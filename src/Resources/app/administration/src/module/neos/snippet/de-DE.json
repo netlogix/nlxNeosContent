@@ -1,0 +1,36 @@
+{
+    "sw-privileges": {
+        "permissions": {
+            "neos": {
+                "label": "Enterprise Content Platform"
+            }
+        }
+    },
+    "sw-cms": {
+        "components": {
+            "cmsListItem": {
+                "neos": {
+                    "COMMENT": "FIXME - this button has to be removed in v1",
+                    "changeIdentifier": "Neos Node identifier ändern",
+                    "button": {
+                        "changeIdentifier": "Bestätigen"
+                    }
+                }
+            }
+        }
+    },
+    "sw-category": {
+        "base": {
+            "cms": {
+                "editInNeos": "In Enterprise Content Platform bearbeiten"
+            }
+        }
+    },
+    "sw-product": {
+        "base": {
+            "cms": {
+                "editInNeos": "In Enterprise Content Platform bearbeiten"
+            }
+        }
+    }
+}

@@ -1,0 +1,48 @@
+{% block sw_cms_list_listing_list_item_option_duplicate %}
+    {% parent %}
+    <sw-context-menu-item
+        :disabled="!acl.can('neos:edit') || undefined"
+        class="sw-cms-list-item__option-neos-identifier"
+        @click="onChangeNeosNodeIdentifier(cmsPage)"
+        @closeNodeIdentifierChangeModal="showNodeIdentifierChangeModal = false"
+    >
+        {{ $tc('sw-cms.components.cmsListItem.neos.changeIdentifier') }}
+    </sw-context-menu-item>
+{% endblock %}
+
+{% block sw_cms_list_rename_modal %}
+    {% parent %}
+    <sw-modal
+        v-if="showNodeIdentifierChangeModal"
+        :title="$tc('sw-cms.components.cmsListItem.neos.changeIdentifier')"
+        variant="small"
+        @modal-close="onCloseNodeIdentifierChangeModal"
+    >
+
+        <div class="nlx-change-node-identifier-modal__text">
+            {{ $tc('sw-cms.components.cmsListItem.neos.changeIdentifier') }}
+        </div>
+        <sw-text-field
+            v-model:value="currentPage.extensions.nlxNeosNode.nodeIdentifier"
+            class="nlx-change-node-identifier-modal__text-field"
+            size="medium"
+        />
+
+        <template #modal-footer>
+            <sw-button
+                size="small"
+                @click="onCloseNodeIdentifierChangeModal"
+            >
+                {{ $tc('global.default.cancel') }}
+            </sw-button>
+
+            <sw-button
+                size="small"
+                variant="primary"
+                @click="onConfirmNodeIdentifierChangeModal"
+            >
+                {{ $tc('sw-cms.components.cmsListItem.neos.button.changeIdentifier') }}
+            </sw-button>
+        </template>
+    </sw-modal>
+{% endblock %}

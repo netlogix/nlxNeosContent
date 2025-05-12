@@ -1,0 +1,40 @@
+{% sw_extends '@@Storefront/storefront/layout/meta.html.twig' %}
+
+{% block layout_head_stylesheet %}
+    {{ parent() }}
+
+    {% set styleUrls = getStyleUrls() %}
+    {% for url in styleUrls %}
+        <link rel="stylesheet" href="{{ url }}"/>
+    {% endfor %}
+
+    {% set scriptUrls = getScriptUrls() %}
+    {% for url in scriptUrls %}
+        {% if 'esm' in url %}
+            <script src="{{ url }}" type="module"></script>
+        {% else %}
+            <script nomodule src="{{ url }}" type="text/javascript"></script>
+        {% endif %}
+    {% endfor %}
+{% endblock %}
+
+
+{% block layout_head_javascript_router %}
+    {# Register all routes that will be needed in JavaScript to the window.router object #}
+    <script>
+        window.activeNavigationId = '{{ shopware.navigation.id }}';
+        window.router = {
+            'frontend.cart.offcanvas': '{{ url('frontend.cart.offcanvas') }}',
+            'frontend.cookie.offcanvas': '{{ url('frontend.cookie.offcanvas') }}',
+            'frontend.checkout.finish.page': '{{ url('frontend.checkout.finish.page') }}',
+            'frontend.checkout.info': '{{ url('frontend.checkout.info') }}',
+            'frontend.menu.offcanvas': '{{ url('frontend.menu.offcanvas') }}',
+            'frontend.cms.page': '{{ url('frontend.cms.page') }}',
+            'frontend.cms.navigation.page': '{{ url('frontend.cms.navigation.page') }}',
+            'frontend.account.addressbook': '{{ url('frontend.account.addressbook') }}',
+            'frontend.country.country-data': '{{ url('frontend.country.country.data') }}',
+            'frontend.app-system.generate-token': '{{ url('frontend.app-system.generate-token', { name: 'Placeholder' }) }}',
+        };
+        window.salesChannelId = '{{ context.salesChannelId }}';
+    </script>
+{% endblock %}

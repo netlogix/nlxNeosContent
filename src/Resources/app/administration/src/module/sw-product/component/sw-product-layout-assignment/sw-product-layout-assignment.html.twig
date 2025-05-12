@@ -1,0 +1,20 @@
+{% block sw_product_layout_assignment_button_edit %}
+    <sw-button
+        class="sw-product-layout-assignment__button"
+        size="small"
+        :disabled="!acl.can('product.editor') || undefined"
+        v-if="!isNeosPage"
+        @click="openInPageBuilder"
+    >
+        {{ cmsPage ? $tc('sw-product.layoutAssignment.textEditInDesigner') : $tc('sw-product.layoutAssignment.textCreateNewLayout') }}
+    </sw-button>
+    <sw-button
+        class="sw-product-layout-assignment__button"
+        size="small"
+        :disabled="!acl.can('product.editor') || undefined"
+        v-if="isNeosPage"
+        @click="openInNeos"
+    >
+        {{ $tc('sw-category.base.cms.editInNeos') }}
+    </sw-button>
+{% endblock %}

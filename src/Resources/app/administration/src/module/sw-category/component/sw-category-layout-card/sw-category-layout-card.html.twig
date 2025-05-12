@@ -1,0 +1,20 @@
+{% block sw_category_detail_layout_desc_actions_designer %}
+    <sw-button
+        class="sw-category-detail-layout__open-in-pagebuilder"
+        size="small"
+        :disabled="!acl.can('category.editor')"
+        v-if="!isNeosPage"
+        @click="openInPagebuilder"
+    >
+        {{ cmsPage ? $tc('sw-category.base.cms.editInPagebuilder') : $tc('sw-category.base.cms.editInPagebuilderEmpty') }}
+    </sw-button>
+    <sw-button
+        class="sw-category-detail-layout__open-in-pagebuilder"
+        size="small"
+        :disabled="!acl.can('category.editor')"
+        v-if="isNeosPage"
+        @click="openInNeos"
+    >
+        {{ $tc('sw-category.base.cms.editInNeos') }}
+    </sw-button>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% block sw_cms_list_item_image %}
+    <div
+        v-if="page && !isNeosPage"
+        class="sw-cms-list-item__image"
+        :style="previewMedia"
+        role="button"
+        tabindex="0"
+        @click="onItemClick(page)"
+        @keydown.enter="onItemClick(page)"
+    >
+        <div v-if="isDefault">
+            <span
+                v-if="page.type === 'product_list'"
+                class="sw-cms-list-item__is-default"
+            >{{ $tc('sw-cms.components.cmsListItem.defaultLayoutProductList') }}</span>
+            <span
+                v-else-if="page.type === 'product_detail'"
+                class="sw-cms-list-item__is-default"
+            >{{ $tc('sw-cms.components.cmsListItem.defaultLayoutProductDetail') }}</span>
+        </div>
+    </div>
+    <div
+        v-else-if="page && isNeosPage"
+        class="sw-cms-list-item__image neos-layout"
+        :style="previewMedia"
+        role="button"
+        tabindex="0"
+        @click="onItemClick(page)"
+        @keydown.enter="onItemClick(page)"
+    >
+        <div v-if="isDefault">
+            <span
+                v-if="page.type === 'product_list'"
+                class="sw-cms-list-item__is-default"
+            >{{ $tc('sw-cms.components.cmsListItem.defaultLayoutProductList') }}</span>
+            <span
+                v-else-if="page.type === 'product_detail'"
+                class="sw-cms-list-item__is-default"
+            >{{ $tc('sw-cms.components.cmsListItem.defaultLayoutProductDetail') }}</span>
+        </div>
+        <div class="sw-cms-list-item__neos-flag">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 124.5 124.45" class="neos-branding-logo">
+                <path fill="#009fe3" d="M88.83 0L68.12 15.1v31.57l20.71 29.28V0zM88.83 112.57L9.22 0 0 6.74v117.71l20.71-15.1V51.06l51.78 73.39h22.65l16.34-11.88H88.83z"></path>
+                <path fill="#fff" d="M20.71 51.06v58.29L0 124.45h22.65l20.71-15.1V83.17L20.71 51.06zM88.83 75.95V0h22.65v112.57H88.83L9.22 0h25.89l53.72 75.95z"></path>
+            </svg>
+        </div>
+    </div>
+    <div
+        v-else
+        class="sw-cms-list-item__image is--empty"
+    >
+        {{ $tc('sw-cms.components.cmsListItem.emptyText') }}
+    </div>
+{% endblock %}

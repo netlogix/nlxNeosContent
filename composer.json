@@ -1,0 +1,33 @@
+{
+    "name": "netlogix/neos-content",
+    "description": "This plugin enables Shopware to render Neos content elements.",
+    "version": "0.1.4",
+    "type": "shopware-platform-plugin",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "nlxNeosContent\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "netlogix"
+        }
+    ],
+    "require": {
+        "shopware/core": "^6.6"
+    },
+    "extra": {
+        "shopware-plugin-class": "nlxNeosContent\\NlxNeosContent",
+        "copyright": "(c) netlogix GmbH & Co. KG",
+        "label": {
+            "de-DE": "Neos Content für Shopware",
+            "en-GB": "Neos Content for Shopware"
+        },
+        "description": {
+            "de-DE": "",
+            "en-GB": ""
+        },
+        "shopware-admin": "Resources/app/administration"
+    }
+}
