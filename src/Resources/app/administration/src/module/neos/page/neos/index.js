@@ -40,7 +40,8 @@ Shopware.Component.register('neos-index', {
 
             if (currentRoute._value.name === 'nlx.neos.index') {
                 configService.getValues('NlxNeosContent').then((response) => {
-                    this.config.neosBaseUri = `${response['NlxNeosContent.config.neosBaseUri']}/neos/shopware/login/${token}`;
+                    //TODO move route generation to a service
+                    this.config.neosBaseUri = `${response['NlxNeosContent.config.neosBaseUri']}/neos/shopware/login/${token}?apiUrl=${Shopware.Context.api.schemeAndHttpHost}`;
                 });
             }
 
@@ -48,7 +49,8 @@ Shopware.Component.register('neos-index', {
                 configService.getValues('NlxNeosContent').then((response) => {
                     const nodeIdentifier = currentRoute.value.params.nodeIdentifier;
                     const language = 'english'; //FIXME: Somehow get the current language (language) either from the route or append it to the url calling this component
-                    this.config.neosBaseUri = `${response['NlxNeosContent.config.neosBaseUri']}/neos/shopware/login/${token}?nodeIdentifier=${nodeIdentifier}&language=${language}`;
+                    //TODO move route generation to a service
+                    this.config.neosBaseUri = `${response['NlxNeosContent.config.neosBaseUri']}/neos/shopware/login/${token}/?apiUrl=${Shopware.Context.api.schemeAndHttpHost}&?nodeIdentifier=${nodeIdentifier}&language=${language}`;
                 });
             }
         },
