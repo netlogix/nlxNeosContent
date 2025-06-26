@@ -1,0 +1,66 @@
+{% block sw_cms_layout_assignment_modal %}
+    <sw-modal
+        :title="$tc('sw-cms.detail.sidebar.titleLayoutAssignment')"
+        class="sw-cms-layout-assignment-modal"
+        @modal-close="onAbort"
+    >
+
+        {% block sw_cms_layout_assignment_modal_loader %}
+            <sw-loader
+                v-if="isLoading"
+                class="sw-cms-layout-assignment-modal__loader"
+            />
+        {% endblock %}
+
+        {% block nlx_cms_preview_modal_content %}
+
+{#            TODO prefill with value if value exists maybe allow plugin config for salesChannel #}
+
+            <sw-entity-single-select
+                v-model="salesChannelId"
+                entity="sales_channel"
+                label="Sales Channel"
+                placeholder="Please select a sales channel"
+                :value="salesChannelId"
+                @update:value="onSalesChannelInput"
+            ></sw-entity-single-select>
+
+            <sw-entity-single-select
+                v-model="languageId"
+                entity="language"
+                label="Language"
+                placeholder="Please select a language"
+                :value="languageId"
+                @update:value="onLanguageInput"
+            ></sw-entity-single-select>
+
+        {% endblock %}
+
+        {% block sw_cms_layout_assignment_modal_actions %}
+            <template #modal-footer>
+                {% block sw_cms_layout_assignment_action_abort %}
+                    <sw-button
+                        :disabled="isLoading"
+                        class="sw-cms-layout-assignment-modal__action-cancel"
+                        size="small"
+                        @click="onAbort"
+                    >
+                        {{ $tc('global.default.cancel') }}
+                    </sw-button>
+                {% endblock %}
+
+                {% block sw_cms_layout_assignment_action_confirm %}
+                    <sw-button
+                        :disabled="isLoading"
+                        class="sw-cms-preview-modal__action-confirm"
+                        size="small"
+                        variant="primary"
+                        @click="onConfirm"
+                    >
+                        {{ $tc('sw-category.base.cms.preview.buttonText') }}
+                    </sw-button>
+                {% endblock %}
+            </template>
+        {% endblock %}
+    </sw-modal>
+{% endblock %}

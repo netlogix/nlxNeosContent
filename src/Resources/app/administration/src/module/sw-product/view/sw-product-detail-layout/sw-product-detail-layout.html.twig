@@ -1,0 +1,23 @@
+{% block sw_product_detail_layout_content %}
+    <sw-product-layout-assignment
+        :cms-page="currentPage"
+        @modal-layout-open="onOpenLayoutModal"
+        @modal-preview-open="onOpenPreviewModal"
+        @button-edit-click="onOpenInPageBuilder"
+        @button-delete-click="onResetLayout"
+    >
+
+    </sw-product-layout-assignment>
+{% endblock %}
+
+{% block sw_product_detail_layout_modal %}
+    {% parent() %}
+
+    <nlx-preview-modal
+        v-if="showPreviewModal"
+        :headline="$tc('sw-category.base.cms.preview.modal.headline')"
+        :cmsPageId="cmsPageId"
+        @modal-preview-select="onSelectPreview"
+        @modal-close="onClosePreviewModal"
+    ></nlx-preview-modal>
+{% endblock %}

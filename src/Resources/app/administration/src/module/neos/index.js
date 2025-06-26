@@ -27,6 +27,7 @@ Shopware.Module.register('nlx-neos', {
     routes: {
         index: {
             component: 'neos-index',
+            name: 'nlx.neos.index',
             path: 'index',
             meta: {
                 privilege: "neos.viewer"
@@ -36,7 +37,8 @@ Shopware.Module.register('nlx-neos', {
         },
         detail: {
             component: 'neos-index',
-            path: 'detail/:nodeIdentifier',
+            name: 'nlx.neos.detail',
+            path: 'detail',
             meta: {
                 privilege: "neos.viewer"
             },

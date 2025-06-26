@@ -1,3 +1,9 @@
 <div class="neos">
-    <iframe :src="config.neosBaseUri" title="Neos CMS"></iframe>
+
+    <form ref="form" :action="config.neosBaseUri" method="post" target="neos-cms">
+        <input type="hidden" name="shopwareAccessToken" required :value="config.token">
+        <input type="hidden" name="apiUrl" required :value="config.apiUrl">
+    </form>
+
+    <iframe ref="iframe" name="neos-cms" id="neos-cms" src="" title="Neos CMS"></iframe>
 </div>

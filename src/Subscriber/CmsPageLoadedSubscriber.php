@@ -4,20 +4,16 @@ declare(strict_types=1);
 
 namespace nlxNeosContent\Subscriber;
 
+use nlxNeosContent\Core\Content\NeosNode\NeosNodeEntity;
 use nlxNeosContent\Service\ContentExchangeService;
+use nlxNeosContent\Service\ResolverContextService;
 use Shopware\Core\Content\Category\CategoryDefinition;
-use Shopware\Core\Content\Category\CategoryEntity;
-use Shopware\Core\Content\Category\CategoryException;
 use Shopware\Core\Content\Cms\Aggregate\CmsSection\CmsSectionCollection;
-use Shopware\Core\Content\Cms\DataResolver\ResolverContext\EntityResolverContext;
 use Shopware\Core\Content\Cms\DataResolver\ResolverContext\ResolverContext;
 use Shopware\Core\Content\Cms\Events\CmsPageLoadedEvent;
-use Shopware\Core\Content\Product\SalesChannel\SalesChannelProductDefinition;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopware\Core\Framework\Struct\ArrayEntity;
-use Shopware\Core\System\SalesChannel\Entity\SalesChannelRepository;
+use Shopware\Core\Content\LandingPage\LandingPageDefinition;
+use Shopware\Core\Content\Product\ProductDefinition;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -26,12 +22,7 @@ class CmsPageLoadedSubscriber
 {
     public function __construct(
         private readonly ContentExchangeService $contentExchangeService,
-        private readonly SalesChannelProductDefinition $productDefinition,
-        #[Autowire(service: 'sales_channel.product.repository', lazy: true)]
-        private readonly SalesChannelRepository $productRepository,
-        private readonly CategoryDefinition $categoryDefinition,
-        #[Autowire(service: 'sales_channel.category.repository', lazy: true)]
-        private readonly SalesChannelRepository $categoryRepository,
+        private readonly ResolverContextService $resolverContextService,
     ) {
     }
 
@@ -73,6 +64,20 @@ class CmsPageLoadedSubscriber
                 $cmsPageEntity->getSections(),
                 $neosNode->getVars()['nodeIdentifier']
             );
+        } elseif ($cmsPageEntity->getType() === 'landingpage') {
+            $this->exchangeLandingPage(
+                $cmsPageLoadedEvent->getSalesChannelContext(),
+                $cmsPageLoadedEvent->getRequest(),
+                $cmsPageEntity->getSections(),
+                $neosNode->getVars()['nodeIdentifier']
+            );
+        } else {
+            $this->exchangeShopPage(
+                $cmsPageLoadedEvent->getSalesChannelContext(),
+                $cmsPageLoadedEvent->getRequest(),
+                $cmsPageEntity->getSections(),
+                $neosNode->getVars()['nodeIdentifier']
+            );
         }
     }
 
@@ -83,11 +88,18 @@ class CmsPageLoadedSubscriber
         CmsSectionCollection $cmsSectionCollection,
         string $nodeIdentifier
     ): void {
+        $resolverContext = $this->resolverContextService->getResolverContextForEntityName(
+            CategoryDefinition::ENTITY_NAME,
+            $categoryId,
+            $salesChannelContext,
+            $request
+        );
+
         $this->contentExchangeService->exchangeCmsSectionContent(
             $cmsSectionCollection,
             $nodeIdentifier,
-            $this->getCategoryResolverContext($categoryId, $salesChannelContext, $request),
-            'en'
+            $resolverContext,
+            $salesChannelContext->getLanguageInfo()->localeCode
         );
     }
 
@@ -98,50 +110,57 @@ class CmsPageLoadedSubscriber
         CmsSectionCollection $cmsSectionCollection,
         string $nodeIdentifier
     ): void {
-        // Create a resolver context for the product to resolve the product data
-        $criteria = new Criteria([$productId]);
-        $criteria->addAssociation('media');
-        $criteria->addAssociation('manufacturer.media');
-        $product = $this->productRepository->search($criteria, $salesChannelContext)->first();
-
-        $resolverContext = new EntityResolverContext(
+        $resolverContext = $this->resolverContextService->getResolverContextForEntityName(
+            ProductDefinition::ENTITY_NAME,
+            $productId,
             $salesChannelContext,
-            $request,
-            $this->productDefinition,
-            clone $product
+            $request
         );
 
         $this->contentExchangeService->exchangeCmsSectionContent(
             $cmsSectionCollection,
             $nodeIdentifier,
             $resolverContext,
-            'en'
+            $salesChannelContext->getLanguageInfo()->localeCode
         );
     }
 
-    private function getCategoryResolverContext(
-        string $categoryId,
-        SalesChannelContext $context,
-        Request $request
-    ): ResolverContext {
-        $criteria = new Criteria([$categoryId]);
-        $criteria->setTitle('category::data');
-        $criteria->addAssociation('media');
-        $category = $this->categoryRepository
-            ->search($criteria, $context)
-            ->get($categoryId);
+    private function exchangeLandingPage(
+        SalesChannelContext $salesChannelContext,
+        Request $request,
+        CmsSectionCollection $cmsSectionCollection,
+        string $nodeIdentifier
+    ): void {
+        $resolverContext = new ResolverContext($salesChannelContext, $request);
 
-        if (!$category instanceof CategoryEntity) {
-            throw CategoryException::categoryNotFound($categoryId);
-        }
-
-        return new EntityResolverContext($context, $request, $this->categoryDefinition, $category);
+        $this->contentExchangeService->exchangeCmsSectionContent(
+            $cmsSectionCollection,
+            $nodeIdentifier,
+            $resolverContext,
+            $salesChannelContext->getLanguageInfo()->localeCode
+        );
     }
 
-    private function neosNodeHasNodeIdentifier(ArrayEntity $neosNode): bool
+    private function exchangeShopPage(
+        SalesChannelContext $salesChannelContext,
+        Request $request,
+        CmsSectionCollection $cmsSectionCollection,
+        string $nodeIdentifier
+    ): void
     {
-        $vars = $neosNode->getVars();
-        $nodeIdentifier = $vars['nodeIdentifier'];
+        $resolverContext = new ResolverContext($salesChannelContext, $request);
+
+        $this->contentExchangeService->exchangeCmsSectionContent(
+            $cmsSectionCollection,
+            $nodeIdentifier,
+            $resolverContext,
+            $salesChannelContext->getLanguageInfo()->localeCode
+        );
+    }
+
+    private function neosNodeHasNodeIdentifier(NeosNodeEntity $neosNode): bool
+    {
+        $nodeIdentifier = $neosNode->getNodeIdentifier();
 
         if (!$nodeIdentifier) {
             return false;

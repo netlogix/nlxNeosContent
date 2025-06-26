@@ -22,14 +22,26 @@
     "sw-category": {
         "base": {
             "cms": {
-                "editInNeos": "In Enterprise Content Platform bearbeiten"
+                "editInNeos": "In Enterprise Content Platform bearbeiten",
+                "preview": {
+                    "buttonText": "Vorschau öffnen",
+                    "modal": {
+                        "headline": "Vorschaukonfiguration"
+                    }
+                }
             }
         }
     },
     "sw-product": {
         "base": {
             "cms": {
-                "editInNeos": "In Enterprise Content Platform bearbeiten"
+                "editInNeos": "In Enterprise Content Platform bearbeiten",
+                "preview": {
+                    "buttonText": "Vorschau öffnen",
+                    "modal": {
+                        "headline": "Vorschaukonfiguration"
+                    }
+                }
             }
         }
     }

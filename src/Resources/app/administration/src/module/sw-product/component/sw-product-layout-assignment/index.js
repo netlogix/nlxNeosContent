@@ -13,6 +13,10 @@ export default {
         },
     },
 
+    emits: [
+        'modal-preview-open'
+    ],
+
     methods: {
         openInNeos() {
             if (!this.cmsPage) {
@@ -26,10 +30,16 @@ export default {
 
             this.$router.push({
                 name: 'nlx.neos.detail',
-                params: {
+                query: {
                     nodeIdentifier: this.cmsPage.extensions.nlxNeosNode.nodeIdentifier,
+                    entityId: this.$router.currentRoute.value.params.id,
+                    entityName: 'product',
                 },
             });
-        }
+        },
+
+        openPreviewModal() {
+            this.$emit('modal-preview-open');
+        },
     },
 }

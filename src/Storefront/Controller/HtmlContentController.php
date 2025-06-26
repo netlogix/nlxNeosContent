@@ -13,13 +13,19 @@ use Symfony\Component\Routing\Annotation\Route;
 #[Route(defaults: ['_routeScope' => ['storefront']])]
 class HtmlContentController extends StorefrontController
 {
+    /**
+     * This controller should be used to load static HTML content like stylesheets and scripts
+     * earlier the idea was to load header and footer content but this is not needed anymore since
+     * shopware v.6.6.10.x has a esi url for that
+     */
+
 
     public function __construct()
     {
     }
 
     #[Route(path: '/html-content/style', name: 'frontend.html-content.style', methods: ['GET'])]
-    public function headerTEST(Request $request, SalesChannelContext $context): Response
+    public function getStyles(Request $request, SalesChannelContext $context): Response
     {
         //FIXME this can probably be improved but it works for now
         $response = $this->renderStorefront('@Storefront/storefront/layout.html.twig');

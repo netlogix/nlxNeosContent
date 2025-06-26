@@ -20,7 +20,11 @@ class ResourceHelper extends AbstractExtension
     {
         $baseUrl = $this->systemConfigService->get('NlxNeosContent.config.neosBaseUri');
         $client = new Client();
-        $response = $client->get($baseUrl . '/shopware-api/resources/');
+        try {
+            $response = $client->get($baseUrl . '/shopware-api/resources/');
+        } catch (\Exception $e) {
+            return; // FIXME handle error, log it or flash Message, but without catching it it breaks shopware completely
+        }
         $this->resources = json_decode($response->getBody()->getContents(), true);
     }
 

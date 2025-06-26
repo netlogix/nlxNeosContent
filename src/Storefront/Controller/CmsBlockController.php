@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace nlxNeosContent\Storefront\Controller;
 
 use nlxNeosContent\Service\ContentExchangeService;
+use nlxNeosContent\Service\ResolverContextService;
 use Shopware\Core\Content\Category\CategoryDefinition;
 use Shopware\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockCollection;
 use Shopware\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockEntity;
-use Shopware\Core\Content\Cms\DataResolver\ResolverContext\EntityResolverContext;
+use Shopware\Core\Content\Cms\CmsPageEntity;
 use Shopware\Core\Content\Product\ProductDefinition;
-use Shopware\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\System\SalesChannel\Entity\SalesChannelRepository;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -20,6 +21,12 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
+/**
+ * @internal
+ *
+ * This controller is used to render a CMS block based on the provided entity name and ID.
+ * The rendered html's sole purpose is to be used in the Neos CMS for advanced editing preview.
+ */
 #[Route(defaults: ['_routeScope' => ['storefront']])]
 class CmsBlockController extends StorefrontController
 {
@@ -29,7 +36,8 @@ class CmsBlockController extends StorefrontController
         #[Autowire(service: 'sales_channel.category.repository', lazy: true)]
         private readonly SalesChannelRepository $categoryRepository,
         private readonly ContentExchangeService $contentExchangeService,
-        private readonly DefinitionInstanceRegistry $definitionRegistry,
+        private readonly ResolverContextService $resolverContextService,
+        private readonly EntityRepository $cmsPageRepository,
     ) {
     }
 
@@ -39,26 +47,24 @@ class CmsBlockController extends StorefrontController
         SalesChannelContext $context
     ): Response {
         $entityName = $request->get('sw-entity-name');
-        $entityId = $request->get('sw-entity-id', null);
+        $entityId = $request->get('sw-entity-id');
         $blockData = json_decode($request->getContent(), true);
 
-        $definition = $this->definitionRegistry->getByEntityName($entityName);
         $repository = $this->getRepository($entityName);
 
-        $criteria = $entityId ? new Criteria([$entityId]) : new Criteria();
-        if ($entityName === ProductDefinition::ENTITY_NAME) {
-            $criteria->addAssociation('media');
-            $criteria->addAssociation('manufacturer.media');
-        } else if ($entityName === CategoryDefinition::ENTITY_NAME) {
-            // TODO
-        }
+        $criteria = $this->createCriteria($entityName, $entityId);
 
         $entityResponse = $repository->search(
             $criteria,
             $context
         );
+
         if ($entityResponse->count() === 0) {
-            // TODO: what do we do if no products exist?
+            throw new \RuntimeException(
+                sprintf('No entity found for entity name "%s" and id "%s"', $entityName, $entityId)
+            );
+            // TODO: what do we do if no entities exist?
+            // Maybe send a renderable "error" that tells the user that the element could not be rendered
         }
 
         /**
@@ -67,31 +73,61 @@ class CmsBlockController extends StorefrontController
          * There are different options how Variants are treated in Storefront and apparently this controller can not handle it yet.
          * */
 
-        $entity = $entityResponse->first();
-
         /** @var CmsBlockEntity $block */
         $block = $this->contentExchangeService->createCmsBlockFromNeosElement(
             $blockData,
             1,
-            'foo-bar'
+            'section'
         );
 
-        $resolverContext = new EntityResolverContext(
-            $context, $request,
-            $definition,
-            $entity
+        if (empty($entityId)) {
+            $entityId = $entityResponse->first()->getId();
+        }
+
+        $resolverContext = $this->resolverContextService->getResolverContextForEntityName(
+            $entityName,
+            $entityId,
+            $context,
+            $request,
+            true
         );
 
-        $collection = new CmsBlockCollection([$block]);
-        $this->contentExchangeService->loadSlotData($collection, $resolverContext);
+        $cmsBlockCollection = new CmsBlockCollection([$block]);
+        $this->contentExchangeService->loadSlotData($cmsBlockCollection, $resolverContext);
+
+        $parameters = [
+            'block' => $block,
+            'context' => $context,
+        ];
+
+        if ($entityName === CategoryDefinition::ENTITY_NAME) {
+            $cmsPages = $this->cmsPageRepository->search(
+                (new Criteria([$entityResponse->first()->getCmsPageId()]))
+                    ->addAssociation('sections'),
+                $context->getContext()
+            );
+
+            /** @var CmsPageEntity $cmsPage */
+            $cmsPage = $cmsPages->first();
+            $cmsPage->getSections()->first()->setBlocks($cmsBlockCollection);
+
+            $parameters['cmsPage'] = $cmsPage;
+        }
 
         return $this->render(
             sprintf('@Storefront/storefront/block/cms-block-%s.html.twig', $block->getType()),
-            [
-                'block' => $block,
-                'context' => $context,
-            ]
+            $parameters
         );
+    }
+
+    private function createCriteria(string $entityName, ?string $entityId): Criteria
+    {
+        $criteria = $entityId ? new Criteria([$entityId]) : new Criteria();
+        if ($entityName === ProductDefinition::ENTITY_NAME) {
+            $criteria->addAssociation('media');
+            $criteria->addAssociation('manufacturer.media');
+        }
+        return $criteria;
     }
 
     private function getRepository(string $entityName): SalesChannelRepository

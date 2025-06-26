@@ -37,7 +37,7 @@ class ContentExchangeService
         CmsSectionCollection $cmsSectionCollection,
         string $nodeIdentifier,
         ResolverContext $resolverContext,
-        string $dimensions = 'en'
+        string $dimensions,
     ): void {
         $elements = $this->fetchNeosContentByNodeIdentifierAndDimension(
             $nodeIdentifier,

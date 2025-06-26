@@ -26,6 +26,11 @@ class NeosNodeDefinition extends EntityDefinition
         return self::ENTITY_NAME;
     }
 
+    public function getEntityClass(): string
+    {
+        return NeosNodeEntity::class;
+    }
+
     protected function defineFields(): FieldCollection
     {
         return new FieldCollection([

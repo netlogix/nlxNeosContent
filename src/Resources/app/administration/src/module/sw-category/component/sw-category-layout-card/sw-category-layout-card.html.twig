@@ -17,4 +17,22 @@
     >
         {{ $tc('sw-category.base.cms.editInNeos') }}
     </sw-button>
+
+    {# FIXME remove doubled class and add styling for the preview button class #}
+    <sw-button
+        class="sw-product-preview__button sw-product-layout-assignment__button"
+        size="small"
+        :disabled="!acl.can('category.editor') || undefined"
+        @click="openPreviewModal"
+    >
+        {{ $tc('sw-category.base.cms.preview.buttonText') }}
+    </sw-button>
+
+    <nlx-preview-modal
+        v-if="showPreviewModal"
+        :headline="$tc('sw-category.base.cms.preview.modal.headline')"
+        :cmsPageId="cmsPage.id"
+        @modal-preview-select="onSelectPreview"
+        @modal-close="onClosePreviewModal"
+    ></nlx-preview-modal>
 {% endblock %}

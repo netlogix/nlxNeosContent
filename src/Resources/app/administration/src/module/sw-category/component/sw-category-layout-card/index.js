@@ -3,6 +3,12 @@ import template from './sw-category-layout-card.html.twig';
 export default {
     template,
 
+    data() {
+        return {
+            showPreviewModal: false,
+        };
+    },
+
     computed: {
         isNeosPage() {
             if (!this.cmsPage) {
@@ -12,6 +18,10 @@ export default {
             return this.cmsPage.extensions?.nlxNeosNode?.nodeIdentifier !== undefined;
         },
     },
+
+    emits: [
+        'modal-preview-open'
+    ],
 
     methods: {
         openInNeos() {
@@ -26,10 +36,20 @@ export default {
 
             this.$router.push({
                 name: 'nlx.neos.detail',
-                params: {
+                query: {
                     nodeIdentifier: this.cmsPage.extensions.nlxNeosNode.nodeIdentifier,
+                    entityId: this.category.id,
+                    entityName: 'category',
                 },
             });
+        },
+
+        openPreviewModal() {
+            this.showPreviewModal = true;
+        },
+
+        onClosePreviewModal() {
+            this.showPreviewModal = false;
         }
     },
 }

@@ -4,40 +4,68 @@ declare(strict_types=1);
 
 namespace nlxNeosContent\Service;
 
+use Exception;
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\GuzzleException;
+use nlxNeosContent\Core\Content\NeosNode\NeosNodeEntity;
+use Shopware\Administration\Notification\NotificationService;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\Entity;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\NotFilter;
+use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
-use Symfony\Component\HttpFoundation\InputBag;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
+#[Autoconfigure(public: true)]
 class NeosLayoutPageService
 {
+    public const string AVAILABLE_FILTER_PAGE_TYPES = 'product_list|product_detail|landingpage|page';
+
     public function __construct(
         private readonly SystemConfigService $systemConfigService,
         private readonly EntityRepository $cmsPageRepository,
         private readonly EntityRepository $nlxNeosNodeRepository,
+        private readonly NotificationService $notificationService,
     ) {
     }
 
-    public function createCmsPagesForMissingNeosNodes(InputBag $payload, Context $context): void
+    public function getAvailableFilterPageTypes(): array
     {
-        $pageTypes = $this->getFilterPageTypes($payload);
-        $neosNodes = $this->getNeosLayoutPages($pageTypes);
+        return explode('|', self::AVAILABLE_FILTER_PAGE_TYPES);
+    }
 
-        $alreadyPresentNeosLayouts = $this->getShopwarePagesWithConnectedNeosNode($context);
+    public function initialNodeImport(Context $context): void
+    {
+        try {
+            $neosNodes = $this->getNeosLayoutPages($this->getAvailableFilterPageTypes());
+        } catch (Exception $e) {
+            $this->createNotification(
+                $context
+            );
+            return;
+        }
+        $this->createMissingNeosCmsPages($neosNodes, $context);
+    }
+
+    public function createMissingNeosCmsPages(array $neosNodes, Context $context): void
+    {
+        $presentNeosNodeIdentifiers = $this->getCmsPageIdWithConnectedNodeIdentifier($context);
         $neosNodesWithoutExistingShopwareLayouts = $this->removeAlreadyPresentNeosLayouts(
             $neosNodes,
-            $alreadyPresentNeosLayouts
+            $presentNeosNodeIdentifiers
         );
 
         $this->createCmsPagesForNodes($neosNodesWithoutExistingShopwareLayouts, $context);
     }
 
+    /**
+     * Fetches Neos layout pages based on the provided page types.
+     * @throws GuzzleException
+     */
     public function getNeosLayoutPages(array $pageTypes): array
     {
         $baseUrl = $this->systemConfigService->get('NlxNeosContent.config.neosBaseUri');
@@ -54,12 +82,20 @@ class NeosLayoutPageService
 
             $apiUrl = sprintf('%s/shopware-api/layout/pages/%s%s', $baseUrl, $pageType, $language);
             $client = new Client();
-            $response = $client->get($apiUrl, [
-                'headers' => [
-                    'Accept' => 'application/json',
-                    'Content-Type' => 'application/json',
-                ],
-            ]);
+            try {
+                $response = $client->get($apiUrl, [
+                    'headers' => [
+                        'Accept' => 'application/json',
+                        'Content-Type' => 'application/json',
+                    ],
+                ]);
+            } catch (Exception $e) {
+                throw new \RuntimeException(
+                    sprintf('Failed to fetch Neos layout pages: %s', $e->getMessage()),
+                    1743497435,
+                    $e
+                );
+            }
 
             $responseData = json_decode($response->getBody()->getContents(), true);
             foreach ($responseData as $value) {
@@ -75,6 +111,7 @@ class NeosLayoutPageService
         $pagesData = [];
         foreach ($neosNodes as $node) {
             $cmsPage = [
+                'id' => md5($node['nodeIdentifier']),
                 'name' => $node['name'],
                 'type' => $node['type'],
                 'versionId' => DEFAULTS::LIVE_VERSION,
@@ -98,33 +135,41 @@ class NeosLayoutPageService
             $pagesData[] = $cmsPage;
         }
 
-        $this->cmsPageRepository->create($pagesData, $context);
+        $this->cmsPageRepository->upsert($pagesData, $context);
     }
 
-    private function getFilterPageTypes($payload): array
+    public function updateNeosCmsPages(array $neosNodes, Context $context): void
     {
-        $pageTypeFilterValues = 'product_list|product_detail|landingpage|page';
+        $pagesWithConnectedNeosNode = $this->getCmsPageIdWithConnectedNodeIdentifier($context);
 
-        if ($payload->has('filter')) {
-            foreach ($payload->getIterator() as $parameter => $value) {
-                if ($parameter === 'filter') {
-                    if (is_array($value)) {
-                        foreach ($value as $filter) {
-                            if ($filter['field'] === 'type') {
-                                $pageTypeFilterValues = $filter['value'];
-                            }
-                        }
-                    }
-                }
-            }
+        $pagesData = [];
+        foreach ($neosNodes as $node) {
+
+            $cmsPageId = array_search($node['nodeIdentifier'], $pagesWithConnectedNeosNode, true);
+
+            $cmsPageData = [
+                'id' => $cmsPageId,
+                'name' => $node['name'],
+                'type' => $node['type'],
+                'nlxNeosNode' => [
+                    'versionId' => DEFAULTS::LIVE_VERSION,
+                    'cmsPageVersionId' => DEFAULTS::LIVE_VERSION,
+                    'nodeIdentifier' => $node['nodeIdentifier'],
+                ],
+            ];
+
+            $pagesData[] = $cmsPageData;
         }
 
-        return explode('|', $pageTypeFilterValues);
+        $this->cmsPageRepository->update(
+            $pagesData,
+            $context
+        );
     }
 
-    private function getShopwarePagesWithConnectedNeosNode(Context $context): array
+    public function getNeosNodeEntitiesWithConnectedCmsPage(Context $context): EntityCollection
     {
-        $nlxNeosNodeEntities = $this->nlxNeosNodeRepository->search(
+        return $this->nlxNeosNodeRepository->search(
             (new Criteria())->addFilter(
                 new NotFilter(
                     NotFilter::CONNECTION_AND,
@@ -135,12 +180,16 @@ class NeosLayoutPageService
             ),
             $context
         )->getEntities();
+    }
+
+    private function getCmsPageIdWithConnectedNodeIdentifier(Context $context): array
+    {
+        $neosNodeEntities = $this->getNeosNodeEntitiesWithConnectedCmsPage($context);
 
         $availableNodeIdentifiers = [];
-        /** @var Entity $nlxNeosNodeEntity */
-        foreach ($nlxNeosNodeEntities as $nlxNeosNodeEntity) {
-            $availableNodeIdentifiers[$nlxNeosNodeEntity->getVars()['cmsPageId']] = $nlxNeosNodeEntity->getVars(
-            )['nodeIdentifier'];
+        /** @var NeosNodeEntity $nlxNeosNodeEntity */
+        foreach ($neosNodeEntities as $nlxNeosNodeEntity) {
+            $availableNodeIdentifiers[$nlxNeosNodeEntity->getCmsPageId()] = $nlxNeosNodeEntity->getNodeIdentifier();
         }
 
         return $availableNodeIdentifiers;
@@ -151,6 +200,23 @@ class NeosLayoutPageService
         return array_filter($pages, function ($page) use ($alreadyPresentNeosLayouts) {
             return !in_array($page['nodeIdentifier'], $alreadyPresentNeosLayouts);
         });
+    }
+
+    public function createNotification(Context $context, ?string $message = null): void
+    {
+        //FIXME translate Message
+        if (empty($message)) {
+            $message = 'Neos layout pages could not be fetched. This might be due to a misconfiguration of the Neos Base URI or an issue with the Neos API.';
+        }
+        $this->notificationService->createNotification(
+            [
+                'id' => Uuid::randomHex(),
+                'requiredPrivileges' => [],
+                'message' => $message,
+                'status' => 'error',
+            ],
+            $context
+        );
     }
 }
 

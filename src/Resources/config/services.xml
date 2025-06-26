@@ -10,5 +10,11 @@
         <service id="nlxNeosContent\Core\Content\Admin\CacheInvalidationRoute" public="true">
             <tag name="controller.service_arguments"/>
         </service>
+        <service id="nlxNeosContent\Core\Content\Admin\UpdateNeosPagesRoute" public="true">
+            <tag name="controller.service_arguments"/>
+        </service>
+        <service id="nlxNeosContent\Storefront\Controller\PreviewController" public="true">
+            <argument type="service" id="Shopware\Core\Content\Cms\SalesChannel\CmsRoute"/>
+        </service>
     </services>
 </container>

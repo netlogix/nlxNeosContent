@@ -12,7 +12,8 @@ class NeosNodeEntity extends Entity
 {
     use EntityIdTrait;
 
-    protected CmsPageEntity $cmsPage;
+    //This has to be nullable because else the api/search/cms-page endpoint breaks
+    protected ?CmsPageEntity $cmsPage = null;
 
     protected string $cmsPageId;
 
