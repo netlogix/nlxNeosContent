@@ -44,5 +44,11 @@
                 }
             }
         }
+    },
+    "nlx-url-test-button": {
+        "label": "Test URL",
+        "success": "The URL is reachable.",
+        "error": "The URL is not reachable.",
+        "loading": "Testing URL..."
     }
 }

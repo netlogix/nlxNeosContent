@@ -6,9 +6,7 @@ namespace nlxNeosContent;
 
 use Doctrine\DBAL\Connection;
 use nlxNeosContent\Service\NeosAuthorizationRoleService;
-use nlxNeosContent\Service\NeosLayoutPageService;
 use RuntimeException;
-use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\Plugin;
 use Shopware\Core\Framework\Plugin\Context\ActivateContext;
 use Shopware\Core\Framework\Plugin\Context\InstallContext;
@@ -30,8 +28,9 @@ class NlxNeosContent extends Plugin
     {
         parent::activate($activateContext);
 
-        $neosLayoutPageService = $this->container->get(NeosLayoutPageService::class);
-        $neosLayoutPageService->initialNodeImport(Context::createDefaultContext());
+        // FIXME do this in a configuration changed event listener
+        //$neosLayoutPageService = $this->container->get(NeosLayoutPageService::class);
+        //$neosLayoutPageService->initialNodeImport(Context::createDefaultContext());
 
         //TODO reactivate all CMS pages that were deactivated with their respective Version ID
     }

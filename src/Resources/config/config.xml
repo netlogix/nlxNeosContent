@@ -8,8 +8,25 @@
             <name>neosBaseUri</name>
             <label>The uri of the headless neos system</label>
             <label lang="de-DE">Die Uri des Headless-Neos Systems</label>
-            <placeholder>https://neos.neos-shopware.netlogix-demo.de</placeholder>
-            <defaultValue>https://neos.neos-shopware.netlogix-demo.de</defaultValue>
+            <helpText>
+                If you don't know the uri for your Neos system open the enterprise content platform page and continue
+                with the registration.
+            </helpText>
+            <helpText lang="de-DE">
+                Falls sie die Uri für das Verknüpfte Neos System nicht kennen, öffnen sie die Enterprise Content
+                Platform Seite und fahren sie mit dem Registrierungsprozess fort.
+            </helpText>
         </input-field>
+        <component name="nlx-url-test-button">
+            <name>nlxTestUrl</name>
+            <label>Test Neos Base Uri</label>
+            <label lang="de-DE">Neos Base Uri testen</label>
+            <helpText>
+                Click this button to test the configured Neos Base Uri.
+            </helpText>
+            <helpText lang="de-DE">
+                Klicken sie auf diesen Button um die konfigurierte Neos Base Uri zu testen.
+            </helpText>
+        </component>
     </card>
 </config>

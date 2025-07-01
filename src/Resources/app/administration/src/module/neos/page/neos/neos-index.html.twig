@@ -1,6 +1,12 @@
-<div class="neos">
+{# Registration Process to get the url to activate the installation #}
+<div class="registration-form" v-if="inactiveConfiguration">
+    <div style="width:100%;height:500px;" data-fillout-id="rRTU5s2mKUeu" data-fillout-embed-type="standard"
+         data-fillout-inherit-parameters data-fillout-dynamic-resize data-fillout-domain="connect.netlogix.de"></div>
+</div>
 
-    <form ref="form" :action="config.neosBaseUri" method="post" target="neos-cms">
+{# Embeded Neos if the installation is active and has a valid URL #}
+<div class="neos">
+    <form ref="neosIframeForm" :action="config.neosBaseUri" method="post" target="neos-cms">
         <input type="hidden" name="shopwareAccessToken" required :value="config.token">
         <input type="hidden" name="apiUrl" required :value="config.apiUrl">
     </form>

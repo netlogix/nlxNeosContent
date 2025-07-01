@@ -44,5 +44,11 @@
                 }
             }
         }
+    },
+    "nlx-url-test-button": {
+        "label": "URL testen",
+        "success": "Die URL ist erreichbar.",
+        "error": "Die URL ist nicht erreichbar.",
+        "loading": "URL wird getestet..."
     }
 }

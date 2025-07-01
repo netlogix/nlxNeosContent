@@ -1,0 +1,8 @@
+<div>
+    <sw-button-process
+        :isLoading="isLoading"
+        :processSuccess="isSaveSuccessful"
+        @process-finish="saveFinish"
+        @click="check"
+    >{{ $tc('nlx-url-test-button.label') }}</sw-button-process>
+</div>

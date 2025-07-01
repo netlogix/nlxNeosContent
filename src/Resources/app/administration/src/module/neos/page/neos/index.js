@@ -25,6 +25,11 @@ Shopware.Component.register('neos-index', {
         apiUrl: {
             type: String,
             required: true,
+        },
+        inactiveConfiguration: {
+            type: Boolean,
+            required: false,
+            default: false
         }
     },
 
@@ -33,8 +38,9 @@ Shopware.Component.register('neos-index', {
             config: {
                 neosBaseUri: null,
                 token: null,
-                apiUrl: null
-            }
+                apiUrl: null,
+            },
+            inactiveConfiguration: false
         };
     },
 
@@ -45,7 +51,18 @@ Shopware.Component.register('neos-index', {
 
     mounted() {
         this.$nextTick(async () => {
-            const form = this.$refs.form;
+            const form = this.$refs.neosIframeForm;
+            const neosBaseUri = await getNeosBaseUri();
+            this.inactiveConfiguration = !neosBaseUri;
+            if (this.inactiveConfiguration) {
+                // If Neos is not active, we load the Fillout registration script
+                const script = document.createElement('script');
+                script.id = 'fillout-registration';
+                script.src = 'https://server.fillout.com/embed/v1/';
+                script.async = true;
+                document.body.appendChild(script);
+                return;
+            }
             //FIXME: This is a workaround since the url in form.action differs from the url set in the html form action property
             //FIXME: Get rid of the timeout and ensure that the correct url is set
             setTimeout(() => {
@@ -57,7 +74,6 @@ Shopware.Component.register('neos-index', {
                 console.error('User is not logged in');
                 return;
             }
-            const neosBaseUri = await getNeosBaseUri();
 
             // send refreshed token to Neos
             loginService.addOnTokenChangedListener(auth => {
