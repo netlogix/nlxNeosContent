@@ -32,7 +32,8 @@ class UpdateNeosPagesRoute extends AbstractAdminRoute
                 explode('|', NeosLayoutPageService::AVAILABLE_FILTER_PAGE_TYPES)
             );
         } catch (Exception $e) {
-            return new Response('Neos layout pages could not be updated.', Response::HTTP_INTERNAL_SERVER_ERROR);
+            $this->neosLayoutPageService->createNotification($context);
+            throw new Exception('Failed to retrieve Neos layout pages: ' . $e->getMessage(), 1751381726, $e);
         }
 
         $this->neosLayoutPageService->createMissingNeosCmsPages($neosPages, $context);

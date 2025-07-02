@@ -68,6 +68,7 @@ class ResolverContextService
         $criteria = new Criteria([$productId]);
         $criteria->addAssociation('media');
         $criteria->addAssociation('manufacturer.media');
+        $criteria->addFilter(new EqualsFilter('active', true));
         $product = $this->productRepository->search($criteria, $context)->first();
 
         if (!$product instanceof ProductEntity) {

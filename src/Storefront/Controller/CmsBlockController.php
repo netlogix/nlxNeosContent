@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace nlxNeosContent\Storefront\Controller;
 
+use Exception;
 use nlxNeosContent\Service\ContentExchangeService;
 use nlxNeosContent\Service\ResolverContextService;
 use Shopware\Core\Content\Category\CategoryDefinition;
@@ -13,6 +14,7 @@ use Shopware\Core\Content\Cms\CmsPageEntity;
 use Shopware\Core\Content\Product\ProductDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\System\SalesChannel\Entity\SalesChannelRepository;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Controller\StorefrontController;
@@ -54,17 +56,36 @@ class CmsBlockController extends StorefrontController
 
         $criteria = $this->createCriteria($entityName, $entityId);
 
-        $entityResponse = $repository->search(
-            $criteria,
-            $context
-        );
+        try {
+            $entityResponse = $repository->search(
+                $criteria,
+                $context
+            );
+        } catch (Exception $exception) {
+            try {
+                $criteria = $this->createCriteria($entityName, null);
+                $entityResponse = $repository->search(
+                    $criteria,
+                    $context
+                );
+            } catch (Exception $e) {
+                throw new \RuntimeException(
+                    sprintf(
+                        'Failed to load entity for entity name "%s" and id "%s": %s',
+                        $entityName,
+                        $entityId,
+                        $e->getMessage()
+                    ),
+                    0,
+                    $exception
+                );
+            }
+        }
 
         if ($entityResponse->count() === 0) {
             throw new \RuntimeException(
                 sprintf('No entity found for entity name "%s" and id "%s"', $entityName, $entityId)
             );
-            // TODO: what do we do if no entities exist?
-            // Maybe send a renderable "error" that tells the user that the element could not be rendered
         }
 
         /**
@@ -123,6 +144,10 @@ class CmsBlockController extends StorefrontController
     private function createCriteria(string $entityName, ?string $entityId): Criteria
     {
         $criteria = $entityId ? new Criteria([$entityId]) : new Criteria();
+        if (!$entityId) {
+            $criteria->addFilter(new EqualsFilter('active', true));
+        }
+
         if ($entityName === ProductDefinition::ENTITY_NAME) {
             $criteria->addAssociation('media');
             $criteria->addAssociation('manufacturer.media');
