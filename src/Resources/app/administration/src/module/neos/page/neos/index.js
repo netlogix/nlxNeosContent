@@ -3,9 +3,9 @@ import './neos-index.scss';
 
 const getNeosBaseUri = async () => {
     const configService = Shopware.Service('systemConfigApiService');
-    const nlxNeosContentConfig = await configService.getValues('NlxNeosContent');
+    const netlogixNeosContentConfig = await configService.getValues('NetlogixNeosContent');
 
-    return nlxNeosContentConfig['NlxNeosContent.config.neosBaseUri'];
+    return netlogixNeosContentConfig['NetlogixNeosContent.config.neosBaseUri'];
 }
 
 Shopware.Component.register('neos-index', {

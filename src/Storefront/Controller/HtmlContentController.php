@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace nlxNeosContent\Storefront\Controller;
+namespace netlogixNeosContent\Storefront\Controller;
 
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Controller\StorefrontController;

@@ -73,6 +73,27 @@ export default {
                     message: 'Failed to save data.'
                 });
             }
+        },
+
+        isNeosPage(page) {
+            return page.extensions?.nlxNeosNode?.nodeIdentifier !== undefined;
+        },
+
+        openInNeos(page) {
+            this.$router.push({
+                name: 'nlx.neos.detail',
+                query: {
+                    nodeIdentifier: page.extensions.nlxNeosNode.nodeIdentifier
+                },
+            });
+        },
+
+        onListItemClick(page) {
+            if(this.isNeosPage(page)){
+                this.openInNeos(page)
+            }else{
+                this.$super('onListItemClick', page);
+            }
         }
     }
 }

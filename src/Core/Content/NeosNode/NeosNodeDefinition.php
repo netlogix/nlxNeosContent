@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace nlxNeosContent\Core\Content\NeosNode;
+namespace netlogixNeosContent\Core\Content\NeosNode;
 
 use Shopware\Core\Content\Cms\CmsPageDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;

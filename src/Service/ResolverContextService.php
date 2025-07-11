@@ -1,6 +1,6 @@
 <?php
 
-namespace nlxNeosContent\Service;
+namespace netlogixNeosContent\Service;
 
 
 use Shopware\Core\Content\Category\CategoryDefinition;

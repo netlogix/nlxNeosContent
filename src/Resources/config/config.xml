@@ -2,30 +2,30 @@
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="../../../../../../vendor/shopware/core/System/SystemConfig/Schema/config.xsd">
     <card>
-        <title>nlxNeosContent Settings</title>
-        <title lang="de-DE">nlxNeosContent Einstellungen</title>
+        <title>CMS connection Settings</title>
+        <title lang="de-DE">CMS Verbindungs-Einstellungen</title>
         <input-field type="text">
             <name>neosBaseUri</name>
-            <label>The uri of the headless neos system</label>
-            <label lang="de-DE">Die Uri des Headless-Neos Systems</label>
+            <label>The url of the headless neos system (https://my-neos.com)</label>
+            <label lang="de-DE">Die URL des Headless-Neos Systems (https://mein-neos.de)</label>
             <helpText>
-                If you don't know the uri for your Neos system open the enterprise content platform page and continue
+                If you don't know the url for your Neos system open the enterprise content platform page and continue
                 with the registration.
             </helpText>
             <helpText lang="de-DE">
-                Falls sie die Uri für das Verknüpfte Neos System nicht kennen, öffnen sie die Enterprise Content
+                Falls sie die URL für das Verknüpfte Neos System nicht kennen, öffnen sie die Enterprise Content
                 Platform Seite und fahren sie mit dem Registrierungsprozess fort.
             </helpText>
         </input-field>
         <component name="nlx-url-test-button">
             <name>nlxTestUrl</name>
-            <label>Test Neos Base Uri</label>
-            <label lang="de-DE">Neos Base Uri testen</label>
+            <label>Test Neos Base URL</label>
+            <label lang="de-DE">Neos Base URL testen</label>
             <helpText>
-                Click this button to test the configured Neos Base Uri.
+                Click this button to test the configured Neos Base URL.
             </helpText>
             <helpText lang="de-DE">
-                Klicken sie auf diesen Button um die konfigurierte Neos Base Uri zu testen.
+                Klicken sie auf diesen Button um die konfigurierte Neos Base URL zu testen.
             </helpText>
         </component>
     </card>

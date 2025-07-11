@@ -19,6 +19,8 @@ export default {
             salesChannelId: null,
             newSalesChannelId: null,
             newLanguageId: null,
+            isElementVisibleInSalesChannel: false,
+            elementId: null,
         };
     },
 
@@ -29,6 +31,14 @@ export default {
 
         domainRepository() {
             return this.repositoryFactory.create('sales_channel_domain')
+        },
+
+        productRepository() {
+            return this.repositoryFactory.create('product')
+        },
+
+        categoryRepository() {
+            return this.repositoryFactory.create('category');
         }
     },
 
@@ -44,12 +54,69 @@ export default {
             const salesChannel = salesChannels.first();
             this.salesChannelId = salesChannel.id;
 
+            this.elementId = this.$router.currentRoute.value.params.id;
+
             //preset language to the current editing context
             this.languageId = Shopware.Context.api.language.id;
+
+            if (this.elementId) {
+                await this.checkElementVisibility(this.elementId, this.salesChannelId);
+            }
         },
 
-        onSalesChannelInput (newSalesChannelId){
+        async checkElementVisibility(elementId, salesChannelId) {
+            const product = await this.checkForProductVisibility(elementId)
+            if (product) {
+                this.isElementVisibleInSalesChannel = product.visibilities.some(visibility =>
+                    visibility.salesChannelId === salesChannelId
+                );
+                return;
+            }
+
+            const category = await this.checkForCategoryVisibility(elementId)
+            if (category) {
+                const criteria = new Shopware.Data.Criteria(1, 1);
+                criteria.addFilter(Shopware.Data.Criteria.equals('navigationCategoryId', category.id));
+
+                const salesChannels = await this.salesChannelRepository.search(criteria, Shopware.Context.api);
+                const catSalesChannels = salesChannels.first();
+                if(catSalesChannels){
+                    this.isElementVisibleInSalesChannel = catSalesChannels.id === salesChannelId
+                }
+                return;
+            }
+
+            this.isElementVisibleInSalesChannel = false;
+        },
+
+        async checkForProductVisibility(productId) {
+            const criteria = new Shopware.Data.Criteria(1, 1);
+            criteria.addFilter(Shopware.Data.Criteria.equals('id', productId));
+            criteria.addAssociation('visibilities');
+
+            const products = await this.productRepository.search(criteria, Shopware.Context.api);
+            return products.first();
+        },
+
+        async checkForCategoryVisibility(categoryId) {
+            const criteria = new Shopware.Data.Criteria(1, 1);
+            criteria.addFilter(Shopware.Data.Criteria.equals('id', categoryId));
+
+            const categories = await this.categoryRepository.search(criteria, Shopware.Context.api);
+            const category = categories.first()
+            if(category && category.parentId !== null){
+                return await this.checkForCategoryVisibility(category.parentId)
+            }
+
+            return category
+        },
+
+        async onSalesChannelInput (newSalesChannelId){
             this.salesChannelId = newSalesChannelId;
+
+            if (this.elementId) {
+                await this.checkElementVisibility(this.elementId, newSalesChannelId);
+            }
         },
 
         onLanguageInput (newLanguageId){

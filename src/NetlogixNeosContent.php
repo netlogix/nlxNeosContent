@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace nlxNeosContent;
+namespace netlogixNeosContent;
 
 use Doctrine\DBAL\Connection;
-use nlxNeosContent\Service\NeosAuthorizationRoleService;
+use netlogixNeosContent\Service\NeosAuthorizationRoleService;
 use RuntimeException;
 use Shopware\Core\Framework\Plugin;
 use Shopware\Core\Framework\Plugin\Context\ActivateContext;
@@ -13,7 +13,7 @@ use Shopware\Core\Framework\Plugin\Context\InstallContext;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
-class NlxNeosContent extends Plugin
+class NetlogixNeosContent extends Plugin
 {
     public function install(InstallContext $installContext): void
     {

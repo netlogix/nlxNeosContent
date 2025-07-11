@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace nlxNeosContent\Service;
+namespace netlogixNeosContent\Service;
 
+use DateTime;
 use GuzzleHttp\Client;
 use Shopware\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockCollection;
 use Shopware\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockEntity;
@@ -54,6 +55,16 @@ class ContentExchangeService
             if ($cmsBlock === null) {
                 continue;
             }
+
+            $cmsBlock->setCreatedAt(new DateTime());
+            $cmsBlock->setSectionPosition('main');
+            $cmsBlock->setVisibility([
+                'mobile' => true,
+                'desktop' => true,
+                'tablet' => true
+            ]);
+            $cmsBlock->setLocked(true);
+            $cmsBlock->setCmsSectionVersionId(DEFAULTS::LIVE_VERSION);
 
             $cmsBlockCollection->add($cmsBlock);
             $blockPosition++;
@@ -106,6 +117,7 @@ class ContentExchangeService
             $cmsSlot->setId($slot['id'] ?? Uuid::randomHex());
             $cmsSlot->setSlot($slot['slot'] ?? 'content');
             $cmsSlot->setConfig($slot['config'] ?? []);
+            $cmsSlot->setTranslated($this->getTranslatedConfigFromConfig($slot['config'] ?? []));
             $cmsSlot->setBlockId($blockId);
             $cmsSlot->internalSetEntityData('cms_slot', $fieldVisibility);
 
@@ -139,9 +151,9 @@ class ContentExchangeService
     private function fetchNeosContentByNodeIdentifierAndDimension(string $nodeIdentifier, string $dimension): string
     {
         $client = new Client();
-        $baseUrl = $this->systemConfigService->get('NlxNeosContent.config.neosBaseUri');
+        $baseUrl = $this->systemConfigService->get('NetlogixNeosContent.config.neosBaseUri');
         if (!$baseUrl) {
-            throw new \RuntimeException('Neos Base URI is not configured');
+            throw new \RuntimeException('Neos Base URL is not configured');
         }
         $response = $client->get(sprintf($baseUrl . "/shopware-api/content/%s__%s/", $nodeIdentifier, $dimension));
         return $response->getBody()->getContents();
@@ -165,5 +177,12 @@ class ContentExchangeService
         $slots = $this->cmsSlotsDataResolver->resolve($blocks->getSlots(), $resolverContext);
 
         $blocks->setSlots($slots);
+    }
+
+    private function getTranslatedConfigFromConfig(array $config): array
+    {
+        return [
+            "config" => $config,
+        ];
     }
 }

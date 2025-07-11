@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace nlxNeosContent\Service;
+namespace netlogixNeosContent\Service;
 
 use Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
-use nlxNeosContent\Core\Content\NeosNode\NeosNodeEntity;
+use netlogixNeosContent\Core\Content\NeosNode\NeosNodeEntity;
 use Shopware\Administration\Notification\NotificationService;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
@@ -23,7 +23,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 #[Autoconfigure(public: true)]
 class NeosLayoutPageService
 {
-    public const string AVAILABLE_FILTER_PAGE_TYPES = 'product_list|product_detail|landingpage|page';
+    public const AVAILABLE_FILTER_PAGE_TYPES = 'product_list|product_detail|landingpage|page';
 
     public function __construct(
         private readonly SystemConfigService $systemConfigService,
@@ -68,9 +68,9 @@ class NeosLayoutPageService
      */
     public function getNeosLayoutPages(array $pageTypes): array
     {
-        $baseUrl = $this->systemConfigService->get('NlxNeosContent.config.neosBaseUri');
+        $baseUrl = $this->systemConfigService->get('NetlogixNeosContent.config.neosBaseUri');
         if (!$baseUrl) {
-            throw new \RuntimeException('Neos Base URI is not configured', 1743418180);
+            throw new \RuntimeException('Neos Base URL is not configured', 1743418180);
         }
 
         $language = '/en-GB';
@@ -206,7 +206,7 @@ class NeosLayoutPageService
     {
         //FIXME translate Message
         if (empty($message)) {
-            $message = 'Neos layout pages could not be fetched. This might be due to a misconfiguration of the Neos Base URI or an issue with the Neos API.';
+            $message = 'Neos layout pages could not be fetched. This might be due to a misconfiguration of the Neos Base URL or an issue with the Neos API.';
         }
         $this->notificationService->createNotification(
             [

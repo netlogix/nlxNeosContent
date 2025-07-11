@@ -25,9 +25,7 @@
                 "editInNeos": "Edit in Enterprise Content Platform",
                 "preview": {
                     "buttonText": "Open Preview",
-                    "modal": {
-                        "headline": "Preview Configuration"
-                    }
+                    "modalHeadline": "Preview Configuration"
                 }
             }
         }

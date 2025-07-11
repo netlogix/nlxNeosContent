@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace nlxNeosContent\Storefront\Controller;
+namespace netlogixNeosContent\Storefront\Controller;
 
 use Exception;
-use nlxNeosContent\Service\ContentExchangeService;
-use nlxNeosContent\Service\ResolverContextService;
+use netlogixNeosContent\Service\ContentExchangeService;
+use netlogixNeosContent\Service\ResolverContextService;
 use Shopware\Core\Content\Category\CategoryDefinition;
 use Shopware\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockCollection;
 use Shopware\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockEntity;

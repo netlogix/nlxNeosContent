@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace nlxNeosContent\Core\Content\Admin;
+namespace netlogixNeosContent\Core\Content\Admin;
 
-use nlxNeosContent\Service\CachingInvalidationService;
+use netlogixNeosContent\Service\CachingInvalidationService;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 

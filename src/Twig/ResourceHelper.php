@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace nlxNeosContent\Twig;
+namespace netlogixNeosContent\Twig;
 
 use GuzzleHttp\Client;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
@@ -18,7 +18,7 @@ class ResourceHelper extends AbstractExtension
         private readonly SystemConfigService $systemConfigService,
     )
     {
-        $baseUrl = $this->systemConfigService->get('NlxNeosContent.config.neosBaseUri');
+        $baseUrl = $this->systemConfigService->get('NetlogixNeosContent.config.neosBaseUri');
         $client = new Client();
         try {
             $response = $client->get($baseUrl . '/shopware-api/resources/');

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace nlxNeosContent\Core\Content\Admin;
+namespace netlogixNeosContent\Core\Content\Admin;
 
 use Exception;
-use nlxNeosContent\Service\NeosLayoutPageService;
+use netlogixNeosContent\Service\NeosLayoutPageService;
 use Shopware\Core\Framework\Context;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;

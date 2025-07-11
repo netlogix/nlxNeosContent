@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace nlxNeosContent\Storefront\Controller;
+namespace netlogixNeosContent\Storefront\Controller;
 
 use horstoeko\mimedb\tests\TestCase;
 use Shopware\Core\Content\Cms\CmsPageEntity;

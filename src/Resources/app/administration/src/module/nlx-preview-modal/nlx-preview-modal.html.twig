@@ -1,6 +1,6 @@
 {% block sw_cms_layout_assignment_modal %}
     <sw-modal
-        :title="$tc('sw-cms.detail.sidebar.titleLayoutAssignment')"
+        :title="$tc('sw-category.base.cms.preview.buttonText')"
         class="sw-cms-layout-assignment-modal"
         @modal-close="onAbort"
     >
@@ -51,7 +51,7 @@
 
                 {% block sw_cms_layout_assignment_action_confirm %}
                     <sw-button
-                        :disabled="isLoading"
+                        :disabled="isLoading || !isElementVisibleInSalesChannel"
                         class="sw-cms-preview-modal__action-confirm"
                         size="small"
                         variant="primary"

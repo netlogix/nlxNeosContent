@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace nlxNeosContent\Core\Content\Admin;
+namespace netlogixNeosContent\Core\Content\Admin;
 
 use Symfony\Component\HttpFoundation\Response;
 
