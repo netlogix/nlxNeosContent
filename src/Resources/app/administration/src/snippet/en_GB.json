@@ -48,5 +48,13 @@
         "success": "The URL is reachable.",
         "error": "The URL is not reachable.",
         "loading": "Testing URL..."
+    },
+    "nlx-update-neos-templates-button": {
+        "label": "Update Neos Templates",
+        "success": "The Neos templates have been updated."
+    },
+    "nlx-invalidate-cms-page-caches-button": {
+        "label": "Clear Caches of Linked CMS Pages",
+        "success": "The caches of the linked CMS pages have been cleared."
     }
 }

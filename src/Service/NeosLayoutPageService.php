@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace netlogixNeosContent\Service;
 
+use Doctrine\DBAL\Connection;
 use Exception;
-use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use netlogixNeosContent\Core\Content\NeosNode\NeosNodeEntity;
+use netlogixNeosContent\Error\CanNotDeleteDefaultLayoutPageException;
+use Psr\Http\Client\ClientInterface;
 use Shopware\Administration\Notification\NotificationService;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
@@ -26,10 +28,12 @@ class NeosLayoutPageService
     public const AVAILABLE_FILTER_PAGE_TYPES = 'product_list|product_detail|landingpage|page';
 
     public function __construct(
-        private readonly SystemConfigService $systemConfigService,
         private readonly EntityRepository $cmsPageRepository,
         private readonly EntityRepository $nlxNeosNodeRepository,
         private readonly NotificationService $notificationService,
+        private readonly ClientInterface $neosClient,
+        private readonly Connection $connection,
+        private readonly SystemConfigService $systemConfigService,
     ) {
     }
 
@@ -68,11 +72,6 @@ class NeosLayoutPageService
      */
     public function getNeosLayoutPages(array $pageTypes): array
     {
-        $baseUrl = $this->systemConfigService->get('NetlogixNeosContent.config.neosBaseUri');
-        if (!$baseUrl) {
-            throw new \RuntimeException('Neos Base URL is not configured', 1743418180);
-        }
-
         $language = '/en-GB';
         $contents = [];
         foreach ($pageTypes as $pageType) {
@@ -80,10 +79,9 @@ class NeosLayoutPageService
                 throw new \InvalidArgumentException(sprintf('Invalid page type: %s', $pageType), 1743497434);
             }
 
-            $apiUrl = sprintf('%s/shopware-api/layout/pages/%s%s', $baseUrl, $pageType, $language);
-            $client = new Client();
+            $apiUrl = sprintf('/shopware-api/layout/pages/%s%s', $pageType, $language);
             try {
-                $response = $client->get($apiUrl, [
+                $response = $this->neosClient->get($apiUrl, [
                     'headers' => [
                         'Accept' => 'application/json',
                         'Content-Type' => 'application/json',
@@ -144,7 +142,6 @@ class NeosLayoutPageService
 
         $pagesData = [];
         foreach ($neosNodes as $node) {
-
             $cmsPageId = array_search($node['nodeIdentifier'], $pagesWithConnectedNeosNode, true);
 
             $cmsPageData = [
@@ -182,6 +179,51 @@ class NeosLayoutPageService
         )->getEntities();
     }
 
+    /**
+     * Removes CmsPages that have a node identifier which does not exist in Neos.
+     * If a CmsPage is set as default, it will not be removed and a notification will be created.
+     *
+     * @param Context $context
+     * @return void
+     */
+    public function removeCmsPagesWithInvalidNodeIdentifiers(array $neosNodes, Context $context): void
+    {
+        $neosNodeEntities = $this->getNeosNodeEntitiesWithConnectedCmsPage($context);
+        $configs = $this->systemConfigService->get('core.cms');
+        $defaultCmsPageIds = array_filter(
+            $configs,
+            fn($key)=> str_starts_with($key, 'default_'),
+            ARRAY_FILTER_USE_KEY
+        );
+
+        $pagesToDelete = [];
+
+        /** @var NeosNodeEntity $neosNodeEntity */
+        foreach ($neosNodeEntities as $neosNodeEntity) {
+            if (!$neosNodeEntity->getNodeIdentifier()) {
+                continue;
+            }
+            $nodeIdentifier = array_column($neosNodes, 'nodeIdentifier');
+            if (in_array($neosNodeEntity->getNodeIdentifier(), $nodeIdentifier)) {
+                continue;
+            }
+            $cmsPageId = $neosNodeEntity->getCmsPageId();
+
+            if (in_array($cmsPageId, $defaultCmsPageIds)) {
+                throw new CanNotDeleteDefaultLayoutPageException(
+                    $neosNodeEntity->getCmsPage()
+                );
+            }
+
+            $pagesToDelete[] = ['id' => $cmsPageId];
+        }
+
+        $this->cmsPageRepository->delete(
+            $pagesToDelete,
+            $context
+        );
+    }
+
     private function getCmsPageIdWithConnectedNodeIdentifier(Context $context): array
     {
         $neosNodeEntities = $this->getNeosNodeEntitiesWithConnectedCmsPage($context);
@@ -202,7 +244,7 @@ class NeosLayoutPageService
         });
     }
 
-    public function createNotification(Context $context, ?string $message = null): void
+    public function createNotification(Context $context, ?string $message = null, ?string $status = 'error'): void
     {
         //FIXME translate Message
         if (empty($message)) {
@@ -213,7 +255,7 @@ class NeosLayoutPageService
                 'id' => Uuid::randomHex(),
                 'requiredPrivileges' => [],
                 'message' => $message,
-                'status' => 'error',
+                'status' => $status,
             ],
             $context
         );

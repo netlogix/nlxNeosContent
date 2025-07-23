@@ -7,6 +7,7 @@ namespace netlogixNeosContent\Core\Content\Admin;
 use Exception;
 use netlogixNeosContent\Service\NeosLayoutPageService;
 use Shopware\Core\Framework\Context;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
@@ -38,9 +39,9 @@ class UpdateNeosPagesRoute extends AbstractAdminRoute
 
         $this->neosLayoutPageService->createMissingNeosCmsPages($neosPages, $context);
         $this->neosLayoutPageService->updateNeosCmsPages($neosPages, $context);
+        $this->neosLayoutPageService->removeCmsPagesWithInvalidNodeIdentifiers($neosPages, $context);
 
-        //TODO implement logic to delete or deactivate Neos CMS pages that no longer exist in Neos
 
-        return new Response('Neos layout pages updated successfully.', Response::HTTP_OK);
+        return new JsonResponse(['status' => 'Neos layout pages updated successfully.'], Response::HTTP_OK);
     }
 }

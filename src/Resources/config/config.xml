@@ -4,10 +4,13 @@
     <card>
         <title>CMS connection Settings</title>
         <title lang="de-DE">CMS Verbindungs-Einstellungen</title>
-        <input-field type="text">
+        <input-field type="url">
             <name>neosBaseUri</name>
+            <required>true</required>
+            <copyable>true</copyable>
             <label>The url of the headless neos system (https://my-neos.com)</label>
             <label lang="de-DE">Die URL des Headless-Neos Systems (https://mein-neos.de)</label>
+
             <helpText>
                 If you don't know the url for your Neos system open the enterprise content platform page and continue
                 with the registration.
@@ -27,6 +30,22 @@
             <helpText lang="de-DE">
                 Klicken sie auf diesen Button um die konfigurierte Neos Base URL zu testen.
             </helpText>
+        </component>
+        <component name="nlx-update-neos-templates-button">
+            <name>updateNeosTemplates</name>
+            <label>Update imported cms pages</label>
+            <label lang="de-DE">Importierte Cms-Seiten aktualisieren</label>
+            <helpText>
+                This button updates all imported cms pages and removes pages with outdated connections.
+            </helpText>
+            <helpText lang="de-DE">
+                Dieser Button aktualisiert alle importierten Cms-Seiten und entfernt Seiten mit veralteten Verbindungen.
+            </helpText>
+        </component>
+        <component name="nlx-invalidate-cms-page-caches-button">
+            <name>invalidateCmsPageCaches</name>
+            <label>Invalidate caches for connected Cms-Pages</label>
+            <label lang="de-DE">Cache für verknüpfte Cms-Seiten invalidieren</label>
         </component>
     </card>
 </config>

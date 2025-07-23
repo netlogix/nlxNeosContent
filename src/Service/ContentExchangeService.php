@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace netlogixNeosContent\Service;
 
 use DateTime;
-use GuzzleHttp\Client;
+use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Exception\RequestException;
+use netlogixNeosContent\Error\NeosContentFetchException;
+use Psr\Http\Client\ClientInterface;
 use Shopware\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockCollection;
 use Shopware\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockEntity;
 use Shopware\Core\Content\Cms\Aggregate\CmsSection\CmsSectionCollection;
@@ -19,7 +22,6 @@ use Shopware\Core\Defaults;
 use Shopware\Core\Framework\DataAbstractionLayer\FieldVisibility;
 use Shopware\Core\Framework\Struct\Struct;
 use Shopware\Core\Framework\Uuid\Uuid;
-use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Serializer\SerializerInterface;
 
@@ -29,29 +31,30 @@ class ContentExchangeService
     public function __construct(
         #[Autowire(service: 'serializer')]
         private readonly SerializerInterface $serializer,
-        private readonly SystemConfigService $systemConfigService,
         private readonly CmsSlotsDataResolver $cmsSlotsDataResolver,
+        private readonly ClientInterface $neosClient,
     ) {
     }
 
-    public function exchangeCmsSectionContent(
-        CmsSectionCollection $cmsSectionCollection,
+    /**
+     * @throws GuzzleException
+     */
+    public function getAlternativeCmsBlocksFromNeos(
+        string $cmsSectionId,
         string $nodeIdentifier,
-        ResolverContext $resolverContext,
         string $dimensions,
-    ): void {
+    ): CmsBlockCollection {
         $elements = $this->fetchNeosContentByNodeIdentifierAndDimension(
             $nodeIdentifier,
             $dimensions
         );
 
         $blocks = $this->serializer->decode($elements, 'json');
-        $sectionId = $cmsSectionCollection->first()->getId();
 
         $cmsBlockCollection = new CmsBlockCollection();
         $blockPosition = 0;
         foreach ($blocks as $blockData) {
-            $cmsBlock = $this->createCmsBlockFromNeosElement($blockData, $blockPosition, $sectionId);
+            $cmsBlock = $this->createCmsBlockFromNeosElement($blockData, $blockPosition, $cmsSectionId);
             if ($cmsBlock === null) {
                 continue;
             }
@@ -70,9 +73,7 @@ class ContentExchangeService
             $blockPosition++;
         }
 
-        $this->loadSlotData($cmsBlockCollection, $resolverContext);
-
-        $cmsSectionCollection->first()->setBlocks($cmsBlockCollection);
+        return $cmsBlockCollection;
     }
 
     public function createCmsBlockFromNeosElement(array $blockData, int $position, string $sectionId): ?CmsBlockEntity
@@ -121,8 +122,7 @@ class ContentExchangeService
             $cmsSlot->setBlockId($blockId);
             $cmsSlot->internalSetEntityData('cms_slot', $fieldVisibility);
 
-            if (count($slot['fieldConfig']) > 0)
-            {
+            if (count($slot['fieldConfig']) > 0) {
                 $cmsSlot->setFieldConfig($this->fieldConfigCollectionFromArray($slot['fieldConfig'] ?? []));
             }
 
@@ -148,14 +148,21 @@ class ContentExchangeService
         return $fieldConfigCollection;
     }
 
+    /**
+     * @throws GuzzleException
+     */
     private function fetchNeosContentByNodeIdentifierAndDimension(string $nodeIdentifier, string $dimension): string
     {
-        $client = new Client();
-        $baseUrl = $this->systemConfigService->get('NetlogixNeosContent.config.neosBaseUri');
-        if (!$baseUrl) {
-            throw new \RuntimeException('Neos Base URL is not configured');
+        try {
+            $response = $this->neosClient->get(sprintf("/shopware-api/content/%s__%s/", $nodeIdentifier, $dimension));
+        } catch (RequestException $e) {
+            throw new NeosContentFetchException (
+                sprintf('Failed to fetch content from Neos for node identifier "%s" and dimension "%s": %s', $nodeIdentifier, $dimension, $e->getMessage()),
+                1752652016,
+                $e
+            );
         }
-        $response = $client->get(sprintf($baseUrl . "/shopware-api/content/%s__%s/", $nodeIdentifier, $dimension));
+
         return $response->getBody()->getContents();
     }
 

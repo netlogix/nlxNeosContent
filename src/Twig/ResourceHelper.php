@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace netlogixNeosContent\Twig;
 
-use GuzzleHttp\Client;
-use Shopware\Core\System\SystemConfig\SystemConfigService;
+use Psr\Http\Client\ClientInterface;
 use Symfony\Component\DependencyInjection\Attribute\AsTaggedItem;
 use Twig\Extension\AbstractExtension;
+use Twig\TwigFunction;
 
 #[AsTaggedItem('twig.extension')]
 class ResourceHelper extends AbstractExtension
@@ -15,13 +15,11 @@ class ResourceHelper extends AbstractExtension
     private array $resources = [];
 
     public function __construct(
-        private readonly SystemConfigService $systemConfigService,
+        private readonly ClientInterface $neosClient,
     )
     {
-        $baseUrl = $this->systemConfigService->get('NetlogixNeosContent.config.neosBaseUri');
-        $client = new Client();
         try {
-            $response = $client->get($baseUrl . '/shopware-api/resources/');
+            $response = $this->neosClient->get('/shopware-api/resources/');
         } catch (\Exception $e) {
             return; // FIXME handle error, log it or flash Message, but without catching it it breaks shopware completely
         }
@@ -31,8 +29,8 @@ class ResourceHelper extends AbstractExtension
     public function getFunctions()
     {
         return [
-            new \Twig\TwigFunction('getStyleUrls', [$this, 'getStyleUrls']),
-            new \Twig\TwigFunction('getScriptUrls', [$this, 'getScriptUrls']),
+            new TwigFunction('getStyleUrls', [$this, 'getStyleUrls']),
+            new TwigFunction('getScriptUrls', [$this, 'getScriptUrls']),
         ];
     }
 

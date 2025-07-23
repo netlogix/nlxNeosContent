@@ -13,6 +13,7 @@ use Shopware\Core\Content\LandingPage\LandingPageEntity;
 use Shopware\Core\Content\LandingPage\LandingPageException;
 use Shopware\Core\Content\Product\ProductDefinition;
 use Shopware\Core\Content\Product\ProductEntity;
+use Shopware\Core\Content\Product\SalesChannel\SalesChannelProductDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
@@ -31,6 +32,7 @@ class ResolverContextService
         private readonly SalesChannelRepository $categoryRepository,
         #[Autowire(service: 'sales_channel.landing_page.repository', lazy: true)]
         private readonly SalesChannelRepository $landingPageRepository,
+        private readonly SalesChannelProductDefinition $productDefinition,
     ) {
     }
 
@@ -63,8 +65,6 @@ class ResolverContextService
 
     private function getProductResolverContext($productId, $context, $request): ResolverContext
     {
-        $productDefinition = $this->definitionRegistry->getByEntityName(ProductDefinition::ENTITY_NAME);
-
         $criteria = new Criteria([$productId]);
         $criteria->addAssociation('media');
         $criteria->addAssociation('manufacturer.media');
@@ -80,7 +80,7 @@ class ResolverContextService
         return new EntityResolverContext(
             $context,
             $request,
-            $productDefinition,
+            $this->productDefinition,
             clone $product
         );
     }

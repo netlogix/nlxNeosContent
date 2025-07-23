@@ -11,6 +11,8 @@ use Shopware\Core\Content\Category\CategoryDefinition;
 use Shopware\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockCollection;
 use Shopware\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockEntity;
 use Shopware\Core\Content\Cms\CmsPageEntity;
+use Shopware\Core\Content\Cms\DataResolver\FieldConfig;
+use Shopware\Core\Content\Cms\DataResolver\FieldConfigCollection;
 use Shopware\Core\Content\Product\ProductDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -114,6 +116,20 @@ class CmsBlockController extends StorefrontController
         );
 
         $cmsBlockCollection = new CmsBlockCollection([$block]);
+
+        if($entityName === ProductDefinition::ENTITY_NAME && $blockData['type'] === 'cross-selling') {
+
+            $fieldConfig = $cmsBlockCollection->getSlots()->first()?->getFieldConfig();
+
+            if(!$fieldConfig) {
+                $fieldConfig = new FieldConfigCollection();
+            }
+            $fieldConfig->add(new FieldConfig(ProductDefinition::ENTITY_NAME, 'static', $entityId));
+            $cmsBlockCollection->getSlots()->first()->setFieldConfig(
+                $fieldConfig
+            );
+        }
+
         $this->contentExchangeService->loadSlotData($cmsBlockCollection, $resolverContext);
 
         $parameters = [

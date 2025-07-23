@@ -48,5 +48,13 @@
         "success": "Die URL ist erreichbar.",
         "error": "Die URL ist nicht erreichbar.",
         "loading": "URL wird getestet..."
+    },
+    "nlx-update-neos-templates-button": {
+        "label": "Neos Templates aktualisieren",
+        "success": "Die Neos Templates wurden aktualisiert."
+    },
+    "nlx-invalidate-cms-page-caches-button": {
+        "label": "Caches der verknüpften CMS-Seiten leeren",
+        "success": "Die Caches der verknüpften CMS-Seiten wurden geleert."
     }
 }

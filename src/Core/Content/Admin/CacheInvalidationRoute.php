@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace netlogixNeosContent\Core\Content\Admin;
 
 use netlogixNeosContent\Service\CachingInvalidationService;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
@@ -26,6 +27,6 @@ class CacheInvalidationRoute extends AbstractAdminRoute
     {
         $this->cacheInvalidationService->invalidateCachesForNeosCmsPages();
 
-        return new Response('Neos Content Cache invalidated');
+        return new JsonResponse(['status' => 'Neos Content Cache invalidated']);
     }
 }

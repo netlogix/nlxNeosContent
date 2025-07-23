@@ -5,13 +5,16 @@ declare(strict_types=1);
 namespace netlogixNeosContent\Subscriber;
 
 use netlogixNeosContent\Core\Content\NeosNode\NeosNodeEntity;
+use netlogixNeosContent\Error\MissingCmsPageEntityException;
 use netlogixNeosContent\Service\ContentExchangeService;
 use netlogixNeosContent\Service\ResolverContextService;
 use Shopware\Core\Content\Category\CategoryDefinition;
+use Shopware\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockCollection;
+use Shopware\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockEntity;
 use Shopware\Core\Content\Cms\Aggregate\CmsSection\CmsSectionCollection;
-use Shopware\Core\Content\Cms\DataResolver\ResolverContext\ResolverContext;
+use Shopware\Core\Content\Cms\DataResolver\FieldConfig;
+use Shopware\Core\Content\Cms\DataResolver\FieldConfigCollection;
 use Shopware\Core\Content\Cms\Events\CmsPageLoadedEvent;
-use Shopware\Core\Content\LandingPage\LandingPageDefinition;
 use Shopware\Core\Content\Product\ProductDefinition;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
@@ -32,8 +35,8 @@ class CmsPageLoadedSubscriber
         $cmsPageEntity = array_pop($array);
 
         if (!$cmsPageEntity) {
-            //FIXME Add exception class for this case and throw it here
-            return;
+            //this should never happen, but if it does we throw an exception
+            throw new MissingCmsPageEntityException('CmsPageLoadedEvent did not return a CmsPageEntity', 1752652068);
         }
 
         if (!$cmsPageEntity->hasExtension('nlxNeosNode')) {
@@ -48,46 +51,45 @@ class CmsPageLoadedSubscriber
             return;
         }
 
-        if ($cmsPageEntity->getType() === 'product_list') {
-            $this->exchangeProductListingPage(
+        $cmsSectionCollection = $cmsPageEntity->getSections();
+
+        match ($cmsPageEntity->getType()) {
+            'product_list' => $newCmsBlocks = $this->getNewListingPageBlocks(
                 $cmsPageLoadedEvent->getSalesChannelContext()->getSalesChannel()->getNavigationCategoryId(),
                 $cmsPageLoadedEvent->getSalesChannelContext(),
                 $cmsPageLoadedEvent->getRequest(),
-                $cmsPageEntity->getSections(),
+                $cmsSectionCollection,
                 $neosNode->getVars()['nodeIdentifier']
-            );
-        } elseif ($cmsPageEntity->getType() === 'product_detail') {
-            $this->exchangeProductDetailPage(
+            ),
+            'product_detail' => $newCmsBlocks = $this->getNewDetailPageBlocks(
                 $cmsPageLoadedEvent->getRequest()->attributes->get('productId'),
                 $cmsPageLoadedEvent->getSalesChannelContext(),
                 $cmsPageLoadedEvent->getRequest(),
-                $cmsPageEntity->getSections(),
+                $cmsSectionCollection,
                 $neosNode->getVars()['nodeIdentifier']
-            );
-        } elseif ($cmsPageEntity->getType() === 'landingpage') {
-            $this->exchangeLandingPage(
+            ),
+            'landingpage' => $newCmsBlocks = $this->getNewLandingPageBlocks(
                 $cmsPageLoadedEvent->getSalesChannelContext(),
-                $cmsPageLoadedEvent->getRequest(),
-                $cmsPageEntity->getSections(),
+                $cmsSectionCollection,
                 $neosNode->getVars()['nodeIdentifier']
-            );
-        } else {
-            $this->exchangeShopPage(
+            ),
+            'page' => $newCmsBlocks = $this->getNewShopPageBlocks(
                 $cmsPageLoadedEvent->getSalesChannelContext(),
-                $cmsPageLoadedEvent->getRequest(),
-                $cmsPageEntity->getSections(),
+                $cmsSectionCollection,
                 $neosNode->getVars()['nodeIdentifier']
-            );
-        }
+            )
+        };
+
+        $this->exchangeCmsBlocks($cmsSectionCollection, $newCmsBlocks);
     }
 
-    private function exchangeProductListingPage(
+    private function getNewListingPageBlocks(
         string $categoryId,
         SalesChannelContext $salesChannelContext,
         Request $request,
         CmsSectionCollection $cmsSectionCollection,
         string $nodeIdentifier
-    ): void {
+    ): CmsBlockCollection {
         $resolverContext = $this->resolverContextService->getResolverContextForEntityName(
             CategoryDefinition::ENTITY_NAME,
             $categoryId,
@@ -95,21 +97,23 @@ class CmsPageLoadedSubscriber
             $request
         );
 
-        $this->contentExchangeService->exchangeCmsSectionContent(
-            $cmsSectionCollection,
+        $alternativeCmsBlocksFromNeos = $this->contentExchangeService->getAlternativeCmsBlocksFromNeos(
+            $cmsSectionCollection->first()->getId(),
             $nodeIdentifier,
-            $resolverContext,
             $salesChannelContext->getLanguageInfo()->localeCode
         );
+
+        $this->contentExchangeService->loadSlotData($alternativeCmsBlocksFromNeos, $resolverContext);
+        return $alternativeCmsBlocksFromNeos;
     }
 
-    private function exchangeProductDetailPage(
+    private function getNewDetailPageBlocks(
         string $productId,
         SalesChannelContext $salesChannelContext,
         Request $request,
         CmsSectionCollection $cmsSectionCollection,
         string $nodeIdentifier
-    ): void {
+    ): CmsBlockCollection {
         $resolverContext = $this->resolverContextService->getResolverContextForEntityName(
             ProductDefinition::ENTITY_NAME,
             $productId,
@@ -117,45 +121,62 @@ class CmsPageLoadedSubscriber
             $request
         );
 
-        $this->contentExchangeService->exchangeCmsSectionContent(
-            $cmsSectionCollection,
+        $alternativeCmsBlocksFromNeos = $this->contentExchangeService->getAlternativeCmsBlocksFromNeos(
+            $cmsSectionCollection->first()->getId(),
             $nodeIdentifier,
-            $resolverContext,
+            $salesChannelContext->getLanguageInfo()->localeCode
+        );
+
+        /** @var CmsBlockEntity $cmsBlock */
+        foreach ($alternativeCmsBlocksFromNeos->getIterator() as $cmsBlock) {
+            if ($cmsBlock->getType() !== 'cross-selling') {
+                continue;
+            }
+
+            $fieldConfig = $cmsBlock->getSlots()->first()?->getFieldConfig();
+
+            if (!$fieldConfig) {
+                $fieldConfig = new FieldConfigCollection();
+            }
+            $fieldConfig->add(new FieldConfig(ProductDefinition::ENTITY_NAME, 'static', $productId));
+            $cmsBlock->getSlots()->first()->setFieldConfig(
+                $fieldConfig
+            );
+        }
+
+        $this->contentExchangeService->loadSlotData($alternativeCmsBlocksFromNeos, $resolverContext);
+        return $alternativeCmsBlocksFromNeos;
+    }
+
+    private function getNewLandingPageBlocks(
+        SalesChannelContext $salesChannelContext,
+        CmsSectionCollection $cmsSectionCollection,
+        string $nodeIdentifier
+    ): CmsBlockCollection {
+        return $this->contentExchangeService->getAlternativeCmsBlocksFromNeos(
+            $cmsSectionCollection->first()->getId(),
+            $nodeIdentifier,
             $salesChannelContext->getLanguageInfo()->localeCode
         );
     }
 
-    private function exchangeLandingPage(
+    private function getNewShopPageBlocks(
         SalesChannelContext $salesChannelContext,
-        Request $request,
         CmsSectionCollection $cmsSectionCollection,
         string $nodeIdentifier
+    ): CmsBlockCollection {
+        return $this->contentExchangeService->getAlternativeCmsBlocksFromNeos(
+            $cmsSectionCollection->first()->getId(),
+            $nodeIdentifier,
+            $salesChannelContext->getLanguageInfo()->localeCode
+        );
+    }
+
+    private function exchangeCmsBlocks(
+        $cmsSectionCollection,
+        $newCmsBlocks,
     ): void {
-        $resolverContext = new ResolverContext($salesChannelContext, $request);
-
-        $this->contentExchangeService->exchangeCmsSectionContent(
-            $cmsSectionCollection,
-            $nodeIdentifier,
-            $resolverContext,
-            $salesChannelContext->getLanguageInfo()->localeCode
-        );
-    }
-
-    private function exchangeShopPage(
-        SalesChannelContext $salesChannelContext,
-        Request $request,
-        CmsSectionCollection $cmsSectionCollection,
-        string $nodeIdentifier
-    ): void
-    {
-        $resolverContext = new ResolverContext($salesChannelContext, $request);
-
-        $this->contentExchangeService->exchangeCmsSectionContent(
-            $cmsSectionCollection,
-            $nodeIdentifier,
-            $resolverContext,
-            $salesChannelContext->getLanguageInfo()->localeCode
-        );
+        $cmsSectionCollection->first()->setBlocks($newCmsBlocks);
     }
 
     private function neosNodeHasNodeIdentifier(NeosNodeEntity $neosNode): bool

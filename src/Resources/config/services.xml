@@ -5,7 +5,9 @@
            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
 
     <services>
-        <defaults autowire="true" autoconfigure="true"/>
+        <defaults autowire="true" autoconfigure="true">
+            <bind key="$neosClient" type="service" id="nlx-neos-content.neos-client"/>
+        </defaults>
         <prototype namespace="netlogixNeosContent\" resource="../../*"/>
         <service id="netlogixNeosContent\Core\Content\Admin\CacheInvalidationRoute" public="true">
             <tag name="controller.service_arguments"/>
@@ -15,6 +17,11 @@
         </service>
         <service id="netlogixNeosContent\Storefront\Controller\PreviewController" public="true">
             <argument type="service" id="Shopware\Core\Content\Cms\SalesChannel\CmsRoute"/>
+        </service>
+
+        <service id="nlx-neos-content.neos-client" class="Psr\Http\Client\ClientInterface">
+            <factory class="netlogixNeosContent\HttpClient\NeosClientFactory" method="create"/>
+            <argument type="service" id="netlogixNeosContent\Service\ConfigService"/>
         </service>
     </services>
 </container>
