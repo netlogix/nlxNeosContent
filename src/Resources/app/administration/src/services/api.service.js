@@ -1,4 +1,4 @@
-const { ApiService } = Shopware.Classes;
+const {ApiService} = Shopware.Classes;
 
 export default class NlxNeosContentApiService extends ApiService {
     constructor(httpClient, loginService, apiEndpoint = '_action/neos') {
@@ -16,9 +16,22 @@ export default class NlxNeosContentApiService extends ApiService {
                 {
                     headers: this.getBasicHeaders(),
                 }
-            )
-            .then((response) => {
-                return ApiService.handleResponse(response);
+            ).catch((error) => {
+                return {
+                    success: false,
+                    data: error.response.data ?? {message: 'Network error'}
+                };
+            }).then((response) => {
+                if (response.status === 200) {
+                    return {
+                        success: true,
+                        data: response.data
+                    };
+                }
+                return {
+                    success: false,
+                    data: response.data ?? {message: 'Network error'}
+                };
             });
     }
 
@@ -30,10 +43,22 @@ export default class NlxNeosContentApiService extends ApiService {
                 data,
                 {
                     headers: this.getBasicHeaders(),
+                }).catch((error) => {
+                return {
+                    success: false,
+                    data: error.response.data ?? {message: 'Network error'}
+                };
+            }).then((response) => {
+                if (response.status === 200) {
+                    return {
+                        success: true,
+                        data: response.data
+                    };
                 }
-            )
-            .then((response) => {
-                return ApiService.handleResponse(response);
+                return {
+                    success: false,
+                    data: response.data ?? {message: 'Network error'}
+                };
             });
     }
 }

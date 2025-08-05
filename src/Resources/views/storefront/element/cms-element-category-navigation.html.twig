@@ -1,0 +1,9 @@
+{# remove with plugin version for shopware 6.7 since the core will do it correctly then #}
+{% sw_extends "@@NetlogixNeosContent/storefront/element/cms-element-category-navigation.html.twig" %}
+{% block element_category_navigation %}
+    {% if neosRequest %}
+        {% set navigation = element.data.tree %}
+        {% set active = null %}
+    {% endif %}
+    {{ parent() }}
+{% endblock %}

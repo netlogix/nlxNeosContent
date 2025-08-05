@@ -70,7 +70,7 @@ class NetlogixNeosContent extends Plugin
 
         return new NeosAuthorizationRoleService(
             $container->get('acl_role.repository'),
-            $container->get('user.repository')
+            $container->get('acl_user_role.repository')
         );
     }
 

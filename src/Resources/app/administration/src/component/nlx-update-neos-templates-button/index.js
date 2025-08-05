@@ -1,4 +1,4 @@
-const { Component, Mixin } = Shopware;
+const {Component, Mixin} = Shopware;
 import template from './nlx-update-neos-templates-button.html.twig';
 
 Component.register('nlx-update-neos-templates-button', {
@@ -20,15 +20,22 @@ Component.register('nlx-update-neos-templates-button', {
     methods: {
         updateNeosPages() {
             this.isLoading = true;
-            this.nlxNeosContentApiService.updateNeosPages().catch((error) => {
-                this.createNotificationError(error);
+            this.nlxNeosContentApiService.updateNeosPages().then((response) => {
+                if (response.success) {
+                    this.createNotificationSuccess({
+                        title: this.$tc('nlx-update-neos-templates-button.label'),
+                        message: this.$tc('nlx-update-neos-templates-button.success')
+                    });
+                } else {
+                    const message = response.data.errors[0].detail ?? this.$tc('nlx-update-neos-templates-button.error');
+                    this.createNotificationError({
+                        title: this.$tc('nlx-update-neos-templates-button.error-title'),
+                        message: message
+                    })
+                }
             }).finally(() => {
-                this.createNotificationSuccess({
-                    title: this.$tc('nlx-update-neos-templates-button.label'),
-                    message: this.$tc('nlx-update-neos-templates-button.success')
-                });
                 this.isLoading = false;
             });
         }
     }
-})
+});

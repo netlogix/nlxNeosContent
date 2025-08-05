@@ -1,4 +1,4 @@
-const { Component, Mixin } = Shopware;
+const {Component, Mixin} = Shopware;
 import template from './nlx-invalidate-cms-page-caches-button.html.twig';
 
 Component.register('nlx-invalidate-cms-page-caches-button', {
@@ -20,13 +20,20 @@ Component.register('nlx-invalidate-cms-page-caches-button', {
     methods: {
         clearNeosPageCaches() {
             this.isLoading = true;
-            this.nlxNeosContentApiService.clearNeosPageCaches().catch((error) => {
-                this.createNotificationError(error);
+            this.nlxNeosContentApiService.clearNeosPageCaches().then((response) => {
+                if (response.success) {
+                    this.createNotificationSuccess({
+                        title: this.$tc('nlx-invalidate-cms-page-caches-button.label'),
+                        message: this.$tc('nlx-invalidate-cms-page-caches-button.success')
+                    })
+                } else {
+                    const message = response.data.errors[0].detail ?? this.$tc('nlx-invalidate-cms-page-caches-button.error');
+                    this.createNotificationError({
+                        title: this.$tc('nlx-invalidate-cms-page-caches-button.error-title'),
+                        message: message
+                    })
+                }
             }).finally(() => {
-                this.createNotificationSuccess({
-                    title: this.$tc('nlx-invalidate-cms-page-caches-button.label'),
-                    message: this.$tc('nlx-invalidate-cms-page-caches-button.success')
-                })
                 this.isLoading = false;
             });
         }

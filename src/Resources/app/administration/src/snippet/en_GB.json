@@ -50,11 +50,15 @@
         "loading": "Testing URL..."
     },
     "nlx-update-neos-templates-button": {
-        "label": "Update Neos Templates",
-        "success": "The Neos templates have been updated."
+        "label": "Update Enterprise Content Platform Templates",
+        "success": "The Enterprise Content Platform templates have been updated.",
+        "error-title": "The Enterprise Content Platform templates could not be updated.",
+        "error": "An unknown error occurred. The Enterprise Content Platform server might be unreachable or the connection is interrupted."
     },
     "nlx-invalidate-cms-page-caches-button": {
         "label": "Clear Caches of Linked CMS Pages",
-        "success": "The caches of the linked CMS pages have been cleared."
+        "success": "The caches of the linked CMS pages have been cleared.",
+        "error-title": "The caches of the linked CMS pages could not be cleared.",
+        "error": "An unknown error occurred."
     }
 }

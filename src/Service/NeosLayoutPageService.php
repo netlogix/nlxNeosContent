@@ -174,7 +174,7 @@ class NeosLayoutPageService
                         new EqualsFilter('cmsPageId', null),
                     ]
                 )
-            ),
+            )->addAssociation('cmsPage'),
             $context
         )->getEntities();
     }

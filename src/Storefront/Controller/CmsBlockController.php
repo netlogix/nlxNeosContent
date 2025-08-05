@@ -135,6 +135,7 @@ class CmsBlockController extends StorefrontController
         $parameters = [
             'block' => $block,
             'context' => $context,
+            'neosRequest' => true,
         ];
 
         if ($entityName === CategoryDefinition::ENTITY_NAME) {
