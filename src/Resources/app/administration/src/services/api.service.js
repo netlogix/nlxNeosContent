@@ -61,4 +61,31 @@ export default class NlxNeosContentApiService extends ApiService {
                 };
             });
     }
+
+    getNeosToken() {
+        const apiRoute = `${this.getApiBasePath()}/token`;
+        return this.httpClient
+            .get(
+                apiRoute,
+                {
+                    headers: this.getBasicHeaders(),
+                }
+            ).catch((error) => {
+                return {
+                    success: false,
+                    data: error.response.data ?? {message: 'Network error'}
+                };
+            }).then((response) => {
+                if (response.status === 200) {
+                    return {
+                        success: true,
+                        data: response.data
+                    };
+                }
+                return {
+                    success: false,
+                    data: response.data ?? {message: 'Network error'}
+                }
+            });
+    }
 }

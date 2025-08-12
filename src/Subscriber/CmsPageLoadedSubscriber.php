@@ -90,7 +90,7 @@ class CmsPageLoadedSubscriber
         CmsSectionCollection $cmsSectionCollection,
         string $nodeIdentifier
     ): CmsBlockCollection {
-        $resolverContext = $this->resolverContextService->getResolverContextForEntityName(
+        $resolverContext = $this->resolverContextService->getResolverContextForEntityNameAndId(
             CategoryDefinition::ENTITY_NAME,
             $categoryId,
             $salesChannelContext,
@@ -114,7 +114,7 @@ class CmsPageLoadedSubscriber
         CmsSectionCollection $cmsSectionCollection,
         string $nodeIdentifier
     ): CmsBlockCollection {
-        $resolverContext = $this->resolverContextService->getResolverContextForEntityName(
+        $resolverContext = $this->resolverContextService->getResolverContextForEntityNameAndId(
             ProductDefinition::ENTITY_NAME,
             $productId,
             $salesChannelContext,

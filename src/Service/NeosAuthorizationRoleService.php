@@ -33,12 +33,19 @@ class NeosAuthorizationRoleService
         "message_queue_stats:read",
         'system_config:read',
         'acl_role:read',
-        'user:read'
+        'user:read',
+        'product:read',
+        'category:read',
+        'product_manufacturer:read',
+        'product_media:read',
+        'property_group_option:read',
+        'property_group:read',
     ],
         NEOS_VIEWER_PRIVILEGES = [
         'neos.viewer',
         'nlx_neos_node:read',
-        'neos:read'
+        'neos:read',
+        'cms_page:read',
     ],
         NEOS_EDITOR_PRIVILEGES = [
         'neos.viewer',
@@ -46,7 +53,8 @@ class NeosAuthorizationRoleService
         'neos:read',
         'neos.editor',
         'neos:edit',
-        'nlx_neos_node:update'
+        'nlx_neos_node:update',
+        'cms_page:update',
     ];
 
     public function __construct(

@@ -9,15 +9,6 @@
             <bind key="$neosClient" type="service" id="nlx-neos-content.neos-client"/>
         </defaults>
         <prototype namespace="netlogixNeosContent\" resource="../../*"/>
-        <service id="netlogixNeosContent\Core\Content\Admin\CacheInvalidationRoute" public="true">
-            <tag name="controller.service_arguments"/>
-        </service>
-        <service id="netlogixNeosContent\Core\Content\Admin\UpdateNeosPagesRoute" public="true">
-            <tag name="controller.service_arguments"/>
-        </service>
-        <service id="netlogixNeosContent\Storefront\Controller\PreviewController" public="true">
-            <argument type="service" id="Shopware\Core\Content\Cms\SalesChannel\CmsRoute"/>
-        </service>
 
         <service id="nlx-neos-content.neos-client" class="Psr\Http\Client\ClientInterface">
             <factory class="netlogixNeosContent\HttpClient\NeosClientFactory" method="create"/>

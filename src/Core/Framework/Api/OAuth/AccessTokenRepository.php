@@ -20,7 +20,7 @@ class AccessTokenRepository implements AccessTokenRepositoryInterface
     ) {
     }
 
-    public function getNewToken(ClientEntityInterface $clientEntity, array $scopes, $userIdentifier = null)
+    public function getNewToken(ClientEntityInterface $clientEntity, array $scopes, $userIdentifier = null): AccessTokenEntityInterface
     {
         $swToken = $this->decorated->getNewToken($clientEntity, $scopes, $userIdentifier);
         if (!NeosScopeEntity::hasNeosScope($swToken->getScopes())) {

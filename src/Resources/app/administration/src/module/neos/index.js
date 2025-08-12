@@ -38,7 +38,7 @@ Shopware.Module.register('nlx-neos', {
         detail: {
             component: 'neos-index',
             name: 'nlx.neos.detail',
-            path: 'detail',
+            path: 'detail/:nodeIdentifier/:entityId/:entityName',
             meta: {
                 privilege: "neos.viewer"
             },

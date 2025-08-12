@@ -30,7 +30,7 @@ export default {
 
             this.$router.push({
                 name: 'nlx.neos.detail',
-                query: {
+                params: {
                     nodeIdentifier: this.cmsPage.extensions.nlxNeosNode.nodeIdentifier,
                     entityId: this.$router.currentRoute.value.params.id,
                     entityName: 'product',

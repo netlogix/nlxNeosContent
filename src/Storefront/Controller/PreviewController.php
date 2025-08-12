@@ -4,14 +4,12 @@ declare(strict_types=1);
 
 namespace netlogixNeosContent\Storefront\Controller;
 
-use horstoeko\mimedb\tests\TestCase;
 use Shopware\Core\Content\Cms\CmsPageEntity;
-use Shopware\Core\Content\Cms\Events\CmsPageLoadedEvent;
 use Shopware\Core\Content\Cms\Events\CmsPageLoaderCriteriaEvent;
 use Shopware\Core\Content\Cms\SalesChannel\AbstractCmsRoute;
+use Shopware\Core\Content\Cms\SalesChannel\CmsRoute;
 use Shopware\Core\Content\Product\SalesChannel\ProductAvailableFilter;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\Feature;
@@ -23,6 +21,8 @@ use Shopware\Storefront\Page\Navigation\NavigationPageLoadedHook;
 use Shopware\Storefront\Page\Navigation\NavigationPageLoader;
 use Shopware\Storefront\Page\Product\ProductPageLoadedHook;
 use Shopware\Storefront\Page\Product\ProductPageLoader;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -30,6 +30,7 @@ use Symfony\Component\HttpKernel\Attribute\MapQueryParameter;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Requirement\Requirement;
 
+#[Autoconfigure(public: true)]
 #[Route(defaults: ['_routeScope' => ['storefront']])]
 class PreviewController extends StorefrontController
 {
@@ -42,8 +43,8 @@ class PreviewController extends StorefrontController
      * If the request comes from the Shopware-Admin it can just use the live-workspace.
      */
 
-
     public function __construct(
+        #[Autowire(service: CmsRoute::class)]
         private readonly AbstractCmsRoute $cmsRoute,
         private readonly NavigationPageLoader $navigationPageLoader,
         private readonly ProductPageLoader $productPageLoader,

@@ -14,7 +14,9 @@ use Shopware\Core\Content\LandingPage\LandingPageException;
 use Shopware\Core\Content\Product\ProductDefinition;
 use Shopware\Core\Content\Product\ProductEntity;
 use Shopware\Core\Content\Product\SalesChannel\SalesChannelProductDefinition;
+use Shopware\Core\Content\Product\SalesChannel\SalesChannelProductEntity;
 use Shopware\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
+use Shopware\Core\Framework\DataAbstractionLayer\Entity;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\System\SalesChannel\Entity\SalesChannelRepository;
@@ -36,7 +38,7 @@ class ResolverContextService
     ) {
     }
 
-    public function getResolverContextForEntityName(
+    public function getResolverContextForEntityNameAndId(
         string $entityName,
         $entityId,
         $context,
@@ -44,14 +46,18 @@ class ResolverContextService
         $useEntityIdAsNavigationId = false
     ): ResolverContext {
         return match ($entityName) {
-            ProductDefinition::ENTITY_NAME => $this->getProductResolverContext($entityId, $context, $request),
-            CategoryDefinition::ENTITY_NAME => $this->getCategoryResolverContext(
+            ProductDefinition::ENTITY_NAME => $this->getProductResolverContextFromProductId(
+                $entityId,
+                $context,
+                $request
+            ),
+            CategoryDefinition::ENTITY_NAME => $this->getCategoryResolverContextFromCategoryId(
                 $entityId,
                 $context,
                 $request,
                 $useEntityIdAsNavigationId
             ),
-            LandingPageDefinition::ENTITY_NAME => $this->getLandingPageResolverContext(
+            LandingPageDefinition::ENTITY_NAME => $this->getLandingPageResolverContextFromEntityId(
                 $entityId,
                 $context,
                 $request,
@@ -63,7 +69,40 @@ class ResolverContextService
         };
     }
 
-    private function getProductResolverContext($productId, $context, $request): ResolverContext
+    public function getResolverContextForEntity(
+        Entity $entity,
+        $context,
+        $request,
+        $useEntityIdAsNavigationId = false
+    ): ResolverContext {
+        if ($entity instanceof SalesChannelProductEntity) {
+            return $this->getProductResolverContextFromEntity(
+                $entity,
+                $context,
+                $request
+            );
+        }
+
+        if ($entity instanceof CategoryEntity) {
+            if ($useEntityIdAsNavigationId) {
+                $request->attributes->set('navigationId', $entity->getId());
+            }
+            return $this->getCategoryResolverContextFromEntity(
+                $context,
+                $request,
+                $entity
+            );
+        }
+
+        return $this->getLandingPageResolverContextFromEntityId(
+            $entity->getId(),
+            $context,
+            $request,
+            false
+        );
+    }
+
+    private function getProductResolverContextFromProductId($productId, $context, $request): ResolverContext
     {
         $criteria = new Criteria([$productId]);
         $criteria->addAssociation('media');
@@ -77,22 +116,29 @@ class ResolverContextService
             );
         }
 
+        return $this->getProductResolverContextFromEntity(
+            $product,
+            $context,
+            $request,
+        );
+    }
+
+    private function getProductResolverContextFromEntity(ProductEntity $entity, $context, $request): ResolverContext
+    {
         return new EntityResolverContext(
             $context,
             $request,
             $this->productDefinition,
-            clone $product
+            clone $entity
         );
     }
 
-    private function getCategoryResolverContext(
+    private function getCategoryResolverContextFromCategoryId(
         string $categoryId,
         SalesChannelContext $context,
         Request $request,
         $useEntityIdAsNavigationId
     ): ResolverContext {
-        $categoryDefinition = $this->definitionRegistry->getByEntityName(CategoryDefinition::ENTITY_NAME);
-
         $criteria = new Criteria([$categoryId]);
         $criteria->setTitle('category::data');
         $criteria->addAssociation('media');
@@ -108,15 +154,27 @@ class ResolverContextService
             $request->attributes->set('navigationId', $categoryId);
         }
 
+        return $this->getCategoryResolverContextFromEntity(
+            $context,
+            $request,
+            $category
+        );
+    }
+
+    private function getCategoryResolverContextFromEntity(
+        SalesChannelContext $context,
+        Request $request,
+        CategoryEntity $category,
+    ): ResolverContext {
         return new EntityResolverContext(
             $context,
             $request,
-            $categoryDefinition,
+            $this->definitionRegistry->getByEntityName(CategoryDefinition::ENTITY_NAME),
             clone $category
         );
     }
 
-    private function getLandingPageResolverContext(
+    private function getLandingPageResolverContextFromEntityId(
         string $landingPageId,
         SalesChannelContext $context,
         Request $request,

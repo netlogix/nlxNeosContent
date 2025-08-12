@@ -11,7 +11,7 @@ const getNeosBaseUri = async () => {
 Shopware.Component.register('neos-index', {
     template,
 
-    inject: ['systemConfigApiService', 'nlxRoutes', 'repositoryFactory'],
+    inject: ['systemConfigApiService', 'nlxRoutes', 'repositoryFactory', 'nlxNeosContentApiService'],
 
     props: {
         neosBaseUri: {
@@ -76,9 +76,15 @@ Shopware.Component.register('neos-index', {
             }
 
             // send refreshed token to Neos
-            loginService.addOnTokenChangedListener(auth => {
+            loginService.addOnTokenChangedListener(async () => {
                 const iframe = this.$refs.iframe;
-                const token = auth.access;
+                const token = await this.nlxNeosContentApiService.getNeosToken().then((response) => {
+                    if (response.success) {
+                        return response.data.token;
+                    } else {
+                        throw new Error('Failed to retrieve Neos token: ' + response.data.message);
+                    }
+                });
 
                 iframe.contentWindow.postMessage({
                     nlxShopwareMessageType: 'token-changed',
@@ -103,7 +109,13 @@ Shopware.Component.register('neos-index', {
                 return;
             }
 
-            this.config.token = loginService.getToken();
+            this.config.token = await this.nlxNeosContentApiService.getNeosToken().then((response) => {
+                if (response.success) {
+                    return response.data.token;
+                } else {
+                    throw new Error('Failed to retrieve Neos token: ' + response.data.message);
+                }
+            });
             this.config.apiUrl = Shopware.Context.api.schemeAndHttpHost;
 
             const currentRoute = this.$router.currentRoute;
@@ -143,10 +155,10 @@ Shopware.Component.register('neos-index', {
                 languageParam = locale.code;
             }
 
-            queryParams.push({ key: 'nodeIdentifier', value: this.$router.currentRoute.value.query.nodeIdentifier });
+            queryParams.push({ key: 'nodeIdentifier', value: this.$router.currentRoute.value.params.nodeIdentifier });
             queryParams.push({ key: 'language', value: languageParam });
-            queryParams.push({ key: 'swEntityId', value: this.$router.currentRoute.value.query.entityId ?? '' });
-            queryParams.push({ key: 'swEntityName', value: this.$router.currentRoute.value.query.entityName ?? '' });
+            queryParams.push({ key: 'swEntityId', value: this.$router.currentRoute.value.params.entityId ?? '' });
+            queryParams.push({ key: 'swEntityName', value: this.$router.currentRoute.value.params.entityName ?? '' });
             return queryParams;
         }
     }

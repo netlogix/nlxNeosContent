@@ -5,21 +5,23 @@ declare(strict_types=1);
 namespace netlogixNeosContent\Core\Content\Admin;
 
 use Exception;
+use GuzzleHttp\Exception\GuzzleException;
 use netlogixNeosContent\Service\NeosLayoutPageService;
 use Shopware\Core\Framework\Context;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
 #[Route(defaults: ['_routeScope' => ['api']])]
-class UpdateNeosPagesRoute extends AbstractAdminRoute
+class UpdateNeosPagesRoute extends AbstractUpdatePagesRoute
 {
     public function __construct(
         private readonly NeosLayoutPageService $neosLayoutPageService
     ) {
     }
 
-    public function getDecorated(): AbstractAdminRoute
+    public function getDecorated(): AbstractUpdatePagesRoute
     {
         return $this;
     }
@@ -32,7 +34,7 @@ class UpdateNeosPagesRoute extends AbstractAdminRoute
             $neosPages = $this->neosLayoutPageService->getNeosLayoutPages(
                 explode('|', NeosLayoutPageService::AVAILABLE_FILTER_PAGE_TYPES)
             );
-        } catch (Exception $e) {
+        } catch (GuzzleException $e) {
             $this->neosLayoutPageService->createNotification($context);
             throw new Exception('Failed to retrieve Neos layout pages: ' . $e->getMessage(), 1751381726, $e);
         }

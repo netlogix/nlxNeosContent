@@ -107,9 +107,8 @@ class CmsBlockController extends StorefrontController
             $entityId = $entityResponse->first()->getId();
         }
 
-        $resolverContext = $this->resolverContextService->getResolverContextForEntityName(
-            $entityName,
-            $entityId,
+        $resolverContext = $this->resolverContextService->getResolverContextForEntity(
+            $entityResponse->first(),
             $context,
             $request,
             true
@@ -161,6 +160,7 @@ class CmsBlockController extends StorefrontController
     private function createCriteria(string $entityName, ?string $entityId): Criteria
     {
         $criteria = $entityId ? new Criteria([$entityId]) : new Criteria();
+        $criteria->setTitle('cms-block-criteria-' . $entityName);
         if (!$entityId) {
             $criteria->addFilter(new EqualsFilter('active', true));
         }

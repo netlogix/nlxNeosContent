@@ -82,7 +82,7 @@ export default {
         openInNeos(page) {
             this.$router.push({
                 name: 'nlx.neos.detail',
-                query: {
+                params: {
                     nodeIdentifier: page.extensions.nlxNeosNode.nodeIdentifier
                 },
             });

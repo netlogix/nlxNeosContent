@@ -17,6 +17,8 @@ class NeosNodeEntity extends Entity
 
     protected string $cmsPageId;
 
+    protected string $cmsPageVersionId;
+
     protected ?string $nodeIdentifier;
 
     public function getNodeIdentifier(): ?string
@@ -37,6 +39,16 @@ class NeosNodeEntity extends Entity
     public function setCmsPage(CmsPageEntity $cmsPage): void
     {
         $this->cmsPage = $cmsPage;
+    }
+
+    public function getCmsPageVersionId(): string
+    {
+        return $this->cmsPageVersionId;
+    }
+
+    public function setCmsPageVersionId(string $cmsPageVersionId): void
+    {
+        $this->cmsPageVersionId = $cmsPageVersionId;
     }
 
     public function getCmsPageId(): string

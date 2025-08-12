@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace netlogixNeosContent\Service;
 
-use Doctrine\DBAL\Connection;
 use Exception;
 use GuzzleHttp\Exception\GuzzleException;
 use netlogixNeosContent\Core\Content\NeosNode\NeosNodeEntity;
@@ -17,6 +16,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\MultiFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\NotFilter;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
@@ -32,7 +32,6 @@ class NeosLayoutPageService
         private readonly EntityRepository $nlxNeosNodeRepository,
         private readonly NotificationService $notificationService,
         private readonly ClientInterface $neosClient,
-        private readonly Connection $connection,
         private readonly SystemConfigService $systemConfigService,
     ) {
     }
@@ -169,7 +168,7 @@ class NeosLayoutPageService
         return $this->nlxNeosNodeRepository->search(
             (new Criteria())->addFilter(
                 new NotFilter(
-                    NotFilter::CONNECTION_AND,
+                    MultiFilter::CONNECTION_AND,
                     [
                         new EqualsFilter('cmsPageId', null),
                     ]
@@ -183,8 +182,11 @@ class NeosLayoutPageService
      * Removes CmsPages that have a node identifier which does not exist in Neos.
      * If a CmsPage is set as default, it will not be removed and a notification will be created.
      *
+     * @param array $neosNodes
      * @param Context $context
      * @return void
+     *
+     * @throws CanNotDeleteDefaultLayoutPageException
      */
     public function removeCmsPagesWithInvalidNodeIdentifiers(array $neosNodes, Context $context): void
     {

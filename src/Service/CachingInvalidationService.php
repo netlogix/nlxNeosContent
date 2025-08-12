@@ -18,7 +18,7 @@ class CachingInvalidationService
     ) {
     }
 
-    public function invalidateCachesForNeosCmsPages(): void
+    public function invalidateCachesForNeosCmsPages(Context $context): void
     {
         $criteria =  new Criteria();
         $criteria->addAssociation('nlxNeosNode');
@@ -32,7 +32,7 @@ class CachingInvalidationService
         );
         $neosCmsPageIds = $this->cmsPageRepository->searchIds(
             $criteria,
-            Context::createDefaultContext()
+            $context
         );
 
         $tags = array_map(fn (string $id) => 'cms-page-' . $id, $neosCmsPageIds->getIds());
