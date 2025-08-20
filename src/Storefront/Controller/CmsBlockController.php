@@ -17,6 +17,7 @@ use Shopware\Core\Content\Product\ProductDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\NotFilter;
 use Shopware\Core\System\SalesChannel\Entity\SalesChannelRepository;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Controller\StorefrontController;
@@ -161,8 +162,23 @@ class CmsBlockController extends StorefrontController
     {
         $criteria = $entityId ? new Criteria([$entityId]) : new Criteria();
         $criteria->setTitle('cms-block-criteria-' . $entityName);
+        // Big Shops may have so many products that we exceed the memory limit, thus we set a limit of 1
+        $criteria->setLimit(1);
         if (!$entityId) {
             $criteria->addFilter(new EqualsFilter('active', true));
+        }
+
+        if ($entityName === CategoryDefinition::ENTITY_NAME && !$entityId) {
+            $criteria->addFilter(new EqualsFilter('type', 'page'));
+            $criteria->addFilter(new EqualsFilter('productAssignmentType', 'product'));
+            $criteria->addFilter(
+                new NotFilter(
+                    NotFilter::CONNECTION_AND,
+                    [
+                        new EqualsFilter('products.id', null),
+                    ]
+                )
+            );
         }
 
         if ($entityName === ProductDefinition::ENTITY_NAME) {
