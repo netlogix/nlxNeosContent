@@ -30,6 +30,10 @@ Shopware.Component.register('neos-index', {
             type: Boolean,
             required: false,
             default: false
+        },
+        shopwareVersion: {
+            type: String,
+            required: true,
         }
     },
 
@@ -39,6 +43,7 @@ Shopware.Component.register('neos-index', {
                 neosBaseUri: null,
                 token: null,
                 apiUrl: null,
+                shopwareVersion: Shopware.Context.app.config.version
             },
             inactiveConfiguration: false
         };

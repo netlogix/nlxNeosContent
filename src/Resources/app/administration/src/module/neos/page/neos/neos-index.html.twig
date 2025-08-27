@@ -9,6 +9,7 @@
     <form ref="neosIframeForm" :action="config.neosBaseUri" method="post" target="neos-cms">
         <input type="hidden" name="shopwareAccessToken" required :value="config.token">
         <input type="hidden" name="apiUrl" required :value="config.apiUrl">
+        <input type="hidden" name="shopwareVersion" required :value="config.shopwareVersion">
     </form>
 
     <iframe ref="iframe" name="neos-cms" id="neos-cms" src="" title="Neos CMS"></iframe>

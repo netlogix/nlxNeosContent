@@ -37,6 +37,7 @@ class NeosAuthorizationRoleService
         'product:read',
         'category:read',
         'product_manufacturer:read',
+        'product_sorting:read',
         'product_media:read',
         'property_group_option:read',
         'property_group:read',
