@@ -9,7 +9,7 @@ class ApiClient extends ApiService {
     check(values) {
         const neosBaseUri = values['null']['NetlogixNeosContent.config.neosBaseUri'];
 
-        return fetch(neosBaseUri + '/url-check', {
+        return fetch(neosBaseUri + '/neos/shopware/availability/url-check', {
             method: 'GET',
         }).catch((error) => {
             return {
