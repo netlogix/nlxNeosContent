@@ -19,7 +19,7 @@ class ResourceHelper extends AbstractExtension
     )
     {
         try {
-            $response = $this->neosClient->get('/shopware-api/resources/');
+            $response = $this->neosClient->get('/neos/shopware-api/resources/');
         } catch (\Exception $e) {
             return; // FIXME handle error, log it or flash Message, but without catching it it breaks shopware completely
         }

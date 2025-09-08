@@ -153,7 +153,7 @@ class ContentExchangeService
     private function fetchNeosContentByNodeIdentifierAndDimension(string $nodeIdentifier, string $dimension): string
     {
         try {
-            $response = $this->neosClient->get(sprintf("/shopware-api/content/%s__%s/", $nodeIdentifier, $dimension));
+            $response = $this->neosClient->get(sprintf("/neos/shopware-api/content/%s__%s/", $nodeIdentifier, $dimension));
         } catch (RequestException $e) {
             throw new NeosContentFetchException (
                 sprintf('Failed to fetch content from Neos for node identifier "%s" and dimension "%s": %s', $nodeIdentifier, $dimension, $e->getMessage()),

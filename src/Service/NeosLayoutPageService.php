@@ -78,7 +78,7 @@ class NeosLayoutPageService
                 throw new \InvalidArgumentException(sprintf('Invalid page type: %s', $pageType), 1743497434);
             }
 
-            $apiUrl = sprintf('/shopware-api/layout/pages/%s%s', $pageType, $language);
+            $apiUrl = sprintf('/neos/shopware-api/layout/pages/%s%s', $pageType, $language);
             try {
                 $response = $this->neosClient->get($apiUrl, [
                     'headers' => [
