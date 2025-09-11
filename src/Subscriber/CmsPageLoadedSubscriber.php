@@ -6,6 +6,7 @@ namespace netlogixNeosContent\Subscriber;
 
 use netlogixNeosContent\Core\Content\NeosNode\NeosNodeEntity;
 use netlogixNeosContent\Error\MissingCmsPageEntityException;
+use netlogixNeosContent\Resolver\NeosDimensionResolver;
 use netlogixNeosContent\Service\ContentExchangeService;
 use netlogixNeosContent\Service\ResolverContextService;
 use Shopware\Core\Content\Category\CategoryDefinition;
@@ -16,6 +17,7 @@ use Shopware\Core\Content\Cms\DataResolver\FieldConfig;
 use Shopware\Core\Content\Cms\DataResolver\FieldConfigCollection;
 use Shopware\Core\Content\Cms\Events\CmsPageLoadedEvent;
 use Shopware\Core\Content\Product\ProductDefinition;
+use Shopware\Core\Framework\Struct\Struct;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpFoundation\Request;
@@ -26,6 +28,7 @@ class CmsPageLoadedSubscriber
     public function __construct(
         private readonly ContentExchangeService $contentExchangeService,
         private readonly ResolverContextService $resolverContextService,
+        private readonly NeosDimensionResolver $neosDimensionResolver,
     ) {
     }
 
@@ -53,30 +56,37 @@ class CmsPageLoadedSubscriber
 
         $cmsSectionCollection = $cmsPageEntity->getSections();
 
+         $dimensions = $this->neosDimensionResolver->resolveDimensions(
+            $cmsPageLoadedEvent->getSalesChannelContext(),
+            $cmsPageLoadedEvent->getRequest()
+        );
+
         match ($cmsPageEntity->getType()) {
             'product_list' => $newCmsBlocks = $this->getNewListingPageBlocks(
                 $cmsPageLoadedEvent->getSalesChannelContext()->getSalesChannel()->getNavigationCategoryId(),
                 $cmsPageLoadedEvent->getSalesChannelContext(),
                 $cmsPageLoadedEvent->getRequest(),
                 $cmsSectionCollection,
-                $neosNode->getVars()['nodeIdentifier']
+                $neosNode->getVars()['nodeIdentifier'],
+                $dimensions
             ),
             'product_detail' => $newCmsBlocks = $this->getNewDetailPageBlocks(
                 $cmsPageLoadedEvent->getRequest()->attributes->get('productId'),
                 $cmsPageLoadedEvent->getSalesChannelContext(),
                 $cmsPageLoadedEvent->getRequest(),
                 $cmsSectionCollection,
-                $neosNode->getVars()['nodeIdentifier']
+                $neosNode->getVars()['nodeIdentifier'],
+                $dimensions
             ),
             'landingpage' => $newCmsBlocks = $this->getNewLandingPageBlocks(
-                $cmsPageLoadedEvent->getSalesChannelContext(),
                 $cmsSectionCollection,
-                $neosNode->getVars()['nodeIdentifier']
+                $neosNode->getVars()['nodeIdentifier'],
+                $dimensions
             ),
             'page' => $newCmsBlocks = $this->getNewShopPageBlocks(
-                $cmsPageLoadedEvent->getSalesChannelContext(),
                 $cmsSectionCollection,
-                $neosNode->getVars()['nodeIdentifier']
+                $neosNode->getVars()['nodeIdentifier'],
+                $dimensions
             )
         };
 
@@ -88,7 +98,8 @@ class CmsPageLoadedSubscriber
         SalesChannelContext $salesChannelContext,
         Request $request,
         CmsSectionCollection $cmsSectionCollection,
-        string $nodeIdentifier
+        string $nodeIdentifier,
+        Struct $dimensions
     ): CmsBlockCollection {
         $resolverContext = $this->resolverContextService->getResolverContextForEntityNameAndId(
             CategoryDefinition::ENTITY_NAME,
@@ -100,7 +111,7 @@ class CmsPageLoadedSubscriber
         $alternativeCmsBlocksFromNeos = $this->contentExchangeService->getAlternativeCmsBlocksFromNeos(
             $cmsSectionCollection->first()->getId(),
             $nodeIdentifier,
-            $salesChannelContext->getLanguageInfo()->localeCode
+            $dimensions
         );
 
         $this->contentExchangeService->loadSlotData($alternativeCmsBlocksFromNeos, $resolverContext);
@@ -112,7 +123,8 @@ class CmsPageLoadedSubscriber
         SalesChannelContext $salesChannelContext,
         Request $request,
         CmsSectionCollection $cmsSectionCollection,
-        string $nodeIdentifier
+        string $nodeIdentifier,
+        Struct $dimensions
     ): CmsBlockCollection {
         $resolverContext = $this->resolverContextService->getResolverContextForEntityNameAndId(
             ProductDefinition::ENTITY_NAME,
@@ -124,7 +136,7 @@ class CmsPageLoadedSubscriber
         $alternativeCmsBlocksFromNeos = $this->contentExchangeService->getAlternativeCmsBlocksFromNeos(
             $cmsSectionCollection->first()->getId(),
             $nodeIdentifier,
-            $salesChannelContext->getLanguageInfo()->localeCode
+            $dimensions
         );
 
         /** @var CmsBlockEntity $cmsBlock */
@@ -149,26 +161,26 @@ class CmsPageLoadedSubscriber
     }
 
     private function getNewLandingPageBlocks(
-        SalesChannelContext $salesChannelContext,
         CmsSectionCollection $cmsSectionCollection,
-        string $nodeIdentifier
+        string $nodeIdentifier,
+        Struct $dimensions
     ): CmsBlockCollection {
         return $this->contentExchangeService->getAlternativeCmsBlocksFromNeos(
             $cmsSectionCollection->first()->getId(),
             $nodeIdentifier,
-            $salesChannelContext->getLanguageInfo()->localeCode
+            $dimensions
         );
     }
 
     private function getNewShopPageBlocks(
-        SalesChannelContext $salesChannelContext,
         CmsSectionCollection $cmsSectionCollection,
-        string $nodeIdentifier
+        string $nodeIdentifier,
+        Struct $dimensions
     ): CmsBlockCollection {
         return $this->contentExchangeService->getAlternativeCmsBlocksFromNeos(
             $cmsSectionCollection->first()->getId(),
             $nodeIdentifier,
-            $salesChannelContext->getLanguageInfo()->localeCode
+            $dimensions
         );
     }
 

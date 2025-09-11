@@ -41,7 +41,7 @@ class ContentExchangeService
     public function getAlternativeCmsBlocksFromNeos(
         string $cmsSectionId,
         string $nodeIdentifier,
-        string $dimensions,
+        Struct $dimensions,
     ): CmsBlockCollection {
         $elements = $this->fetchNeosContentByNodeIdentifierAndDimension(
             $nodeIdentifier,
@@ -150,13 +150,14 @@ class ContentExchangeService
     /**
      * @throws GuzzleException
      */
-    private function fetchNeosContentByNodeIdentifierAndDimension(string $nodeIdentifier, string $dimension): string
+    private function fetchNeosContentByNodeIdentifierAndDimension(string $nodeIdentifier, Struct $dimensions): string
     {
+        $dimensionString = $this->resolveDimensionString($dimensions);
         try {
-            $response = $this->neosClient->get(sprintf("/neos/shopware-api/content/%s__%s/", $nodeIdentifier, $dimension));
+            $response = $this->neosClient->get(sprintf("/neos/shopware-api/content/%s__%s/", $nodeIdentifier, $dimensionString));
         } catch (RequestException $e) {
             throw new NeosContentFetchException (
-                sprintf('Failed to fetch content from Neos for node identifier "%s" and dimension "%s": %s', $nodeIdentifier, $dimension, $e->getMessage()),
+                sprintf('Failed to fetch content from Neos for node identifier "%s" and dimensions "%s": %s', $nodeIdentifier, $dimensionString, $e->getMessage()),
                 1752652016,
                 $e
             );
@@ -190,5 +191,10 @@ class ContentExchangeService
         return [
             "config" => $config,
         ];
+    }
+
+    private function resolveDimensionString(Struct $dimensions): string
+    {
+        return implode('__', $dimensions->getVars());
     }
 }
