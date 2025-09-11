@@ -48,8 +48,8 @@ class AccessTokenRepository implements AccessTokenRepositoryInterface
         $this->decorated->revokeAccessToken($tokenId);
     }
 
-    public function isAccessTokenRevoked($tokenId): void
+    public function isAccessTokenRevoked($tokenId): bool
     {
-        $this->decorated->isAccessTokenRevoked($tokenId);
+        return $this->decorated->isAccessTokenRevoked($tokenId);
     }
 }
