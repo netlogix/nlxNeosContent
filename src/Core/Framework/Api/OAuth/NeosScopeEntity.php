@@ -12,10 +12,7 @@ class NeosScopeEntity implements ScopeEntityInterface
 {
     final public const IDENTIFIER = 'neos';
 
-    /**
-     * @return string
-     */
-    public function getIdentifier()
+    public function getIdentifier(): string
     {
         return self::IDENTIFIER;
     }

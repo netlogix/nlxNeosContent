@@ -70,7 +70,12 @@ class PreviewController extends StorefrontController
         Request $request,
         SalesChannelContext $salesChannelContext
     ): Response {
-        Feature::setActive('cache_rework', true);
+        /**
+         * @deprecated will be removed once ^6.6 support ends
+         */
+        if (!Feature::has('cache_rework')) {
+            Feature::setActive('cache_rework', true);
+        }
         $cmsPage = $this->getPage($cmsPageId, $salesChannelContext->getContext());
         $pageType = $cmsPage->getType();
 

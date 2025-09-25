@@ -24,10 +24,18 @@ final class CachedNeosDimensionLoader extends AbstractNeosDimensionLoader
 
     public function load(): array
     {
-        return $this->cache->get(
-            self::CACHE_KEY,
-            fn () => $this->decorated->load(),
-            self::CACHE_TTL
-        );
+        try {
+            return
+                $this->cache->get(
+                    self::CACHE_KEY,
+                    function () {
+                        return $this->decorated->load();
+                    },
+                    self::CACHE_TTL
+                );
+        } catch(\Throwable $e) {
+            //FIXME log to sentry
+            return [];
+        }
     }
 }

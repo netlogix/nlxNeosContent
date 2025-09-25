@@ -24,4 +24,9 @@ class CmsPageDefinitionExtension extends EntityExtension
     {
         return CmsPageDefinition::class;
     }
+
+    public function getEntityName(): string
+    {
+        return CmsPageDefinition::ENTITY_NAME;
+    }
 }

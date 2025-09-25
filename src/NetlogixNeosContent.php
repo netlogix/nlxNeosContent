@@ -5,15 +5,23 @@ declare(strict_types=1);
 namespace netlogixNeosContent;
 
 use Doctrine\DBAL\Connection;
+use netlogixNeosContent\Core\Notification\NotificationService;
+use netlogixNeosContent\Core\Notification\NotificationService66;
+use netlogixNeosContent\Core\Notification\NotificationServiceInterface;
 use netlogixNeosContent\Service\NeosAuthorizationRoleService;
 use RuntimeException;
+use Shopware\Core\Framework\Feature;
 use Shopware\Core\Framework\Plugin;
 use Shopware\Core\Framework\Plugin\Context\ActivateContext;
 use Shopware\Core\Framework\Plugin\Context\InstallContext;
 use Shopware\Core\Framework\Uuid\Uuid;
+use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\DependencyInjection\Definition;
 
-class NetlogixNeosContent extends Plugin
+
+class NetlogixNeosContent extends Plugin implements CompilerPassInterface
 {
     public function install(InstallContext $installContext): void
     {
@@ -22,6 +30,23 @@ class NetlogixNeosContent extends Plugin
         $neosAuthorizationRoleService = $this->getNeosAuthorizationRoleService();
         $neosAuthorizationRoleService->createNeosViewerRole();
         $neosAuthorizationRoleService->createNeosEditorRole();
+    }
+
+    function build(ContainerBuilder $container): void
+    {
+        parent::build($container);
+
+        $container->addCompilerPass($this);
+    }
+
+    public function process(ContainerBuilder $container): void
+    {
+        $container->setDefinition(
+            NotificationServiceInterface::class,
+            (new Definition(Feature::isActive('v6.7.0.0') ? NotificationService::class : NotificationService66::class))
+                ->setAutoconfigured(true)
+                ->setAutowired(true)
+        );
     }
 
     public function activate(ActivateContext $activateContext): void

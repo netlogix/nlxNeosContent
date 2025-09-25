@@ -23,7 +23,11 @@ class ResourceHelper extends AbstractExtension
         } catch (\Exception $e) {
             return; // FIXME handle error, log it or flash Message, but without catching it it breaks shopware completely
         }
-        $this->resources = json_decode($response->getBody()->getContents(), true);
+        $decodedBody = json_decode($response->getBody()->getContents(), true, flags: \JSON_THROW_ON_ERROR);
+        if (!($decodedBody['css'] ?? false)) {
+            return;
+        }
+        $this->resources = $decodedBody;
     }
 
     public function getFunctions()

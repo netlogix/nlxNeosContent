@@ -105,7 +105,7 @@ class ResolverContextService
     private function getProductResolverContextFromProductId($productId, $context, $request): ResolverContext
     {
         $criteria = new Criteria([$productId]);
-        $criteria->addAssociation('media');
+        $criteria->addAssociation('media.media');
         $criteria->addAssociation('manufacturer.media');
         $criteria->addFilter(new EqualsFilter('active', true));
         $product = $this->productRepository->search($criteria, $context)->first();
@@ -141,7 +141,7 @@ class ResolverContextService
     ): ResolverContext {
         $criteria = new Criteria([$categoryId]);
         $criteria->setTitle('category::data');
-        $criteria->addAssociation('media');
+        $criteria->addAssociation('media.media');
         $category = $this->categoryRepository
             ->search($criteria, $context)
             ->get($categoryId);

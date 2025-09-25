@@ -182,7 +182,7 @@ class CmsBlockController extends StorefrontController
         }
 
         if ($entityName === ProductDefinition::ENTITY_NAME) {
-            $criteria->addAssociation('media');
+            $criteria->addAssociation('media.media');
             $criteria->addAssociation('manufacturer.media');
         }
         return $criteria;

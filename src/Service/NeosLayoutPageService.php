@@ -7,9 +7,9 @@ namespace netlogixNeosContent\Service;
 use Exception;
 use GuzzleHttp\Exception\GuzzleException;
 use netlogixNeosContent\Core\Content\NeosNode\NeosNodeEntity;
+use netlogixNeosContent\Core\Notification\NotificationServiceInterface;
 use netlogixNeosContent\Error\CanNotDeleteDefaultLayoutPageException;
 use Psr\Http\Client\ClientInterface;
-use Shopware\Administration\Notification\NotificationService;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
@@ -30,7 +30,7 @@ class NeosLayoutPageService
     public function __construct(
         private readonly EntityRepository $cmsPageRepository,
         private readonly EntityRepository $nlxNeosNodeRepository,
-        private readonly NotificationService $notificationService,
+        private readonly NotificationServiceInterface $notificationService,
         private readonly ClientInterface $neosClient,
         private readonly SystemConfigService $systemConfigService,
     ) {
