@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace netlogixNeosContent\Core\Content\Admin;
+namespace nlxNeosContent\Core\Content\Admin;
 
 use DateTimeInterface;
 use Lcobucci\JWT\Configuration;

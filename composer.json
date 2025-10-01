@@ -1,12 +1,12 @@
 {
     "name": "netlogix/neos-content",
     "description": "This plugin enables Shopware templates to be designed with an Enterprise CMS.",
-    "version": "0.1.11",
+    "version": "0.1.19",
     "type": "shopware-platform-plugin",
     "license": "MIT",
     "autoload": {
         "psr-4": {
-            "netlogixNeosContent\\": "src/"
+            "nlxNeosContent\\": "src/"
         }
     },
     "authors": [
@@ -16,10 +16,10 @@
     ],
     "require": {
         "shopware/core": ">=6.6.10.4 <= v6.7.1.2",
-        "php": "^8.3"
+        "php": "^8.2"
     },
     "extra": {
-        "shopware-plugin-class": "netlogixNeosContent\\NetlogixNeosContent",
+        "shopware-plugin-class": "nlxNeosContent\\NlxNeosContent",
         "copyright": "(c) netlogix GmbH & Co. KG",
         "label": {
             "de-DE": "Enterprise Content Platform für Shopware",

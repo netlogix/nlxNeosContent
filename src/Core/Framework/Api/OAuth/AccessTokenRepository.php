@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace netlogixNeosContent\Core\Framework\Api\OAuth;
+namespace nlxNeosContent\Core\Framework\Api\OAuth;
 
 use League\OAuth2\Server\Entities\AccessTokenEntityInterface;
 use League\OAuth2\Server\Entities\ClientEntityInterface;

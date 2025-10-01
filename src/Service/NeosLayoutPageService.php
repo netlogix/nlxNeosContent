@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace netlogixNeosContent\Service;
+namespace nlxNeosContent\Service;
 
 use Exception;
 use GuzzleHttp\Exception\GuzzleException;
-use netlogixNeosContent\Core\Content\NeosNode\NeosNodeEntity;
-use netlogixNeosContent\Core\Notification\NotificationServiceInterface;
-use netlogixNeosContent\Error\CanNotDeleteDefaultLayoutPageException;
+use nlxNeosContent\Core\Content\NeosNode\NeosNodeEntity;
+use nlxNeosContent\Core\Notification\NotificationServiceInterface;
+use nlxNeosContent\Error\CanNotDeleteDefaultLayoutPageException;
 use Psr\Http\Client\ClientInterface;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;

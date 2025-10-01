@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace netlogixNeosContent\Subscriber;
+namespace nlxNeosContent\Subscriber;
 
-use netlogixNeosContent\Core\Content\NeosNode\NeosNodeEntity;
-use netlogixNeosContent\Error\MissingCmsPageEntityException;
-use netlogixNeosContent\Resolver\NeosDimensionResolver;
-use netlogixNeosContent\Service\ContentExchangeService;
-use netlogixNeosContent\Service\ResolverContextService;
+use nlxNeosContent\Core\Content\NeosNode\NeosNodeEntity;
+use nlxNeosContent\Error\MissingCmsPageEntityException;
+use nlxNeosContent\Resolver\NeosDimensionResolver;
+use nlxNeosContent\Service\ContentExchangeService;
+use nlxNeosContent\Service\ResolverContextService;
 use Shopware\Core\Content\Category\CategoryDefinition;
 use Shopware\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockCollection;
 use Shopware\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockEntity;

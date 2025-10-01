@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace netlogixNeosContent\Service;
+namespace nlxNeosContent\Service;
 
-use netlogixNeosContent\Error\NeosUrlNotConfiguredException;
+use nlxNeosContent\Error\NeosUrlNotConfiguredException;
 use Shopware\Core\System\SystemConfig\Exception\InvalidSettingValueException;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 
@@ -13,7 +13,7 @@ use Shopware\Core\System\SystemConfig\SystemConfigService;
  */
 class ConfigService
 {
-    public const string CONFIG_DOMAIN = 'NetlogixNeosContent.config';
+    public const CONFIG_DOMAIN = 'NlxNeosContent.config';
 
     public function __construct(
         private readonly SystemConfigService $systemConfigService

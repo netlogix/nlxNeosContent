@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace netlogixNeosContent\Service;
+namespace nlxNeosContent\Service;
 
 use Shopware\Core\Framework\Api\Acl\Role\AclRoleEntity;
 use Shopware\Core\Framework\Context;
@@ -41,6 +41,9 @@ class NeosAuthorizationRoleService
         'product_media:read',
         'property_group_option:read',
         'property_group:read',
+        'sales_channel:read',
+        'sales_channel_domain:read',
+        'sales_channel_type:read',
     ],
         NEOS_VIEWER_PRIVILEGES = [
         'neos.viewer',

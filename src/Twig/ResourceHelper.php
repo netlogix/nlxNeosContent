@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace netlogixNeosContent\Twig;
+namespace nlxNeosContent\Twig;
 
 use Psr\Http\Client\ClientInterface;
 use Symfony\Component\DependencyInjection\Attribute\AsTaggedItem;

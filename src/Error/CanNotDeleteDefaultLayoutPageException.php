@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace netlogixNeosContent\Error;
+namespace nlxNeosContent\Error;
 
 use Shopware\Core\Content\Cms\CmsPageEntity;
 

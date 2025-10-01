@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace netlogixNeosContent\Error;
+namespace nlxNeosContent\Error;
 
 class NeosContentFetchException extends \Exception
 {

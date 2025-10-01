@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace netlogixNeosContent\Core\Content\Admin;
+namespace nlxNeosContent\Core\Content\Admin;
 
 use Exception;
 use GuzzleHttp\Exception\GuzzleException;
-use netlogixNeosContent\Service\NeosLayoutPageService;
+use nlxNeosContent\Service\NeosLayoutPageService;
 use Shopware\Core\Framework\Context;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;

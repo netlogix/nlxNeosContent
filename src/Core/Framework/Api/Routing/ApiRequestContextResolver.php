@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace netlogixNeosContent\Core\Framework\Api\Routing;
+namespace nlxNeosContent\Core\Framework\Api\Routing;
 
-use netlogixNeosContent\Core\Framework\Api\OAuth\NeosScopeEntity;
-use netlogixNeosContent\Service\NeosAuthorizationRoleService;
+use nlxNeosContent\Core\Framework\Api\OAuth\NeosScopeEntity;
+use nlxNeosContent\Service\NeosAuthorizationRoleService;
 use Shopware\Core\Framework\Api\Context\AdminApiSource;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\Routing\RequestContextResolverInterface;

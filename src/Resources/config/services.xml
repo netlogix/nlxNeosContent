@@ -8,11 +8,11 @@
         <defaults autowire="true" autoconfigure="true">
             <bind key="$neosClient" type="service" id="nlx-neos-content.neos-client"/>
         </defaults>
-        <prototype namespace="netlogixNeosContent\" resource="../../*"/>
+        <prototype namespace="nlxNeosContent\" resource="../../*"/>
 
         <service id="nlx-neos-content.neos-client" class="Psr\Http\Client\ClientInterface">
-            <factory class="netlogixNeosContent\HttpClient\NeosClientFactory" method="create"/>
-            <argument type="service" id="netlogixNeosContent\Service\ConfigService"/>
+            <factory class="nlxNeosContent\HttpClient\NeosClientFactory" method="create"/>
+            <argument type="service" id="nlxNeosContent\Service\ConfigService"/>
         </service>
     </services>
 </container>

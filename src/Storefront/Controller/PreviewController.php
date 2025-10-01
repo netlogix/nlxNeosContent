@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace netlogixNeosContent\Storefront\Controller;
+namespace nlxNeosContent\Storefront\Controller;
 
 use Shopware\Core\Content\Cms\CmsPageEntity;
 use Shopware\Core\Content\Cms\Events\CmsPageLoaderCriteriaEvent;
@@ -73,7 +73,7 @@ class PreviewController extends StorefrontController
         /**
          * @deprecated will be removed once ^6.6 support ends
          */
-        if (!Feature::has('cache_rework')) {
+        if (Feature::has('cache_rework')) {
             Feature::setActive('cache_rework', true);
         }
         $cmsPage = $this->getPage($cmsPageId, $salesChannelContext->getContext());

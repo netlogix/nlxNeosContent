@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace netlogixNeosContent\Command;
+namespace nlxNeosContent\Command;
 
-use netlogixNeosContent\Service\CachingInvalidationService;
+use nlxNeosContent\Service\CachingInvalidationService;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;

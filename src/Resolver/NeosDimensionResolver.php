@@ -1,9 +1,9 @@
 <?php
 
-namespace netlogixNeosContent\Resolver;
+namespace nlxNeosContent\Resolver;
 
-use netlogixNeosContent\Service\Loader\AbstractNeosDimensionLoader;
-use netlogixNeosContent\Service\Loader\NeosDimensionLoader;
+use nlxNeosContent\Service\Loader\AbstractNeosDimensionLoader;
+use nlxNeosContent\Service\Loader\NeosDimensionLoader;
 use Shopware\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopware\Core\Framework\Struct\Struct;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;

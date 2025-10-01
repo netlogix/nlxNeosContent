@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace netlogixNeosContent\Core\Content\Admin;
+namespace nlxNeosContent\Core\Content\Admin;
 
-use netlogixNeosContent\Service\CachingInvalidationService;
+use nlxNeosContent\Service\CachingInvalidationService;
 use Shopware\Core\Framework\Context;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;

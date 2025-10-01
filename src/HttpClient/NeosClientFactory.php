@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace netlogixNeosContent\HttpClient;
+namespace nlxNeosContent\HttpClient;
 
 use GuzzleHttp\Client;
-use netlogixNeosContent\Service\ConfigService;
+use nlxNeosContent\Service\ConfigService;
 use Psr\Http\Client\ClientInterface;
 
 class NeosClientFactory

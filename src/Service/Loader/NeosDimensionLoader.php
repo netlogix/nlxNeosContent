@@ -1,6 +1,6 @@
 <?php
 
-namespace netlogixNeosContent\Service\Loader;
+namespace nlxNeosContent\Service\Loader;
 
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;

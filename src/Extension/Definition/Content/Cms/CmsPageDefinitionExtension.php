@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace netlogixNeosContent\Extension\Definition\Content\Cms;
+namespace nlxNeosContent\Extension\Definition\Content\Cms;
 
-use netlogixNeosContent\Core\Content\NeosNode\NeosNodeDefinition;
+use nlxNeosContent\Core\Content\NeosNode\NeosNodeDefinition;
 use Shopware\Core\Content\Cms\CmsPageDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityExtension;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\OneToOneAssociationField;

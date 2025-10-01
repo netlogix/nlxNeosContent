@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace netlogixNeosContent\Service;
+namespace nlxNeosContent\Service;
 
 use DateTime;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
-use netlogixNeosContent\Error\NeosContentFetchException;
+use nlxNeosContent\Error\NeosContentFetchException;
 use Psr\Http\Client\ClientInterface;
 use Shopware\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockCollection;
 use Shopware\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockEntity;

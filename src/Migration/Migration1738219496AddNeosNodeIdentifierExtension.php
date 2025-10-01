@@ -1,6 +1,6 @@
 <?php
 
-namespace netlogixNeosContent\Migration;
+namespace nlxNeosContent\Migration;
 
 use Doctrine\DBAL\Connection;
 use Shopware\Core\Framework\Migration\MigrationStep;

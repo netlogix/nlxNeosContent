@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace netlogixNeosContent;
+namespace nlxNeosContent;
 
 use Doctrine\DBAL\Connection;
-use netlogixNeosContent\Core\Notification\NotificationService;
-use netlogixNeosContent\Core\Notification\NotificationService66;
-use netlogixNeosContent\Core\Notification\NotificationServiceInterface;
-use netlogixNeosContent\Service\NeosAuthorizationRoleService;
+use nlxNeosContent\Core\Notification\NotificationService;
+use nlxNeosContent\Core\Notification\NotificationService66;
+use nlxNeosContent\Core\Notification\NotificationServiceInterface;
+use nlxNeosContent\Service\NeosAuthorizationRoleService;
 use RuntimeException;
 use Shopware\Core\Framework\Feature;
 use Shopware\Core\Framework\Plugin;
@@ -21,7 +21,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DependencyInjection\Definition;
 
 
-class NetlogixNeosContent extends Plugin implements CompilerPassInterface
+class NlxNeosContent extends Plugin implements CompilerPassInterface
 {
     public function install(InstallContext $installContext): void
     {

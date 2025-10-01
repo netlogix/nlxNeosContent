@@ -1,6 +1,6 @@
 <?php
 
-namespace netlogixNeosContent\Resolver;
+namespace nlxNeosContent\Resolver;
 use Shopware\Core\Framework\Extensions\Extension;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\Request;

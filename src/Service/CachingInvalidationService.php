@@ -1,6 +1,6 @@
 <?php
 
-namespace netlogixNeosContent\Service;
+namespace nlxNeosContent\Service;
 
 
 use Shopware\Core\Framework\Adapter\Cache\CacheInvalidator;
@@ -40,6 +40,6 @@ class CachingInvalidationService
         $this->cacheInvalidator->invalidate($tags);
         $this->cacheInvalidator->invalidateExpired();
 
-        $this->cacheInvalidator->invalidate(['netlogixNeosContent']);
+        $this->cacheInvalidator->invalidate(['nlxNeosContent']);
     }
 }
