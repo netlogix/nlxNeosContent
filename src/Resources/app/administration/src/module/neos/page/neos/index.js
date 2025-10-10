@@ -95,6 +95,7 @@ Shopware.Component.register('neos-index', {
                     nlxShopwareMessageType: 'token-changed',
                     token: token,
                     apiUrl: Shopware.Context.api.schemeAndHttpHost,
+                    shopwareVersion: this.config.shopwareVersion
                 }, neosBaseUri);
             });
         });

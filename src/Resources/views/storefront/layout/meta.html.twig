@@ -3,19 +3,21 @@
 {% block layout_head_stylesheet %}
     {{ parent() }}
 
-    {% set styleUrls = getStyleUrls() %}
-    {% for url in styleUrls %}
-        <link rel="stylesheet" href="{{ url }}"/>
-    {% endfor %}
+    {% if not neosBackendView %}
+        {% set styleUrls = getStyleUrls() %}
+        {% for url in styleUrls %}
+            <link rel="stylesheet" href="{{ url }}"/>
+        {% endfor %}
 
-    {% set scriptUrls = getScriptUrls() %}
-    {% for url in scriptUrls %}
-        {% if 'esm' in url %}
-            <script src="{{ url }}" type="module"></script>
-        {% else %}
-            <script nomodule src="{{ url }}" type="text/javascript"></script>
-        {% endif %}
-    {% endfor %}
+        {% set scriptUrls = getScriptUrls() %}
+        {% for url in scriptUrls %}
+            {% if 'esm' in url %}
+                <script src="{{ url }}" type="module"></script>
+            {% else %}
+                <script nomodule src="{{ url }}" type="text/javascript"></script>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
 {% endblock %}
 
 

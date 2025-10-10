@@ -22,8 +22,7 @@ class ConfigService
 
     public function isEnabled(?string $salesChannelId = null): bool
     {
-        return $this->systemConfigService->getBool($this->getConfigKey('enable'), $salesChannelId)
-            && $this->getBaseUrl($salesChannelId) !== null;
+        return $this->getBaseUrl($salesChannelId) !== null;
     }
 
     /**
@@ -41,13 +40,7 @@ class ConfigService
             );
         }
 
-        return $baseUrl;
-    }
-
-    public function getNeosUrl(?string $salesChannelId = null): ?string
-    {
-        return $this->systemConfigService->getString($this->getConfigKey('neosBaseUri'), $salesChannelId)
-            ?: null;
+        return rtrim($baseUrl, '/');
     }
 
     private function getConfigKey(string $key): string
