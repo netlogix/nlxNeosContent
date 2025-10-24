@@ -21,6 +21,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\NotFilter;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 #[Autoconfigure(public: true)]
 class NeosLayoutPageService
@@ -33,6 +34,7 @@ class NeosLayoutPageService
         private readonly NotificationServiceInterface $notificationService,
         private readonly ClientInterface $neosClient,
         private readonly SystemConfigService $systemConfigService,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -194,7 +196,7 @@ class NeosLayoutPageService
         $configs = $this->systemConfigService->get('core.cms');
         $defaultCmsPageIds = array_filter(
             $configs,
-            fn($key)=> str_starts_with($key, 'default_'),
+            fn ($key) => str_starts_with($key, 'default_'),
             ARRAY_FILTER_USE_KEY
         );
 
@@ -248,15 +250,11 @@ class NeosLayoutPageService
 
     public function createNotification(Context $context, ?string $message = null, ?string $status = 'error'): void
     {
-        //FIXME translate Message
-        if (empty($message)) {
-            $message = 'Neos layout pages could not be fetched. This might be due to a misconfiguration of the Neos Base URL or an issue with the Neos API.';
-        }
         $this->notificationService->createNotification(
             [
                 'id' => Uuid::randomHex(),
                 'requiredPrivileges' => [],
-                'message' => $message,
+                'message' => $message ?? $this->translator->trans('nlxNeosContent.notification.neosLayoutPagesFetchError'),
                 'status' => $status,
             ],
             $context

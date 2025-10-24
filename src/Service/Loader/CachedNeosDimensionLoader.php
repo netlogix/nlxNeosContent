@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace nlxNeosContent\Service\Loader;
 
+use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\AsDecorator;
 use Symfony\Component\DependencyInjection\Attribute\AutowireDecorated;
 use Symfony\Contracts\Cache\CacheInterface;
@@ -19,6 +20,7 @@ final class CachedNeosDimensionLoader extends AbstractNeosDimensionLoader
         #[AutowireDecorated]
         private readonly AbstractNeosDimensionLoader $decorated,
         private readonly CacheInterface $cache,
+        private readonly LoggerInterface $logger,
     ) {
     }
 
@@ -34,7 +36,7 @@ final class CachedNeosDimensionLoader extends AbstractNeosDimensionLoader
                     self::CACHE_TTL
                 );
         } catch(\Throwable $e) {
-            //FIXME log to sentry
+            $this->logger->error(sprintf('Could not load dimension Mapping from Neos with error message: %s', $e));
             return [];
         }
     }

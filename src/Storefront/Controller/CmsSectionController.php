@@ -8,12 +8,13 @@ use Exception;
 use nlxNeosContent\Service\ContentExchangeService;
 use nlxNeosContent\Service\ResolverContextService;
 use Shopware\Core\Content\Category\CategoryDefinition;
-use Shopware\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockCollection;
-use Shopware\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockEntity;
+use Shopware\Core\Content\Cms\Aggregate\CmsSection\CmsSectionCollection;
+use Shopware\Core\Content\Cms\Aggregate\CmsSection\CmsSectionEntity;
 use Shopware\Core\Content\Cms\CmsPageEntity;
 use Shopware\Core\Content\Cms\DataResolver\FieldConfig;
 use Shopware\Core\Content\Cms\DataResolver\FieldConfigCollection;
 use Shopware\Core\Content\Product\ProductDefinition;
+use Shopware\Core\Framework\DataAbstractionLayer\Entity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
@@ -29,11 +30,11 @@ use Symfony\Component\Routing\Annotation\Route;
 /**
  * @internal
  *
- * This controller is used to render a CMS block based on the provided entity name and ID.
+ * This controller is used to render a CMS section based on the provided sectionData, entity name and ID.
  * The rendered html's sole purpose is to be used in the Neos CMS for advanced editing preview.
  */
 #[Route(defaults: ['_routeScope' => ['storefront']])]
-class CmsBlockController extends StorefrontController
+class CmsSectionController extends StorefrontController
 {
     function __construct(
         #[Autowire(service: 'sales_channel.product.repository', lazy: true)]
@@ -46,14 +47,14 @@ class CmsBlockController extends StorefrontController
     ) {
     }
 
-    #[Route(path: '/html-content/cms-block', name: 'frontend.html-content.cms-block', methods: ['POST'])]
-    function cmsBlock(
+    #[Route(path: '/html-content/cms-section', name: 'frontend.html-content.cms-section', methods: ['POST'])]
+    public function cmsSection(
         Request $request,
         SalesChannelContext $context
     ): Response {
         $entityName = $request->get('sw-entity-name');
         $entityId = $request->get('sw-entity-id');
-        $blockData = json_decode($request->getContent(), true);
+        $sectionData = json_decode($request->getContent(), true);
 
         $repository = $this->getRepository($entityName);
 
@@ -91,69 +92,76 @@ class CmsBlockController extends StorefrontController
             );
         }
 
-        /**
-         * FIXME: If the found entity is a Main-Product and has Variants, we might need to load the first variant instead
-         * This depends a little bit on how the Variants display is configured in SW6.
-         * There are different options how Variants are treated in Storefront and apparently this controller can not handle it yet.
-         * */
-
-        /** @var CmsBlockEntity $block */
-        $block = $this->contentExchangeService->createCmsBlockFromNeosElement(
-            $blockData,
-            1,
-            'section'
-        );
-
         if (empty($entityId)) {
             $entityId = $entityResponse->first()->getId();
         }
 
+        $entity = $entityResponse->first();
+        if (!assert($entity instanceof Entity)) {
+            throw new \RuntimeException(
+                sprintf(
+                    'Search Result is not an instance of Entity for entity name "%s" and id %s',
+                    $entityName,
+                    $entityId
+                )
+            );
+        }
+
         $resolverContext = $this->resolverContextService->getResolverContextForEntity(
-            $entityResponse->first(),
+            $entity,
             $context,
             $request,
             true
         );
 
-        $cmsBlockCollection = new CmsBlockCollection([$block]);
+        /** @var CmsSectionEntity $section */
+        $section = $this->contentExchangeService->createCmsSectionFromSectionData(
+            $sectionData,
+            1,
+            'section'
+        );
 
-        if($entityName === ProductDefinition::ENTITY_NAME && $blockData['type'] === 'cross-selling') {
-
-            $fieldConfig = $cmsBlockCollection->getSlots()->first()?->getFieldConfig();
-
-            if(!$fieldConfig) {
-                $fieldConfig = new FieldConfigCollection();
+        foreach ($section->getBlocks() as $block) {
+            $block->setSection($section);
+            foreach ($block->getSlots() as $slot) {
+                $slot->setBlock($block);
             }
-            $fieldConfig->add(new FieldConfig(ProductDefinition::ENTITY_NAME, 'static', $entityId));
-            $cmsBlockCollection->getSlots()->first()->setFieldConfig(
-                $fieldConfig
-            );
+            if ($entityName === ProductDefinition::ENTITY_NAME && $block->getType() === 'cross-selling') {
+                $fieldConfig = $block->getSlots()->first()?->getFieldConfig();
+
+                if (!$fieldConfig) {
+                    $fieldConfig = new FieldConfigCollection();
+                }
+                $fieldConfig->add(new FieldConfig(ProductDefinition::ENTITY_NAME, 'static', $entityId));
+                $block->getSlots()->first()->setFieldConfig(
+                    $fieldConfig
+                );
+            }
         }
 
-        $this->contentExchangeService->loadSlotData($cmsBlockCollection, $resolverContext);
+
+        $this->contentExchangeService->loadSlotData($section->getBlocks(), $resolverContext);
 
         $parameters = [
-            'block' => $block,
+            'section' => $section,
             'context' => $context,
             'neosRequest' => true,
         ];
 
-        if ($entityName === CategoryDefinition::ENTITY_NAME) {
-            $cmsPages = $this->cmsPageRepository->search(
-                (new Criteria([$entityResponse->first()->getCmsPageId()]))
-                    ->addAssociation('sections'),
-                $context->getContext()
-            );
+        $cmsPages = $this->cmsPageRepository->search(
+            (new Criteria([$entityResponse->first()->getCmsPageId()]))
+                ->addAssociation('sections'),
+            $context->getContext()
+        );
 
-            /** @var CmsPageEntity $cmsPage */
-            $cmsPage = $cmsPages->first();
-            $cmsPage->getSections()->first()->setBlocks($cmsBlockCollection);
+        /** @var CmsPageEntity $cmsPage */
+        $cmsPage = $cmsPages->first();
+        $cmsPage->setSections(new CmsSectionCollection([$section]));
 
-            $parameters['cmsPage'] = $cmsPage;
-        }
+        $parameters['cmsPage'] = $cmsPage;
 
         return $this->render(
-            sprintf('@Storefront/storefront/block/cms-block-%s.html.twig', $block->getType()),
+            '@Storefront/storefront/page/content/detail.html.twig',
             $parameters
         );
     }

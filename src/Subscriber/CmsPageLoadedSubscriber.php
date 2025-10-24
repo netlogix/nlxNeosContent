@@ -10,9 +10,9 @@ use nlxNeosContent\Resolver\NeosDimensionResolver;
 use nlxNeosContent\Service\ContentExchangeService;
 use nlxNeosContent\Service\ResolverContextService;
 use Shopware\Core\Content\Category\CategoryDefinition;
-use Shopware\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockCollection;
 use Shopware\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockEntity;
 use Shopware\Core\Content\Cms\Aggregate\CmsSection\CmsSectionCollection;
+use Shopware\Core\Content\Cms\CmsPageEntity;
 use Shopware\Core\Content\Cms\DataResolver\FieldConfig;
 use Shopware\Core\Content\Cms\DataResolver\FieldConfigCollection;
 use Shopware\Core\Content\Cms\Events\CmsPageLoadedEvent;
@@ -38,7 +38,7 @@ class CmsPageLoadedSubscriber
         $cmsPageEntity = array_pop($array);
 
         if (!$cmsPageEntity) {
-            //this should never happen, but if it does we throw an exception
+            //this should never happen but if it does, we throw an exception
             throw new MissingCmsPageEntityException('CmsPageLoadedEvent did not return a CmsPageEntity', 1752652068);
         }
 
@@ -54,53 +54,46 @@ class CmsPageLoadedSubscriber
             return;
         }
 
-        $cmsSectionCollection = $cmsPageEntity->getSections();
-
          $dimensions = $this->neosDimensionResolver->resolveDimensions(
             $cmsPageLoadedEvent->getSalesChannelContext(),
             $cmsPageLoadedEvent->getRequest()
         );
 
         match ($cmsPageEntity->getType()) {
-            'product_list' => $newCmsBlocks = $this->getNewListingPageBlocks(
+            'product_list' => $newCmsSections = $this->getNewListingPageSections(
                 $cmsPageLoadedEvent->getSalesChannelContext()->getSalesChannel()->getNavigationCategoryId(),
                 $cmsPageLoadedEvent->getSalesChannelContext(),
                 $cmsPageLoadedEvent->getRequest(),
-                $cmsSectionCollection,
                 $neosNode->getVars()['nodeIdentifier'],
                 $dimensions
             ),
-            'product_detail' => $newCmsBlocks = $this->getNewDetailPageBlocks(
+            'product_detail' => $newCmsSections = $this->getNewDetailPageBlocks(
                 $cmsPageLoadedEvent->getRequest()->attributes->get('productId'),
                 $cmsPageLoadedEvent->getSalesChannelContext(),
                 $cmsPageLoadedEvent->getRequest(),
-                $cmsSectionCollection,
                 $neosNode->getVars()['nodeIdentifier'],
                 $dimensions
             ),
-            'landingpage' => $newCmsBlocks = $this->getNewLandingPageBlocks(
-                $cmsSectionCollection,
+            'landingpage' => $newCmsSections = $this->getNewLandingPageBlocks(
                 $neosNode->getVars()['nodeIdentifier'],
                 $dimensions
             ),
-            'page' => $newCmsBlocks = $this->getNewShopPageBlocks(
-                $cmsSectionCollection,
+            'page' => $newCmsSections = $this->getNewShopPageBlocks(
                 $neosNode->getVars()['nodeIdentifier'],
                 $dimensions
             )
         };
 
-        $this->exchangeCmsBlocks($cmsSectionCollection, $newCmsBlocks);
+        $this->replaceCmsSections($cmsPageEntity, $newCmsSections);
     }
 
-    private function getNewListingPageBlocks(
+    private function getNewListingPageSections(
         string $categoryId,
         SalesChannelContext $salesChannelContext,
         Request $request,
-        CmsSectionCollection $cmsSectionCollection,
         string $nodeIdentifier,
         Struct $dimensions
-    ): CmsBlockCollection {
+    ): CmsSectionCollection {
         $resolverContext = $this->resolverContextService->getResolverContextForEntityNameAndId(
             CategoryDefinition::ENTITY_NAME,
             $categoryId,
@@ -108,24 +101,22 @@ class CmsPageLoadedSubscriber
             $request
         );
 
-        $alternativeCmsBlocksFromNeos = $this->contentExchangeService->getAlternativeCmsBlocksFromNeos(
-            $cmsSectionCollection->first()->getId(),
+        $alternativeCmsSectionsFromNeos = $this->contentExchangeService->getAlternativeCmsSectionsFromNeos(
             $nodeIdentifier,
             $dimensions
         );
 
-        $this->contentExchangeService->loadSlotData($alternativeCmsBlocksFromNeos, $resolverContext);
-        return $alternativeCmsBlocksFromNeos;
+        $this->contentExchangeService->loadSlotData($alternativeCmsSectionsFromNeos->getBlocks(), $resolverContext);
+        return $alternativeCmsSectionsFromNeos;
     }
 
     private function getNewDetailPageBlocks(
         string $productId,
         SalesChannelContext $salesChannelContext,
         Request $request,
-        CmsSectionCollection $cmsSectionCollection,
         string $nodeIdentifier,
         Struct $dimensions
-    ): CmsBlockCollection {
+    ): CmsSectionCollection {
         $resolverContext = $this->resolverContextService->getResolverContextForEntityNameAndId(
             ProductDefinition::ENTITY_NAME,
             $productId,
@@ -133,8 +124,7 @@ class CmsPageLoadedSubscriber
             $request
         );
 
-        $alternativeCmsBlocksFromNeos = $this->contentExchangeService->getAlternativeCmsBlocksFromNeos(
-            $cmsSectionCollection->first()->getId(),
+        $alternativeCmsBlocksFromNeos = $this->contentExchangeService->getAlternativeCmsSectionsFromNeos(
             $nodeIdentifier,
             $dimensions
         );
@@ -156,39 +146,35 @@ class CmsPageLoadedSubscriber
             );
         }
 
-        $this->contentExchangeService->loadSlotData($alternativeCmsBlocksFromNeos, $resolverContext);
+        $this->contentExchangeService->loadSlotData($alternativeCmsBlocksFromNeos->getBlocks(), $resolverContext);
         return $alternativeCmsBlocksFromNeos;
     }
 
     private function getNewLandingPageBlocks(
-        CmsSectionCollection $cmsSectionCollection,
         string $nodeIdentifier,
         Struct $dimensions
-    ): CmsBlockCollection {
-        return $this->contentExchangeService->getAlternativeCmsBlocksFromNeos(
-            $cmsSectionCollection->first()->getId(),
+    ): CmsSectionCollection {
+        return $this->contentExchangeService->getAlternativeCmsSectionsFromNeos(
             $nodeIdentifier,
             $dimensions
         );
     }
 
     private function getNewShopPageBlocks(
-        CmsSectionCollection $cmsSectionCollection,
         string $nodeIdentifier,
         Struct $dimensions
-    ): CmsBlockCollection {
-        return $this->contentExchangeService->getAlternativeCmsBlocksFromNeos(
-            $cmsSectionCollection->first()->getId(),
+    ): CmsSectionCollection {
+        return $this->contentExchangeService->getAlternativeCmsSectionsFromNeos(
             $nodeIdentifier,
             $dimensions
         );
     }
 
-    private function exchangeCmsBlocks(
-        $cmsSectionCollection,
-        $newCmsBlocks,
+    private function replaceCmsSections(
+        CmsPageEntity $cmsPageEntity,
+        CmsSectionCollection $newCmsSections,
     ): void {
-        $cmsSectionCollection->first()->setBlocks($newCmsBlocks);
+        $cmsPageEntity->setSections($newCmsSections);
     }
 
     private function neosNodeHasNodeIdentifier(NeosNodeEntity $neosNode): bool

@@ -1,0 +1,7 @@
+{% sw_extends '@Storefront/storefront/block/cms-block-product-listing.html.twig' %}
+
+{% block block_product_listing %}
+    {% if not block.customFields.hiddenEditorRendering %}
+        {{ parent() }}
+    {% endif %}
+{% endblock %}

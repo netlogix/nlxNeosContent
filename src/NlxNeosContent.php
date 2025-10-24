@@ -52,18 +52,11 @@ class NlxNeosContent extends Plugin implements CompilerPassInterface
     public function activate(ActivateContext $activateContext): void
     {
         parent::activate($activateContext);
-
-        // FIXME do this in a configuration changed event listener
-        //$neosLayoutPageService = $this->container->get(NeosLayoutPageService::class);
-        //$neosLayoutPageService->initialNodeImport(Context::createDefaultContext());
-
-        //TODO reactivate all CMS pages that were deactivated with their respective Version ID
     }
 
     public function deactivate(Plugin\Context\DeactivateContext $deactivateContext): void
     {
         parent::deactivate($deactivateContext);
-        //TODO deactivate all CMS pages that contain the Neos content type with a specific Version ID
     }
 
     public function uninstall(Plugin\Context\UninstallContext $uninstallContext): void
@@ -154,8 +147,7 @@ class NlxNeosContent extends Plugin implements CompilerPassInterface
                 SQL
         );
 
-        //FIXME probably we want to drop the nlx_neos_node table as well,
-        // but currently the creation is done with a migration and can not be done again
+        //FIXME Drop nlx_neos_node table, currently not possible due to creation with migrations
         $connection->executeStatement(
             <<<SQL
                     DELETE FROM nlx_neos_node;

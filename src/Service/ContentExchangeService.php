@@ -11,6 +11,8 @@ use nlxNeosContent\Error\NeosContentFetchException;
 use Psr\Http\Client\ClientInterface;
 use Shopware\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockCollection;
 use Shopware\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockEntity;
+use Shopware\Core\Content\Cms\Aggregate\CmsSection\CmsSectionCollection;
+use Shopware\Core\Content\Cms\Aggregate\CmsSection\CmsSectionEntity;
 use Shopware\Core\Content\Cms\Aggregate\CmsSlot\CmsSlotCollection;
 use Shopware\Core\Content\Cms\Aggregate\CmsSlot\CmsSlotEntity;
 use Shopware\Core\Content\Cms\DataResolver\CmsSlotsDataResolver;
@@ -26,7 +28,6 @@ use Symfony\Component\Serializer\SerializerInterface;
 
 class ContentExchangeService
 {
-    //FIXME use try catch for all type checks
     public function __construct(
         #[Autowire(service: 'serializer')]
         private readonly SerializerInterface $serializer,
@@ -38,28 +39,67 @@ class ContentExchangeService
     /**
      * @throws GuzzleException
      */
-    public function getAlternativeCmsBlocksFromNeos(
-        string $cmsSectionId,
+    public function getAlternativeCmsSectionsFromNeos(
         string $nodeIdentifier,
         Struct $dimensions,
-    ): CmsBlockCollection {
+    ): CmsSectionCollection {
         $elements = $this->fetchNeosContentByNodeIdentifierAndDimension(
             $nodeIdentifier,
             $dimensions
         );
 
-        $blocks = $this->serializer->decode($elements, 'json');
+        $sections = $this->serializer->decode($elements, 'json');
+        $cmsSectionCollection = new CmsSectionCollection();
+        $position = 0;
 
+        foreach ($sections as $sectionData) {
+            $cmsSection = $this->createCmsSectionFromSectionData($sectionData, $position, Uuid::randomHex());
+            if ($cmsSection === null) {
+                continue;
+            }
+
+            $cmsSectionCollection->add($cmsSection);
+            $position++;
+        }
+
+        return $cmsSectionCollection;
+    }
+
+    public function createCmsSectionFromSectionData(array $sectionData, int $position, string $sectionId): ?CmsSectionEntity
+    {
+        if (!isset($sectionData['type'])) {
+            throw new \RuntimeException('Section type is not set');
+        }
+
+        $cmsSection = new CmsSectionEntity();
+        $fieldVisibility = new FieldVisibility([
+
+        ]);
+        $cmsSection->setType($sectionData['type']);
+        $cmsSection->setPosition($position);
+        $cmsSection->setVersionId(DEFAULTS::LIVE_VERSION);
+        $cmsSection->setSizingMode($sectionData['sizingMode'] ?? 'boxed');
+        $cmsSection->setMobileBehavior($sectionData['mobileBehavior'] ?? 'wrap');
+        $cmsSection->setBackgroundColor($sectionData['backgroundColor'] ?? null);
+        $cmsSection->setBackgroundMediaMode($sectionData['backgroundMediaMode'] ?? 'cover');
+        $cmsSection->setId($sectionId);
+        $cmsSection->internalSetEntityData('cms_section', $fieldVisibility);
+        $cmsSection->setBlocks($this->blockCollectionFromArray($sectionData['blocks'] ?? [], $sectionId));
+
+        return $cmsSection;
+    }
+
+    public function blockCollectionFromArray(array $blocks, string $cmsSectionId): CmsBlockCollection
+    {
         $cmsBlockCollection = new CmsBlockCollection();
         $blockPosition = 0;
         foreach ($blocks as $blockData) {
-            $cmsBlock = $this->createCmsBlockFromNeosElement($blockData, $blockPosition, $cmsSectionId);
+            $cmsBlock = $this->createCmsBlockFromBlockData($blockData, $blockPosition, $cmsSectionId);
             if ($cmsBlock === null) {
                 continue;
             }
 
             $cmsBlock->setCreatedAt(new DateTime());
-            $cmsBlock->setSectionPosition('main');
             $cmsBlock->setVisibility([
                 'mobile' => true,
                 'desktop' => true,
@@ -75,7 +115,7 @@ class ContentExchangeService
         return $cmsBlockCollection;
     }
 
-    public function createCmsBlockFromNeosElement(array $blockData, int $position, string $sectionId): ?CmsBlockEntity
+    public function createCmsBlockFromBlockData(array $blockData, int $position, string $sectionId): ?CmsBlockEntity
     {
         if (!isset($blockData['type'])) {
             throw new \RuntimeException('Block type is not set');
@@ -91,8 +131,13 @@ class ContentExchangeService
         $cmsBlock->setPosition($position);
         $cmsBlock->setVersionId(DEFAULTS::LIVE_VERSION);
         $cmsBlock->setSectionId($sectionId);
+        $cmsBlock->setSectionPosition($blockData['sectionPosition'] ?? 'main');
         $cmsBlock->internalSetEntityData('cms_block', $fieldVisibility);
         $cmsBlock->setId($blockId);
+        if (array_key_exists('hiddenEditorRendering', $blockData)) {
+            $cmsBlock->setCustomFields(['hiddenEditorRendering' => $blockData['hiddenEditorRendering']]);
+        }
+        $cmsBlock->setCssClass($blockData['cssClass'] ?? '');
 
         $slots = $this->slotCollectionFromArray($blockData['slots'] ?? [], $blockId);
         $cmsBlock->setSlots($slots);
@@ -108,8 +153,6 @@ class ContentExchangeService
                 throw new \RuntimeException('Slot type is not set');
             }
 
-            //FIXME fieldConfig "content" is not set which leads to some values not beeing resolved
-
             $fieldVisibility = new FieldVisibility([]);
             $cmsSlot = $this->deserializeEntityFromJson($slot['data'], CmsSlotEntity::class);
             $cmsSlot->setType($slot['type']);
@@ -124,7 +167,6 @@ class ContentExchangeService
             if (count($slot['fieldConfig']) > 0) {
                 $cmsSlot->setFieldConfig($this->fieldConfigCollectionFromArray($slot['fieldConfig'] ?? []));
             }
-
 
             $cmsSlotCollection->add($cmsSlot);
         }
@@ -148,7 +190,7 @@ class ContentExchangeService
     }
 
     /**
-     * @throws GuzzleException
+     * @throws NeosContentFetchException
      */
     private function fetchNeosContentByNodeIdentifierAndDimension(string $nodeIdentifier, Struct $dimensions): string
     {
@@ -167,7 +209,6 @@ class ContentExchangeService
     }
 
     /**
-     * @param string $jsonContent
      * @param class-string<T> $classString
      *
      * @template T of Struct

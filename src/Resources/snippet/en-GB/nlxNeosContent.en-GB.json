@@ -1,0 +1,7 @@
+{
+    "nlxNeosContent": {
+        "notification": {
+            "neosLayoutPagesFetchError": "Neos layout pages could not be fetched. This might be due to a misconfiguration of the Neos Base URL or an issue with the Neos API."
+        }
+    }
+}
