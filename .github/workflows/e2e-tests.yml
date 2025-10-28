@@ -1,0 +1,71 @@
+name: E2E Tests
+
+on:
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        shopware-version: ['6.6.10.4', '6.7.2.2']
+        php-version: ['8.3']
+        node-version: [22]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Get Plugin Name
+        id: plugin_name
+        run: echo "PLUGIN_NAME=$(jq -r '.extra."shopware-plugin-class" | split("\\\\") | .[0]' composer.json)" >> $GITHUB_ENV
+
+      - name: Install shopware-cli
+        run: npm i -g @shopware-ag/shopware-cli
+
+      - name: Build plugin zip
+        run: shopware-cli extension zip . --disable-git
+
+      - name: Get zip file name
+        id: zip_name
+        run: echo "ZIP_NAME=$(ls *.zip)" >> $GITHUB_ENV
+
+      - name: Start Shopware
+        run: |
+          docker-compose -f tests/e2e/docker-compose.yml up -d --wait
+        env:
+          SHOPWARE_VERSION: ${{ matrix.shopware-version }}
+
+      - name: Copy plugin to container
+        run: docker cp ${{ env.ZIP_NAME }} shopware:/tmp/${{ env.ZIP_NAME }}
+
+      - name: Unzip plugin in container
+        run: docker-compose -f tests/e2e/docker-compose.yml exec -T shopware unzip /tmp/${{ env.ZIP_NAME }} -d /var/www/html/custom/plugins/
+
+      - name: Install Plugin
+        run: |
+          docker-compose -f tests/e2e/docker-compose.yml exec -T shopware bin/console plugin:install --activate ${{ env.PLUGIN_NAME }}
+          docker-compose -f tests/e2e/docker-compose.yml exec -T shopware bin/console theme:change Storefront
+
+      - name: Install Playwright dependencies
+        run: |
+          cd tests/e2e
+          npm install
+
+      - name: Run Playwright tests
+        run: |
+          cd tests/e2e
+          npx playwright test
+
+      - name: Upload Playwright Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ matrix.shopware-version }}
+          path: tests/e2e/playwright-report/
+          retention-days: 30
