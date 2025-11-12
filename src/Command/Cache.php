@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace nlxNeosContent\Command;
 
 use nlxNeosContent\Service\CachingInvalidationService;
+use Shopware\Core\Framework\Context;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -29,7 +30,7 @@ class Cache extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $this->cacheInvalidationService->invalidateCachesForNeosCmsPages();
+        $this->cacheInvalidationService->invalidateCachesForNeosCmsPages(Context::createDefaultContext());
 
         return Command::SUCCESS;
     }

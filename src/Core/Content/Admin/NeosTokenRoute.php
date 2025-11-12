@@ -6,6 +6,7 @@ namespace nlxNeosContent\Core\Content\Admin;
 
 use DateTimeInterface;
 use Lcobucci\JWT\Configuration;
+use nlxNeosContent\Service\PluginInfoService;
 use Shopware\Core\Framework\Context;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -18,7 +19,8 @@ class NeosTokenRoute extends AbstractNeosTokenRoute
 {
     public function __construct(
         #[Autowire(service: 'shopware.jwt_config')]
-        private readonly Configuration $configuration
+        private readonly Configuration $configuration,
+        private readonly PluginInfoService $pluginInfoService
     ) {
     }
 
@@ -46,8 +48,15 @@ class NeosTokenRoute extends AbstractNeosTokenRoute
             ->canOnlyBeUsedAfter(new \DateTimeImmutable())
             ->expiresAt($expiration);
 
+        try {
+            $pluginVersion = $this->pluginInfoService->getVersion('nlxNeosContent', $context);
+        } catch (\RuntimeException $e) {
+            throw new \RuntimeException('Could not retrieve plugin version: ' . $e->getMessage());
+        }
+
         $builder = $builder->permittedFor($clientId);
         $builder = $builder->withClaim('scopes', ['neos']);
+        $builder = $builder->withClaim('plugin_version', $pluginVersion);
         $builder = $builder->relatedTo($userId);
 
         return new JsonResponse([

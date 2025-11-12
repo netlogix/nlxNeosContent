@@ -14,7 +14,7 @@ Shopware.Component.register('neos-index', {
     inject: ['systemConfigApiService', 'nlxRoutes', 'repositoryFactory', 'nlxNeosContentApiService'],
 
     props: {
-        neosBaseUri: {
+        neosLoginRoute: {
             type: String,
             required: true,
         },
@@ -40,7 +40,7 @@ Shopware.Component.register('neos-index', {
     data() {
         return {
             config: {
-                neosBaseUri: null,
+                neosLoginRoute: null,
                 token: null,
                 apiUrl: null,
                 shopwareVersion: Shopware.Context.app.config.version
@@ -49,13 +49,13 @@ Shopware.Component.register('neos-index', {
         };
     },
 
-    created() {
-        this.loadConfig();
+    create() {
         this.createdComponent();
     },
 
     mounted() {
         this.$nextTick(async () => {
+            await this.loadConfig();
             const form = this.$refs.neosIframeForm;
             const neosBaseUri = await getNeosBaseUri();
             this.inactiveConfiguration = !neosBaseUri;
@@ -68,17 +68,18 @@ Shopware.Component.register('neos-index', {
                 document.body.appendChild(script);
                 return;
             }
-            //FIXME: This is a workaround since the url in form.action differs from the url set in the html form action property
-            //FIXME: Get rid of the timeout and ensure that the correct url is set
-            setTimeout(() => {
-                form.submit();
-            }, 1000);
 
             const loginService = Shopware.Service('loginService');
             if (!loginService.isLoggedIn()) {
                 console.error('User is not logged in');
                 return;
             }
+
+            form.action = this.config.neosLoginRoute;
+            this.addHiddenInputToForm(form, 'shopwareAccessToken', this.config.token);
+            this.addHiddenInputToForm(form, 'apiUrl', this.config.apiUrl);
+            this.addHiddenInputToForm(form, 'shopwareVersion', this.config.shopwareVersion);
+            form.submit();
 
             // send refreshed token to Neos
             loginService.addOnTokenChangedListener(async () => {
@@ -96,7 +97,7 @@ Shopware.Component.register('neos-index', {
                     token: token,
                     apiUrl: Shopware.Context.api.schemeAndHttpHost,
                     shopwareVersion: this.config.shopwareVersion
-                }, neosBaseUri);
+                }, this.config.neosLoginRoute);
             });
         });
     },
@@ -127,12 +128,12 @@ Shopware.Component.register('neos-index', {
             const currentRoute = this.$router.currentRoute;
             const neosBaseUri = await getNeosBaseUri();
             if (currentRoute._value.name === 'nlx.neos.index') {
-                this.config.neosBaseUri = this.nlxRoutes.getNeosIndexRoute(neosBaseUri);
+                this.config.neosLoginRoute = this.nlxRoutes.getNeosIndexRoute(neosBaseUri);
             }
 
             if (currentRoute._value.name === 'nlx.neos.detail') {
                 const queryParams = await this.getDetailQueryParams();
-                this.config.neosBaseUri = this.nlxRoutes.getNeosDetailRoute(neosBaseUri, queryParams);
+                this.config.neosLoginRoute = this.nlxRoutes.getNeosDetailRoute(neosBaseUri, queryParams);
             }
         },
 
@@ -166,6 +167,14 @@ Shopware.Component.register('neos-index', {
             queryParams.push({ key: 'swEntityId', value: this.$router.currentRoute.value.params.entityId ?? '' });
             queryParams.push({ key: 'swEntityName', value: this.$router.currentRoute.value.params.entityName ?? '' });
             return queryParams;
+        },
+
+        addHiddenInputToForm(form, name, value) {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = name;
+            input.value = value;
+            form.appendChild(input);
         }
     }
 });
