@@ -80,7 +80,7 @@ class ContentExchangeService
         $cmsSection->setVersionId(DEFAULTS::LIVE_VERSION);
         $cmsSection->setSizingMode($sectionData['sizingMode'] ?? 'boxed');
         $cmsSection->setMobileBehavior($sectionData['mobileBehavior'] ?? 'wrap');
-        $cmsSection->setBackgroundColor($sectionData['backgroundColor'] ?? null);
+        $cmsSection->setBackgroundColor($sectionData['backgroundColor'] ?? '');
         $cmsSection->setBackgroundMediaMode($sectionData['backgroundMediaMode'] ?? 'cover');
         $cmsSection->setId($sectionId);
         $cmsSection->internalSetEntityData('cms_section', $fieldVisibility);

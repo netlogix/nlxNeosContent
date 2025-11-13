@@ -92,12 +92,20 @@ Shopware.Component.register('neos-index', {
                     }
                 });
 
-                iframe.contentWindow.postMessage({
-                    nlxShopwareMessageType: 'token-changed',
-                    token: token,
-                    apiUrl: Shopware.Context.api.schemeAndHttpHost,
-                    shopwareVersion: this.config.shopwareVersion
-                }, this.config.neosLoginRoute);
+                if(!this.config.neosLoginRoute) {
+                    console.error('Could not refresh token: neosLoginRoute is undefined');
+                    return;
+                }
+
+                iframe.contentWindow.postMessage(
+                    {
+                        nlxShopwareMessageType: 'token-changed',
+                        token: token,
+                        apiUrl: Shopware.Context.api.schemeAndHttpHost,
+                        shopwareVersion: this.config.shopwareVersion
+                    },
+                    this.config.neosLoginRoute
+                );
             });
         });
     },
