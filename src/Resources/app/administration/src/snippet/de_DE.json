@@ -6,19 +6,6 @@
             }
         }
     },
-    "sw-cms": {
-        "components": {
-            "cmsListItem": {
-                "neos": {
-                    "COMMENT": "FIXME - this button has to be removed in v1",
-                    "changeIdentifier": "Neos Node identifier ändern",
-                    "button": {
-                        "changeIdentifier": "Bestätigen"
-                    }
-                }
-            }
-        }
-    },
     "sw-category": {
         "base": {
             "cms": {
