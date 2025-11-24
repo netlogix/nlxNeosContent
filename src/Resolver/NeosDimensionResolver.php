@@ -10,6 +10,9 @@ use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Request;
 
+/**
+ * @deprecated use languageId and salesChannelId
+ */
 class NeosDimensionResolver
 {
     protected array $dimensions = [];

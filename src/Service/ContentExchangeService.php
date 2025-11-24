@@ -7,8 +7,10 @@ namespace nlxNeosContent\Service;
 use DateTime;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
+use nlxNeosContent\Error\FaultyNeosSectionDataException;
 use nlxNeosContent\Error\NeosContentFetchException;
 use Psr\Http\Client\ClientInterface;
+use Psr\Log\LoggerInterface;
 use Shopware\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockCollection;
 use Shopware\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockEntity;
 use Shopware\Core\Content\Cms\Aggregate\CmsSection\CmsSectionCollection;
@@ -23,6 +25,7 @@ use Shopware\Core\Defaults;
 use Shopware\Core\Framework\DataAbstractionLayer\FieldVisibility;
 use Shopware\Core\Framework\Struct\Struct;
 use Shopware\Core\Framework\Uuid\Uuid;
+use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Serializer\SerializerInterface;
 
@@ -33,6 +36,7 @@ class ContentExchangeService
         private readonly SerializerInterface $serializer,
         private readonly CmsSlotsDataResolver $cmsSlotsDataResolver,
         private readonly ClientInterface $neosClient,
+        private readonly LoggerInterface $logger
     ) {
     }
 
@@ -41,18 +45,51 @@ class ContentExchangeService
      */
     public function getAlternativeCmsSectionsFromNeos(
         string $nodeIdentifier,
-        Struct $dimensions,
+        string $languageId,
+        string $salesChannelId
     ): CmsSectionCollection {
         $elements = $this->fetchNeosContentByNodeIdentifierAndDimension(
             $nodeIdentifier,
-            $dimensions
+            $languageId,
+            $salesChannelId
         );
+
+        return $this->createCmsSectionFromElementsArray($elements);
+    }
+
+    public function fetchCmsSectionsFromNeosByPath(string $pathInfo, SalesChannelContext $salesChannelContext): CmsSectionCollection
+    {
+        $response = $this->neosClient->get(sprintf("/neos/shopware-api/content-by-path/%s", trim($pathInfo, '/')), [
+            'headers' => [
+                'x-sw-language-id' => $salesChannelContext->getLanguageId(),
+                'x-sw-sales-channel-id' => $salesChannelContext->getSalesChannelId(),
+            ]
+        ]);
+
+        return $this->createCmsSectionFromElementsArray($response->getBody()->getContents());
+    }
+
+    private function createCmsSectionFromElementsArray(string $elements): CmsSectionCollection
+    {
+#        return $this->serializer->denormalize($elements, CmsSectionCollection::class,'json');
 
         $sections = $this->serializer->decode($elements, 'json');
         $cmsSectionCollection = new CmsSectionCollection();
         $position = 0;
 
         foreach ($sections as $sectionData) {
+            if (!is_array($sectionData)) {
+                // Log error and continue with next section to prevent breaking the storefront
+                $this->logger->error(
+                    new FaultyNeosSectionDataException(
+                        message: "Provided section data from Neos is not an array",
+                        code: 1763629733,
+                        previous: null,
+                        sectionData: $sectionData
+                    )
+                );
+                continue;
+            }
             $cmsSection = $this->createCmsSectionFromSectionData($sectionData, $position, Uuid::randomHex());
             if ($cmsSection === null) {
                 continue;
@@ -65,8 +102,11 @@ class ContentExchangeService
         return $cmsSectionCollection;
     }
 
-    public function createCmsSectionFromSectionData(array $sectionData, int $position, string $sectionId): ?CmsSectionEntity
-    {
+    public function createCmsSectionFromSectionData(
+        array $sectionData,
+        int $position,
+        string $sectionId
+    ): ?CmsSectionEntity {
         if (!isset($sectionData['type'])) {
             throw new \RuntimeException('Section type is not set');
         }
@@ -192,14 +232,27 @@ class ContentExchangeService
     /**
      * @throws NeosContentFetchException
      */
-    private function fetchNeosContentByNodeIdentifierAndDimension(string $nodeIdentifier, Struct $dimensions): string
-    {
-        $dimensionString = $this->resolveDimensionString($dimensions);
+    private function fetchNeosContentByNodeIdentifierAndDimension(
+        string $nodeIdentifier,
+        string $languageId,
+        string $salesChannelId
+    ): string {
         try {
-            $response = $this->neosClient->get(sprintf("/neos/shopware-api/content/%s__%s/", $nodeIdentifier, $dimensionString));
+            $response = $this->neosClient->get(sprintf("/neos/shopware-api/content/%s/", $nodeIdentifier), [
+                'headers' => [
+                    'x-sw-language-id' => $languageId,
+                    'x-sw-sales-channel-id' => $salesChannelId,
+                ]
+            ]);
         } catch (RequestException $e) {
             throw new NeosContentFetchException (
-                sprintf('Failed to fetch content from Neos for node identifier "%s" and dimensions "%s": %s', $nodeIdentifier, $dimensionString, $e->getMessage()),
+                sprintf(
+                    'Failed to fetch content from Neos for node identifier "%s" for sales channel "%s" and language "%s": %s',
+                    $nodeIdentifier,
+                    $salesChannelId,
+                    $languageId,
+                    $e->getMessage()
+                ),
                 1752652016,
                 $e
             );

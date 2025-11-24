@@ -6,8 +6,8 @@
 
 {# Embeded Neos if the installation is active and has a valid URL #}
 <div class="neos">
-    <form ref="neosIframeForm" method="post" target="neos-cms">
-    </form>
-
-    <iframe ref="iframe" name="neos-cms" id="neos-cms" src="" title="Neos CMS"></iframe>
+    <sw-loader v-if="isLoading"></sw-loader>
+    <iframe v-else
+            :src="iframeSrc"
+            ref="iframe" name="neos-cms" id="neos-cms" title="Neos CMS"></iframe>
 </div>
