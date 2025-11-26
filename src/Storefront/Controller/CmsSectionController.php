@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace nlxNeosContent\Storefront\Controller;
 
 use Exception;
+use nlxNeosContent\Core\Content\Cms\Aggregate\CmsSection\NeosCmsSectionEntity;
 use nlxNeosContent\Service\ContentExchangeService;
 use nlxNeosContent\Service\ResolverContextService;
 use Shopware\Core\Content\Category\CategoryDefinition;
@@ -26,6 +27,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Serializer\SerializerInterface;
 
 /**
  * @internal
@@ -44,6 +46,7 @@ class CmsSectionController extends StorefrontController
         private readonly ContentExchangeService $contentExchangeService,
         private readonly ResolverContextService $resolverContextService,
         private readonly EntityRepository $cmsPageRepository,
+        private readonly SerializerInterface $serializer,
     ) {
     }
 
@@ -114,12 +117,11 @@ class CmsSectionController extends StorefrontController
             true
         );
 
+        $sectionData['id'] = 'neos-preview-section';
+
         /** @var CmsSectionEntity $section */
-        $section = $this->contentExchangeService->createCmsSectionFromSectionData(
-            $sectionData,
-            1,
-            'section'
-        );
+        $section = $this->serializer->denormalize($sectionData, NeosCmsSectionEntity::class, 'json');
+        $section->setPosition(1);
 
         foreach ($section->getBlocks() as $block) {
             $block->setSection($section);
