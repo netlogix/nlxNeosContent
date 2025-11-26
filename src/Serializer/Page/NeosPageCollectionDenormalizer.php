@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace nlxNeosContent\Serializer;
+namespace nlxNeosContent\Serializer\Page;
 
 use nlxNeosContent\Neos\DTO\NeosPageCollection;
 use nlxNeosContent\Neos\DTO\NeosPageDTO;
