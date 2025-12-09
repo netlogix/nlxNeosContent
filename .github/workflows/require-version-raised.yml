@@ -16,7 +16,8 @@ jobs:
       - name: Read base version (main branch)
         id: base_version
         run: |
-          git checkout ${{ github.event.pull_request.base.sha }}
+          git fetch origin main
+          git checkout origin/main -- composer.json
           BASE_VERSION=$(jq -r '.version' composer.json)
           echo "value=$BASE_VERSION" >> $GITHUB_OUTPUT
 
