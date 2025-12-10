@@ -2,7 +2,8 @@ name: Require Version Raise
 
 on:
   pull_request:
-    branches: [main]
+    branches:
+      - develop
 
 jobs:
   require-version-bump:
