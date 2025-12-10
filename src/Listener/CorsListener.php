@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace nlxNeosContent\Subscriber;
+namespace nlxNeosContent\Listener;
 
 use nlxNeosContent\Service\ConfigService;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
@@ -13,9 +13,9 @@ use Symfony\Component\HttpKernel\Event\ResponseEvent;
 
 #[AsEventListener(method: 'onKernelRequest', priority: -10000)]
 #[AsEventListener(method: 'onKernelResponse', priority: -10000)]
-class CorsListener
+readonly class CorsListener
 {
-    function __construct(private readonly ConfigService $configService)
+    function __construct(private ConfigService $configService)
     {
     }
 

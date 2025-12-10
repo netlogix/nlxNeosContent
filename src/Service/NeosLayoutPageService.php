@@ -73,19 +73,20 @@ class NeosLayoutPageService
      */
     public function getNeosLayoutPages(array $pageTypes): array
     {
-        $language = '/en-GB';
+        $context = Context::createDefaultContext();
         $contents = [];
         foreach ($pageTypes as $pageType) {
             if (!in_array($pageType, ['product_list', 'product_detail', 'landingpage', 'page'])) {
                 throw new \InvalidArgumentException(sprintf('Invalid page type: %s', $pageType), 1743497434);
             }
 
-            $apiUrl = sprintf('/neos/shopware-api/layout/pages/%s%s', $pageType, $language);
+            $apiUrl = sprintf('/neos/shopware-api/layout/pages/%s', $pageType);
             try {
                 $response = $this->neosClient->get($apiUrl, [
                     'headers' => [
                         'Accept' => 'application/json',
                         'Content-Type' => 'application/json',
+                        'x-sw-language-id' => $context->getLanguageId(),
                     ],
                 ]);
             } catch (Exception $e) {

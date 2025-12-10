@@ -6,6 +6,9 @@ use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
 use Shopware\Core\Framework\Plugin\Exception\DecorationPatternException;
 
+/**
+ * @deprecated
+ */
 class NeosDimensionLoader extends AbstractNeosDimensionLoader
 {
     public function __construct(

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace nlxNeosContent\Subscriber;
+namespace nlxNeosContent\Listener;
 
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Shopware\Core\Content\Product\SalesChannel\ProductAvailableFilter;
@@ -10,7 +10,7 @@ use Shopware\Core\System\SalesChannel\Event\SalesChannelProcessCriteriaEvent;
 use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 
 #[AutoconfigureTag(name: 'kernel.event_subscriber')]
-class SalesChannelProcessCriteriaSubscriber implements EventSubscriberInterface
+class SalesChannelProcessCriteriaListener implements EventSubscriberInterface
 {
     public function __construct()
     {

@@ -35,46 +35,6 @@ export default {
         }
     },
     methods: {
-        onChangeNeosNodeIdentifier(page) {
-            this.neosNodeIdentifier = page.neosNodeIdentifier;
-            this.showNodeIdentifierChangeModal = true;
-            this.cmsPage = page;
-        },
-
-        onCloseNodeIdentifierChangeModal() {
-            this.showNodeIdentifierChangeModal = false;
-            this.currentPage = null;
-            this.$emit('closeNeosNodeIdentifierModal');
-        },
-
-        async onConfirmNodeIdentifierChangeModal() {
-            if (!this.currentPage) {
-                this.createNotificationError({
-                    //TODO translate
-                    title: 'Error',
-                    message: 'Failed could not resolve cms_page: ' + 1742907120
-                });
-                return;
-            }
-
-            try {
-                await this.pageRepository.save(this.currentPage, Shopware.Context.api);
-                this.$emit('closeNeosNodeIdentifierModal');
-                this.createNotificationSuccess({
-                    //TODO translate
-                    title: 'Success',
-                    message: 'Custom data saved successfully!'
-                });
-                this.showNodeIdentifierChangeModal = false;
-            } catch (error) {
-                this.createNotificationError({
-                    //TODO translate
-                    title: 'Error',
-                    message: 'Failed to save data.'
-                });
-            }
-        },
-
         isNeosPage(page) {
             return page.extensions?.nlxNeosNode?.nodeIdentifier !== undefined;
         },
