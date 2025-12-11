@@ -6,7 +6,7 @@ namespace nlxNeosContent\Error;
 
 use Shopware\Core\Content\Cms\CmsPageEntity;
 
-class CanNotDeleteDefaultLayoutPageException extends \Exception
+class CanNotDeleteDefaultLayoutPageException extends \Exception implements NeosExceptionInterface
 {
     public function __construct(CmsPageEntity $cmsPageEntity, int $code = 1753085155, ?\Throwable $previous = null)
     {

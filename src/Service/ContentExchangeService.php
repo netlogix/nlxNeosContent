@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace nlxNeosContent\Service;
 
-use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
 use nlxNeosContent\Core\Content\Cms\Aggregate\CmsSection\NeosCmsSectionCollection;
 use nlxNeosContent\Error\NeosContentFetchException;
@@ -28,7 +27,7 @@ class ContentExchangeService
     }
 
     /**
-     * @throws GuzzleException
+     * @throws NeosContentFetchException
      */
     public function getAlternativeCmsSectionsFromNeos(
         string $nodeIdentifier,
@@ -52,6 +51,7 @@ class ContentExchangeService
                 'x-sw-sales-channel-id' => $salesChannelContext->getSalesChannelId(),
             ]
         ]);
+
         return $this->serializer->denormalize($response->getBody()->getContents(), NeosCmsSectionCollection::class,'json');
     }
 
