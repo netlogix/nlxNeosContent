@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace nlxNeosContent\Error;
 
-class MissingCmsPageEntityException extends \Exception
+class MissingCmsPageEntityException extends \Exception implements NeosExceptionInterface
 {
     public function __construct(string $message = 'No cmsPage entity was found in CmsPageLoadedEvent.', int $code = 1752652152, ?\Throwable $previous = null)
     {
