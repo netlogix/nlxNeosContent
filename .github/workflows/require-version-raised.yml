@@ -25,7 +25,7 @@ jobs:
       - name: Read head version (PR branch)
         id: head_version
         run: |
-          git checkout ${{ github.event.pull_request.head.sha }}
+          git restore composer.json
           HEAD_VERSION=$(jq -r '.version' composer.json)
           echo "value=$HEAD_VERSION" >> $GITHUB_OUTPUT
 
