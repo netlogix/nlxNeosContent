@@ -53,8 +53,8 @@ Shopware.Component.register('neos-index', {
         };
     },
 
-    create() {
-        this.createdComponent();
+    created() {
+        Shopware.Store.get('adminMenu').collapseSidebar();
     },
 
     mounted() {
@@ -175,10 +175,6 @@ Shopware.Component.register('neos-index', {
                 this.iframeSrc = content.iframeUri;
                 this.isLoading = false;
             });
-        },
-
-        createdComponent() {
-            Shopware.Store.get('adminMenu').collapseSidebar();
         },
 
         async getDetailQueryParams() {
