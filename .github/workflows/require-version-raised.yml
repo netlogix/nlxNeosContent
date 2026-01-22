@@ -14,6 +14,12 @@ jobs:
         with:
           fetch-tags: true
 
+      - name: Read head version (PR branch)
+        id: head_version
+        run: |
+          HEAD_VERSION=$(jq -r '.version' composer.json)
+          echo "value=$HEAD_VERSION" >> $GITHUB_OUTPUT
+
       - name: Read base version (main branch)
         id: base_version
         run: |
@@ -21,13 +27,6 @@ jobs:
           git checkout origin/main -- composer.json
           BASE_VERSION=$(jq -r '.version' composer.json)
           echo "value=$BASE_VERSION" >> $GITHUB_OUTPUT
-
-      - name: Read head version (PR branch)
-        id: head_version
-        run: |
-          git restore composer.json
-          HEAD_VERSION=$(jq -r '.version' composer.json)
-          echo "value=$HEAD_VERSION" >> $GITHUB_OUTPUT
 
       - name: Compare versions
         run: |
