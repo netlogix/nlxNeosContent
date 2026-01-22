@@ -10,6 +10,7 @@ use nlxNeosContent\Error\NeosContentFetchException;
 use Psr\Http\Client\ClientInterface;
 use Shopware\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockCollection;
 use Shopware\Core\Content\Cms\Aggregate\CmsSection\CmsSectionCollection;
+use Shopware\Core\Content\Cms\CmsPageEntity;
 use Shopware\Core\Content\Cms\DataResolver\CmsSlotsDataResolver;
 use Shopware\Core\Content\Cms\DataResolver\ResolverContext\ResolverContext;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -30,12 +31,12 @@ class ContentExchangeService
      * @throws NeosContentFetchException
      */
     public function getAlternativeCmsSectionsFromNeos(
-        string $nodeIdentifier,
+        CmsPageEntity $cmsPage,
         string $languageId,
         string $salesChannelId
     ): CmsSectionCollection {
-        $elements = $this->fetchNeosContentByNodeIdentifierAndDimension(
-            $nodeIdentifier,
+        $elements = $this->fetchNeosContentForCmsPage(
+            $cmsPage,
             $languageId,
             $salesChannelId
         );
@@ -58,13 +59,13 @@ class ContentExchangeService
     /**
      * @throws NeosContentFetchException
      */
-    private function fetchNeosContentByNodeIdentifierAndDimension(
-        string $nodeIdentifier,
+    private function fetchNeosContentForCmsPage(
+        CmsPageEntity $cmsPage,
         string $languageId,
         string $salesChannelId
     ): string {
         try {
-            $response = $this->neosClient->get(sprintf("/neos/shopware-api/content/%s/", $nodeIdentifier), [
+            $response = $this->neosClient->get(sprintf("/neos/shopware-api/content/%s/", $cmsPage->getId()), [
                 'headers' => [
                     'x-sw-language-id' => $languageId,
                     'x-sw-sales-channel-id' => $salesChannelId,
@@ -73,8 +74,8 @@ class ContentExchangeService
         } catch (RequestException $e) {
             throw new NeosContentFetchException (
                 sprintf(
-                    'Failed to fetch content from Neos for node identifier "%s" for sales channel "%s" and language "%s": %s',
-                    $nodeIdentifier,
+                    'Failed to fetch content from Neos for node CmsPage "%s" for sales channel "%s" and language "%s" with Errormessage: %s',
+                    $cmsPage->getName(),
                     $salesChannelId,
                     $languageId,
                     $e->getMessage()
@@ -87,6 +88,9 @@ class ContentExchangeService
         return $response->getBody()->getContents();
     }
 
+    /**
+     * Loads the slot data into the given blocks for given resolver context.
+     */
     public function loadSlotData(CmsBlockCollection $blocks, ResolverContext $resolverContext): void
     {
         $slots = $this->cmsSlotsDataResolver->resolve($blocks->getSlots(), $resolverContext);

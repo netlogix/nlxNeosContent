@@ -12,5 +12,5 @@ abstract class AbstractUpdatePagesRoute
 {
     abstract public function getDecorated(): AbstractUpdatePagesRoute;
 
-    abstract public function load(): Response;
+    abstract public function load(Request $request, Context $context): Response;
 }
