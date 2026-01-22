@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace nlxNeosContent\Service;
 
 use Exception;
-use GuzzleHttp\Exception\GuzzleException;
 use nlxNeosContent\Core\Content\NeosNode\NeosNodeEntity;
 use nlxNeosContent\Core\Notification\NotificationServiceInterface;
 use nlxNeosContent\Error\CanNotDeleteDefaultLayoutPageException;
@@ -16,8 +15,6 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\MultiFilter;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\NotFilter;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
@@ -38,122 +35,42 @@ class NeosLayoutPageService
     ) {
     }
 
-    public function getAvailableFilterPageTypes(): array
-    {
-        return explode('|', self::AVAILABLE_FILTER_PAGE_TYPES);
-    }
-
-    public function initialNodeImport(Context $context): void
-    {
-        try {
-            $neosNodes = $this->getNeosLayoutPages($this->getAvailableFilterPageTypes());
-        } catch (Exception $e) {
-            $this->createNotification(
-                $context
-            );
-            return;
-        }
-        $this->createMissingNeosCmsPages($neosNodes, $context);
-    }
-
-    public function createMissingNeosCmsPages(array $neosNodes, Context $context): void
-    {
-        $presentNeosNodeIdentifiers = $this->getCmsPageIdWithConnectedNodeIdentifier($context);
-        $neosNodesWithoutExistingShopwareLayouts = $this->removeAlreadyPresentNeosLayouts(
-            $neosNodes,
-            $presentNeosNodeIdentifiers
-        );
-
-        $this->createCmsPagesForNodes($neosNodesWithoutExistingShopwareLayouts, $context);
-    }
-
-    /**
-     * Fetches Neos layout pages based on the provided page types.
-     * @throws GuzzleException
-     */
-    public function getNeosLayoutPages(array $pageTypes): array
+    public function getNeosCmsPageTemplates(): array
     {
         $context = Context::createDefaultContext();
-        $contents = [];
-        foreach ($pageTypes as $pageType) {
-            if (!in_array($pageType, ['product_list', 'product_detail', 'landingpage', 'page'])) {
-                throw new \InvalidArgumentException(sprintf('Invalid page type: %s', $pageType), 1743497434);
-            }
-
-            $apiUrl = sprintf('/neos/shopware-api/layout/pages/%s', $pageType);
-            try {
-                $response = $this->neosClient->get($apiUrl, [
-                    'headers' => [
-                        'Accept' => 'application/json',
-                        'Content-Type' => 'application/json',
-                        'x-sw-language-id' => $context->getLanguageId(),
-                    ],
-                ]);
-            } catch (Exception $e) {
-                throw new \RuntimeException(
-                    sprintf('Failed to fetch Neos layout pages: %s', $e->getMessage()),
-                    1743497435,
-                    $e
-                );
-            }
-
-            $responseData = json_decode($response->getBody()->getContents(), true);
-            foreach ($responseData as $value) {
-                $contents[] = $value;
-            }
+        try {
+            $response = $this->neosClient->get('/neos/shopware-api/layout/pages', [
+                'headers' => [
+                    'Accept' => 'application/json',
+                    'Content-Type' => 'application/json',
+                    'x-sw-language-id' => $context->getLanguageId(),
+                ],
+            ]);
+        } catch (Exception $e) {
+            throw new \RuntimeException(
+                sprintf('Failed to fetch Neos layout pages: %s', $e->getMessage()),
+                1743497435,
+                $e
+            );
         }
 
-        return $contents;
-    }
-
-    private function createCmsPagesForNodes(array $neosNodes, Context $context): void
-    {
-        $pagesData = [];
-        foreach ($neosNodes as $node) {
-            $cmsPage = [
-                'id' => md5($node['nodeIdentifier']),
-                'name' => $node['name'],
-                'type' => $node['type'],
-                'versionId' => DEFAULTS::LIVE_VERSION,
-                'nlxNeosNode' => [
-                    'versionId' => DEFAULTS::LIVE_VERSION,
-                    'cmsPageVersionId' => DEFAULTS::LIVE_VERSION,
-                    'nodeIdentifier' => $node['nodeIdentifier'],
-                ],
-                'sections' => [
-                    [
-                        'versionId' => DEFAULTS::LIVE_VERSION,
-                        'position' => 0,
-                        'type' => 'default',
-                        'sizingMode' => 'boxed',
-                        'blocks' => [],
-                    ],
-                ],
-                'locked' => true,
-            ];
-
-            $pagesData[] = $cmsPage;
-        }
-
-        $this->cmsPageRepository->upsert($pagesData, $context);
+        return json_decode($response->getBody()->getContents(), true) ?? [];
     }
 
     public function updateNeosCmsPages(array $neosNodes, Context $context): void
     {
-        $pagesWithConnectedNeosNode = $this->getCmsPageIdWithConnectedNodeIdentifier($context);
-
         $pagesData = [];
         foreach ($neosNodes as $node) {
-            $cmsPageId = array_search($node['nodeIdentifier'], $pagesWithConnectedNeosNode, true);
-
             $cmsPageData = [
-                'id' => $cmsPageId,
-                'name' => $node['name'],
+                'id' => $node['cmsPageId'],
+                'name' => $node['title'],
                 'type' => $node['type'],
                 'nlxNeosNode' => [
+                    'id' => md5($node['cmsPageId'] . '_neos_node'),
                     'versionId' => DEFAULTS::LIVE_VERSION,
+                    'cmsPageId' => $node['cmsPageId'],
                     'cmsPageVersionId' => DEFAULTS::LIVE_VERSION,
-                    'nodeIdentifier' => $node['nodeIdentifier'],
+                    'neosConnection' => true,
                 ],
             ];
 
@@ -170,28 +87,13 @@ class NeosLayoutPageService
     {
         return $this->nlxNeosNodeRepository->search(
             (new Criteria())->addFilter(
-                new NotFilter(
-                    MultiFilter::CONNECTION_AND,
-                    [
-                        new EqualsFilter('cmsPageId', null),
-                    ]
-                )
+                new EqualsFilter('neosConnection', true)
             )->addAssociation('cmsPage'),
             $context
         )->getEntities();
     }
 
-    /**
-     * Removes CmsPages that have a node identifier which does not exist in Neos.
-     * If a CmsPage is set as default, it will not be removed and a notification will be created.
-     *
-     * @param array $neosNodes
-     * @param Context $context
-     * @return void
-     *
-     * @throws CanNotDeleteDefaultLayoutPageException
-     */
-    public function removeCmsPagesWithInvalidNodeIdentifiers(array $neosNodes, Context $context): void
+    public function removeObsoleteCmsPages(array $neosNodes, Context $context): void
     {
         $neosNodeEntities = $this->getNeosNodeEntitiesWithConnectedCmsPage($context);
         $configs = $this->systemConfigService->get('core.cms');
@@ -205,14 +107,14 @@ class NeosLayoutPageService
 
         /** @var NeosNodeEntity $neosNodeEntity */
         foreach ($neosNodeEntities as $neosNodeEntity) {
-            if (!$neosNodeEntity->getNodeIdentifier()) {
+            if (!$neosNodeEntity->getNeosConnection()) {
                 continue;
             }
-            $nodeIdentifier = array_column($neosNodes, 'nodeIdentifier');
-            if (in_array($neosNodeEntity->getNodeIdentifier(), $nodeIdentifier)) {
-                continue;
-            }
+            $cmsPageIds = array_column($neosNodes, 'cmsPageId');
             $cmsPageId = $neosNodeEntity->getCmsPageId();
+            if (in_array($cmsPageId, $cmsPageIds, true)) {
+                continue;
+            }
 
             if (in_array($cmsPageId, $defaultCmsPageIds)) {
                 throw new CanNotDeleteDefaultLayoutPageException(
@@ -229,35 +131,43 @@ class NeosLayoutPageService
         );
     }
 
-    private function getCmsPageIdWithConnectedNodeIdentifier(Context $context): array
-    {
-        $neosNodeEntities = $this->getNeosNodeEntitiesWithConnectedCmsPage($context);
-
-        $availableNodeIdentifiers = [];
-        /** @var NeosNodeEntity $nlxNeosNodeEntity */
-        foreach ($neosNodeEntities as $nlxNeosNodeEntity) {
-            $availableNodeIdentifiers[$nlxNeosNodeEntity->getCmsPageId()] = $nlxNeosNodeEntity->getNodeIdentifier();
-        }
-
-        return $availableNodeIdentifiers;
-    }
-
-    private function removeAlreadyPresentNeosLayouts(array $pages, array $alreadyPresentNeosLayouts): array
-    {
-        return array_filter($pages, function ($page) use ($alreadyPresentNeosLayouts) {
-            return !in_array($page['nodeIdentifier'], $alreadyPresentNeosLayouts);
-        });
-    }
-
     public function createNotification(Context $context, ?string $message = null, ?string $status = 'error'): void
     {
         $this->notificationService->createNotification(
             [
                 'id' => Uuid::randomHex(),
                 'requiredPrivileges' => [],
-                'message' => $message ?? $this->translator->trans('nlxNeosContent.notification.neosLayoutPagesFetchError'),
+                'message' => $message ?? $this->translator->trans(
+                        'nlxNeosContent.notification.neosLayoutPagesFetchError'
+                    ),
                 'status' => $status,
             ],
+            $context
+        );
+    }
+
+    public function processProvidedNodes(array $nodes, Context $context): void
+    {
+        $pagesData = [];
+        foreach ($nodes as $node) {
+            $cmsPageData = [
+                'id' => $node['cmsPageId'],
+                'name' => $node['title'],
+                'type' => $node['type'],
+                'nlxNeosNode' => [
+                    'id' => md5($node['cmsPageId'] . '_neos_node'),
+                    'versionId' => DEFAULTS::LIVE_VERSION,
+                    'cmsPageId' => $node['cmsPageId'],
+                    'cmsPageVersionId' => DEFAULTS::LIVE_VERSION,
+                    'neosConnection' => true,
+                ],
+            ];
+
+            $pagesData[] = $cmsPageData;
+        }
+
+        $this->cmsPageRepository->upsert(
+            $pagesData,
             $context
         );
     }

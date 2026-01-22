@@ -6,6 +6,7 @@ namespace nlxNeosContent\Core\Content\NeosNode;
 
 use Shopware\Core\Content\Cms\CmsPageDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\BoolField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\DateField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\FkField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
@@ -38,7 +39,7 @@ class NeosNodeDefinition extends EntityDefinition
             ((new IdField('id', 'id'))->addFlags(new Required(), new PrimaryKey())),
             (new DateField('created_at', 'createdAt')),
             (new DateField('updated_at', 'updatedAt')),
-            (new StringField('node_identifier', 'nodeIdentifier')),
+            (new BoolField('neos_connection', 'neosConnection')),
             (new FkField('cms_page_id', 'cmsPageId', CmsPageDefinition::class))->addFlags(new Required()),
             (new ReferenceVersionField(CmsPageDefinition::class, 'cms_page_version_id')),
             (new OneToOneAssociationField('cmsPage', 'cms_page_id', 'id', CmsPageDefinition::class, false)),

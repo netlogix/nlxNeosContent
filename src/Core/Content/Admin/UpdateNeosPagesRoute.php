@@ -27,21 +27,24 @@ class UpdateNeosPagesRoute extends AbstractUpdatePagesRoute
     }
 
     #[Route(path: '/api/_action/neos/update-neos-pages', name: 'api.neos.update-neos-pages', methods: ['POST'])]
-    public function load(): Response
+    public function load(Request $request, Context $context): Response
     {
-        $context = Context::createDefaultContext();
-        try {
-            $neosPages = $this->neosLayoutPageService->getNeosLayoutPages(
-                explode('|', NeosLayoutPageService::AVAILABLE_FILTER_PAGE_TYPES)
-            );
-        } catch (GuzzleException $e) {
-            $this->neosLayoutPageService->createNotification($context);
-            throw new Exception('Failed to retrieve Neos layout pages: ' . $e->getMessage(), 1751381726, $e);
+        $content = json_decode(json: $request->getContent(), associative: true) ?? [];
+        // If nodes are provided in the request, only process those
+        if (!empty($content['updatedNodes'])) {
+            $this->neosLayoutPageService->processProvidedNodes($content['updatedNodes'], $context);
+            return new JsonResponse(['status' => 'Provided Neos layout pages processed successfully.'], Response::HTTP_OK);
         }
 
-        $this->neosLayoutPageService->createMissingNeosCmsPages($neosPages, $context);
+        try {
+            $neosPages = $this->neosLayoutPageService->getNeosCmsPageTemplates();
+        } catch (GuzzleException $e) {
+            $this->neosLayoutPageService->createNotification($context);
+            throw new Exception('Failed to retrieve Neos templates: ' . $e->getMessage(), 1751381726, $e);
+        }
+
         $this->neosLayoutPageService->updateNeosCmsPages($neosPages, $context);
-        $this->neosLayoutPageService->removeCmsPagesWithInvalidNodeIdentifiers($neosPages, $context);
+        $this->neosLayoutPageService->removeObsoleteCmsPages($neosPages, $context);
 
 
         return new JsonResponse(['status' => 'Neos layout pages updated successfully.'], Response::HTTP_OK);
