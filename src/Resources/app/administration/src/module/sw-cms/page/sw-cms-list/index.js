@@ -36,14 +36,14 @@ export default {
     },
     methods: {
         isNeosPage(page) {
-            return page.extensions?.nlxNeosNode?.nodeIdentifier !== undefined;
+            return page.extensions?.nlxNeosNode?.neosConnection;
         },
 
         openInNeos(page) {
             this.$router.push({
                 name: 'nlx.neos.detail',
                 params: {
-                    nodeIdentifier: page.extensions.nlxNeosNode.nodeIdentifier
+                    cmsPageId: page.id
                 },
             });
         },

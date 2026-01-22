@@ -15,7 +15,7 @@ export default {
                 return;
             }
 
-            return this.cmsPage.extensions?.nlxNeosNode?.nodeIdentifier !== undefined;
+            return this.cmsPage.extensions?.nlxNeosNode?.neosConnection;
         },
     },
 
@@ -29,15 +29,11 @@ export default {
                 // this should never happen
                 console.error('No cmsPage provided');
             }
-            if (!this.cmsPage.extensions?.nlxNeosNode?.nodeIdentifier) {
-                // this should never happen
-                console.error('No nodeIdentifier provided');
-            }
 
             this.$router.push({
                 name: 'nlx.neos.detail',
                 params: {
-                    nodeIdentifier: this.cmsPage.extensions.nlxNeosNode.nodeIdentifier,
+                    cmsPageId: this.cmsPage.id,
                     entityId: this.category.id,
                     entityName: 'category',
                 },
