@@ -19,16 +19,16 @@ class NeosNodeEntity extends Entity
 
     protected string $cmsPageVersionId;
 
-    protected ?string $nodeIdentifier;
+    protected bool $neosConnection = false;
 
-    public function getNodeIdentifier(): ?string
+    public function getNeosConnection(): bool
     {
-        return $this->nodeIdentifier;
+        return $this->neosConnection;
     }
 
-    public function nodeIdentifier(?string $nodeIdentifier): void
+    public function neosConnection(bool $neosConnection): void
     {
-        $this->nodeIdentifier = $nodeIdentifier;
+        $this->neosConnection = $neosConnection;
     }
 
     public function getCmsPage(): CmsPageEntity

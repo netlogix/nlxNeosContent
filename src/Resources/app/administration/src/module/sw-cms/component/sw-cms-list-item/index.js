@@ -10,7 +10,7 @@ export default {
                 return false;
             }
 
-            return this.page.extensions?.nlxNeosNode?.nodeIdentifier !== undefined;
+            return this.page.extensions?.nlxNeosNode?.neosConnection;
         },
     },
 }

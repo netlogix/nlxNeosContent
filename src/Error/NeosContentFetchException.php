@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace nlxNeosContent\Error;
 
-class NeosContentFetchException extends \Exception
+class NeosContentFetchException extends \Exception implements NeosExceptionInterface
 {
     public function __construct(string $message = 'Neos Content could not be fetched.', int $code = 1752651981, ?\Throwable $previous = null)
     {

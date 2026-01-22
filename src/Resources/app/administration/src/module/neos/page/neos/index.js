@@ -1,5 +1,7 @@
 import template from './neos-index.html.twig';
 import './neos-index.scss';
+const { Criteria } = Shopware.Data;
+const { api  } = Shopware.Context;
 
 const getNeosBaseUri = async () => {
     const configService = Shopware.Service('systemConfigApiService');
@@ -39,6 +41,8 @@ Shopware.Component.register('neos-index', {
 
     data() {
         return {
+            isLoading: true,
+            iframeSrc: null,
             config: {
                 neosLoginRoute: null,
                 token: null,
@@ -49,14 +53,13 @@ Shopware.Component.register('neos-index', {
         };
     },
 
-    create() {
-        this.createdComponent();
+    created() {
+        Shopware.Store.get('adminMenu').collapseSidebar();
     },
 
     mounted() {
         this.$nextTick(async () => {
             await this.loadConfig();
-            const form = this.$refs.neosIframeForm;
             const neosBaseUri = await getNeosBaseUri();
             this.inactiveConfiguration = !neosBaseUri;
             if (this.inactiveConfiguration) {
@@ -75,11 +78,9 @@ Shopware.Component.register('neos-index', {
                 return;
             }
 
-            form.action = this.config.neosLoginRoute;
-            this.addHiddenInputToForm(form, 'shopwareAccessToken', this.config.token);
-            this.addHiddenInputToForm(form, 'apiUrl', this.config.apiUrl);
-            this.addHiddenInputToForm(form, 'shopwareVersion', this.config.shopwareVersion);
-            form.submit();
+            this.loadNeosIntoIframe().catch((error) => {
+                console.error('Failed to load Neos into iframe:', error);
+            });
 
             // send refreshed token to Neos
             loginService.addOnTokenChangedListener(async () => {
@@ -92,7 +93,7 @@ Shopware.Component.register('neos-index', {
                     }
                 });
 
-                if(!this.config.neosLoginRoute) {
+                if (!this.config.neosLoginRoute) {
                     console.error('Could not refresh token: neosLoginRoute is undefined');
                     return;
                 }
@@ -101,8 +102,8 @@ Shopware.Component.register('neos-index', {
                     {
                         nlxShopwareMessageType: 'token-changed',
                         token: token,
-                        apiUrl: Shopware.Context.api.schemeAndHttpHost,
-                        shopwareVersion: this.config.shopwareVersion
+                        apiUrl: api.schemeAndHttpHost,
+                        shopwareVersion: this.config.shopwareVersion,
                     },
                     this.config.neosLoginRoute
                 );
@@ -111,8 +112,14 @@ Shopware.Component.register('neos-index', {
     },
 
     computed: {
-        localeRepository() {
-            return this.repositoryFactory.create('locale');
+        salesChannelRepository() {
+            return this.repositoryFactory.create('sales_channel');
+        },
+        async getSalesChannels() {
+            const criteria = new Criteria();
+            criteria.addFilter(Criteria.equals('typeId', '8a243080f92e4c719546314b577cf82b')); // SALES_CHANNEL_TYPE_STOREFRONT
+
+            return await this.salesChannelRepository.search(criteria, api);
         }
     },
 
@@ -131,7 +138,7 @@ Shopware.Component.register('neos-index', {
                     throw new Error('Failed to retrieve Neos token: ' + response.data.message);
                 }
             });
-            this.config.apiUrl = Shopware.Context.api.schemeAndHttpHost;
+            this.config.apiUrl = api.schemeAndHttpHost;
 
             const currentRoute = this.$router.currentRoute;
             const neosBaseUri = await getNeosBaseUri();
@@ -145,44 +152,37 @@ Shopware.Component.register('neos-index', {
             }
         },
 
-        createdComponent() {
-            Shopware.Store.get('adminMenu').collapseSidebar();
+        async loadNeosIntoIframe() {
+            const salesChannel = await this.getSalesChannels.then(sc => sc.first());
+            const response = await fetch(this.config.neosLoginRoute, {
+                method: 'POST',
+                credentials: 'include',
+                redirect: 'follow',
+                headers: {
+                    'x-sw-language-id': api.language.id,
+                    'x-sw-sales-channel-id': salesChannel.id,
+                    'x-sw-context-token': salesChannel.accessKey,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    shopwareAccessToken: this.config.token,
+                    apiUrl: this.config.apiUrl,
+                    shopwareVersion: this.config.shopwareVersion,
+                })
+            });
+
+            response.json().then(content => {
+                this.iframeSrc = content.iframeUri;
+                this.isLoading = false;
+            });
         },
 
         async getDetailQueryParams() {
             const queryParams = [];
-
-            const fallbackLocale = Shopware.Context.app.fallbackLocale;
-
-            let localeId = Shopware.Context.api.language.localeId;
-            let languageParam = "";
-
-             const criteria = new Shopware.Data.Criteria();
-             criteria.addFilter(Shopware.Data.Criteria.equals('id', localeId));
-
-            const locales = await this.localeRepository.search(criteria, Shopware.Context.api);
-            const locale = locales.first();
-
-            if (!locale) {
-                console.warn('No locale found using fallback:', fallbackLocale);
-                languageParam = fallbackLocale;
-            } else {
-                languageParam = locale.code;
-            }
-
-            queryParams.push({ key: 'nodeIdentifier', value: this.$router.currentRoute.value.params.nodeIdentifier });
-            queryParams.push({ key: 'language', value: languageParam });
-            queryParams.push({ key: 'swEntityId', value: this.$router.currentRoute.value.params.entityId ?? '' });
-            queryParams.push({ key: 'swEntityName', value: this.$router.currentRoute.value.params.entityName ?? '' });
+            queryParams.push({key: 'nodeIdentifier', value: this.$router.currentRoute.value.params.nodeIdentifier});
+            queryParams.push({key: 'swEntityId', value: this.$router.currentRoute.value.params.entityId ?? ''});
+            queryParams.push({key: 'swEntityName', value: this.$router.currentRoute.value.params.entityName ?? ''});
             return queryParams;
-        },
-
-        addHiddenInputToForm(form, name, value) {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = name;
-            input.value = value;
-            form.appendChild(input);
         }
     }
 });

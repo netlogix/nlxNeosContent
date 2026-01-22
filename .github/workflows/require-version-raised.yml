@@ -1,0 +1,44 @@
+name: Require Version Raise
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  require-version-bump:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-tags: true
+
+      - name: Read head version (PR branch)
+        id: head_version
+        run: |
+          HEAD_VERSION=$(jq -r '.version' composer.json)
+          echo "value=$HEAD_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Read base version (main branch)
+        id: base_version
+        run: |
+          git fetch origin main
+          git checkout origin/main -- composer.json
+          BASE_VERSION=$(jq -r '.version' composer.json)
+          echo "value=$BASE_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Compare versions
+        run: |
+          BASE="${{ steps.base_version.outputs.value }}"
+          HEAD="${{ steps.head_version.outputs.value }}"
+
+          echo "Base version: $BASE"
+          echo "PR version:   $HEAD"
+
+          if [ "$BASE" = "$HEAD" ]; then
+            echo "❌ ERROR: composer.json version must be updated in this PR."
+            exit 1
+          else
+            echo "✅ Version changed — OK."
+          fi
