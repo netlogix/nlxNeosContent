@@ -1,0 +1,13 @@
+services:
+  shopware:
+    image: dockware/dev:${SHOPWARE_VERSION}
+    container_name: shopware
+    ports:
+      - "80:80"
+    environment:
+      - SHOPWARE_URL=http://localhost
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
