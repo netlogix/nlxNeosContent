@@ -36,7 +36,7 @@ class NeosNodeDefinition extends EntityDefinition
     {
         return new FieldCollection([
             new VersionField(),
-            ((new IdField('id', 'id'))->addFlags(new Required(), new PrimaryKey()))->addFlags(new ApiAware()),
+            (new IdField('id', 'id'))->addFlags(new Required(), new PrimaryKey(), new ApiAware()),
             (new DateField('created_at', 'createdAt')),
             (new DateField('updated_at', 'updatedAt')),
             (new BoolField('neos_connection', 'neosConnection'))->addFlags(new ApiAware()),
