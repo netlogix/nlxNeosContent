@@ -22,7 +22,7 @@ readonly class NavigationLoadedListener
 
     public function __invoke(NavigationLoadedEvent $navigationLoadedEvent): void
     {
-        if ($this->configService->isEnabled()) {
+        if (!$this->configService->isEnabled()) {
             return;
         }
         $navigation = $navigationLoadedEvent->getNavigation();
