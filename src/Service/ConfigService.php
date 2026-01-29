@@ -22,7 +22,7 @@ class ConfigService
 
     public function isEnabled(?string $salesChannelId = null): bool
     {
-        return $this->getBaseUrl($salesChannelId) !== null;
+        return empty($this->getBaseUrl($salesChannelId));
     }
 
     /**
