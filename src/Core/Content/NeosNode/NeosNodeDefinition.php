@@ -42,7 +42,7 @@ class NeosNodeDefinition extends EntityDefinition
             (new BoolField('neos_connection', 'neosConnection'))->addFlags(new ApiAware()),
             (new FkField('cms_page_id', 'cmsPageId', CmsPageDefinition::class))->addFlags(new Required()),
             (new ReferenceVersionField(CmsPageDefinition::class, 'cms_page_version_id')),
-            (new OneToOneAssociationField('cmsPage', 'cms_page_id', 'id', CmsPageDefinition::class, false)),
+            (new OneToOneAssociationField('cmsPage', 'cms_page_id', 'id', CmsPageDefinition::class, false))->addFlags(new ApiAware()),
         ]);
     }
 }
