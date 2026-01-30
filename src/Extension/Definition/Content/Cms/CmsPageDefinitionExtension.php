@@ -7,16 +7,18 @@ namespace nlxNeosContent\Extension\Definition\Content\Cms;
 use nlxNeosContent\Core\Content\NeosNode\NeosNodeDefinition;
 use Shopware\Core\Content\Cms\CmsPageDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityExtension;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\ApiAware;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\OneToOneAssociationField;
 use Shopware\Core\Framework\DataAbstractionLayer\FieldCollection;
-use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 
 class CmsPageDefinitionExtension extends EntityExtension
 {
     public function extendFields(FieldCollection $collection): void
     {
         $collection->add(
-            new OneToOneAssociationField('nlxNeosNode', 'id', 'cms_page_id', NeosNodeDefinition::class, true)
+            (new OneToOneAssociationField(
+                'nlxNeosNode', 'id', 'cms_page_id', NeosNodeDefinition::class, true
+            ))->addFlags(new ApiAware())
         );
     }
 
