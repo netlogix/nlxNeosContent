@@ -142,6 +142,7 @@ class ResolverContextService
         $criteria = new Criteria([$categoryId]);
         $criteria->setTitle('category::data');
         $criteria->addAssociation('media.media');
+        $criteria->setLimit(1);
         $category = $this->categoryRepository
             ->search($criteria, $context)
             ->get($categoryId);
