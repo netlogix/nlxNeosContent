@@ -38,10 +38,10 @@ class NeosPageController extends StorefrontController
         }
 
         $resolverContext = $this->resolverContextService->getResolverContextForEntityNameAndId(
-            CategoryDefinition::ENTITY_NAME,
-            '019a7c22388f72efbf7c5219977ba492',
-            $salesChannelContext,
-            $request
+            entityName: CategoryDefinition::ENTITY_NAME,
+            entityId: $salesChannelContext->getSalesChannel()->getNavigationCategoryId(),
+            context: $salesChannelContext,
+            request: $request,
         );
         $this->contentExchangeService->loadSlotData($sections->getBlocks(), $resolverContext);
         $cmsPage = new CmsPageEntity();
