@@ -14,6 +14,7 @@ use Shopware\Core\Content\Cms\Aggregate\CmsSection\CmsSectionCollection;
 use Shopware\Core\Content\Cms\CmsPageEntity;
 use Shopware\Core\Content\Cms\DataResolver\FieldConfig;
 use Shopware\Core\Content\Cms\DataResolver\FieldConfigCollection;
+use Shopware\Core\Content\Cms\DataResolver\ResolverContext\ResolverContext;
 use Shopware\Core\Content\Cms\Events\CmsPageLoadedEvent;
 use Shopware\Core\Content\Product\ProductDefinition;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -68,7 +69,8 @@ class CmsPageLoadedListener
             ),
             'page' => $this->getNewShopPageBlocks(
                 $cmsPageEntity,
-                $cmsPageLoadedEvent->getSalesChannelContext()
+                $cmsPageLoadedEvent->getSalesChannelContext(),
+                $cmsPageLoadedEvent->getRequest()
             )
         };
 
@@ -151,12 +153,16 @@ class CmsPageLoadedListener
 
     private function getNewShopPageBlocks(
         CmsPageEntity $cmsPageEntity,
-        SalesChannelContext $context
+        SalesChannelContext $context,
+        Request $request
     ): CmsSectionCollection {
-        return $this->contentExchangeService->getAlternativeCmsSectionsFromNeos(
+        $resolverContext = new ResolverContext($context, $request);
+        $alternativeSections = $this->contentExchangeService->getAlternativeCmsSectionsFromNeos(
             $cmsPageEntity,
             $context->getLanguageId(),
             $context->getSalesChannelId()
         );
+        $this->contentExchangeService->loadSlotData($alternativeSections->getBlocks(), $resolverContext);
+        return $alternativeSections;
     }
 }
