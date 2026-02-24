@@ -1,7 +1,8 @@
 import template from './neos-index.html.twig';
 import './neos-index.scss';
+
 const { Criteria } = Shopware.Data;
-const { api  } = Shopware.Context;
+const { api } = Shopware.Context;
 
 const getNeosBaseUri = async () => {
     const configService = Shopware.Service('systemConfigApiService');
@@ -55,6 +56,15 @@ Shopware.Component.register('neos-index', {
 
     created() {
         Shopware.Store.get('adminMenu').collapseSidebar();
+        window.addEventListener('message', (event) => {
+            if (event.data && event.data.type === 'nlxOpenCmsPage') {
+                this.$router.push({
+                    name: 'sw.cms.detail',
+                    params: {id: event.data.cmsPageId},
+                });
+            }
+        });
+
     },
 
     mounted() {
