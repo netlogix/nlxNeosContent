@@ -1,8 +1,8 @@
 import template from './neos-index.html.twig';
 import './neos-index.scss';
 
-const {Criteria} = Shopware.Data;
-const {api} = Shopware.Context;
+const { Criteria } = Shopware.Data;
+const { api } = Shopware.Context;
 
 const getNeosBaseUri = async () => {
     const configService = Shopware.Service('systemConfigApiService');
