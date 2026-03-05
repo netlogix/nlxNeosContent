@@ -63,7 +63,7 @@ Shopware.Component.register('neos-index', {
             const neosBaseUri = await getNeosBaseUri();
             this.inactiveConfiguration = !neosBaseUri;
             if (this.inactiveConfiguration) {
-                // If Neos is not active, weload the Fillout registration script
+                // If Neos is not active, we load the Fillout registration script
                 const script = document.createElement('script');
                 script.id = 'fillout-registration';
                 script.src = 'https://server.fillout.com/embed/v1/';
