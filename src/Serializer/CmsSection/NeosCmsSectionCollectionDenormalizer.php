@@ -6,6 +6,7 @@ namespace nlxNeosContent\Serializer\CmsSection;
 
 use nlxNeosContent\Core\Content\Cms\Aggregate\CmsSection\NeosCmsSectionCollection;
 use nlxNeosContent\Core\Content\Cms\Aggregate\CmsSection\NeosCmsSectionEntity;
+use nlxNeosContent\Error\FaultyNeosSectionDataException;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use Symfony\Component\Serializer\SerializerAwareInterface;
 use Symfony\Component\Serializer\SerializerInterface;
@@ -20,6 +21,16 @@ class NeosCmsSectionCollectionDenormalizer implements DenormalizerInterface, Ser
         $position = 0;
         foreach (json_decode($data, true) as $sectionData) {
             /** @var NeosCmsSectionEntity $cmsSection */
+            if (!is_array($sectionData)) {
+                throw new FaultyNeosSectionDataException(
+                    message: sprintf(
+                        'Expected sectionData to be an array, got %s with data: "%s"',
+                        gettype($sectionData),
+                        $sectionData
+                    ),
+                    code: 1771927301
+                );
+            }
             $cmsSection = $this->serializer->denormalize($sectionData, NeosCmsSectionEntity::class, $format, $context);
             $cmsSection->setPosition($position);
             $cmsSectionCollection->add($cmsSection);
