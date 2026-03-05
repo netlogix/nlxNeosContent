@@ -15,7 +15,10 @@
                     "modalHeadline": "Vorschaukonfiguration"
                 }
             }
-        }
+        },
+      "neos": {
+
+      }
     },
     "sw-product": {
         "base": {

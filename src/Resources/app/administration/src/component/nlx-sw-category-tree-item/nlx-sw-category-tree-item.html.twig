@@ -1,0 +1,70 @@
+{% block sw_tree_item_element_grip %}
+    <div
+            v-if="item.data.neos"
+            class="sw-tree-item__icon"
+    >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 124.5 124.45" class="neos-branding-logo">
+            <path fill="#009fe3"
+                  d="M88.83 0L68.12 15.1v31.57l20.71 29.28V0zM88.83 112.57L9.22 0 0 6.74v117.71l20.71-15.1V51.06l51.78 73.39h22.65l16.34-11.88H88.83z"></path>
+            <path fill="#fff"
+                  stroke="#009fe3"
+                  stroke-width="2px"
+                  d="M20.71 51.06v58.29L0 124.45h22.65l20.71-15.1V83.17L20.71 51.06zM88.83 75.95V0h22.65v112.57H88.83L9.22 0h25.89l53.72 75.95z"></path>
+        </svg>
+    </div>
+    <div v-else>
+        {% parent %}
+    </div>
+{% endblock %}
+
+{% block sw_tree_item_children_items %}
+    <template v-for="child in item.children">
+        <nlx-sw-category-tree-item
+                v-if="child.data.neos"
+                class="nlx-sw-category-tree-item--neos"
+                :key="child.id"
+                :item="child"
+                :dragged-item="draggedItem"
+                :new-element-id="newElementId"
+                :translation-context="translationContext"
+                :on-change-route="onChangeRoute"
+                :active-parent-ids="activeParentIds"
+                :active-item-ids="activeItemIds"
+                :mark-inactive="markInactive"
+                :sortable="false"
+                :should-focus="false"
+                :active-focus-id="activeFocusId"
+                :display-checkbox="false"
+                :disable-context-menu="true"
+                :get-is-highlighted="getIsHighlighted"
+                @check-item="emitCheckedItem"
+        >
+            {% block sw_tree_item_children_items_slots %}
+                {% parent %}
+            {% endblock %}
+        </nlx-sw-category-tree-item>
+        <nlx-sw-category-tree-item
+                v-else
+                :key="child.id"
+                :item="child"
+                :dragged-item="draggedItem"
+                :new-element-id="newElementId"
+                :translation-context="translationContext"
+                :on-change-route="onChangeRoute"
+                :active-parent-ids="activeParentIds"
+                :active-item-ids="activeItemIds"
+                :mark-inactive="markInactive"
+                :sortable="sortable"
+                :should-focus="shouldFocus"
+                :active-focus-id="activeFocusId"
+                :display-checkbox="displayCheckbox"
+                :disable-context-menu="disableContextMenu"
+                :get-is-highlighted="getIsHighlighted"
+                @check-item="emitCheckedItem"
+        >
+            {% block sw_tree_item_children_items_slots %}
+                {% parent %}
+            {% endblock %}
+        </nlx-sw-category-tree-item>
+    </template>
+{% endblock %}
