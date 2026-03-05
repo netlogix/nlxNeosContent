@@ -79,6 +79,7 @@ Shopware.Component.register('neos-index', {
                 script.src = 'https://server.fillout.com/embed/v1/';
                 script.async = true;
                 document.body.appendChild(script);
+                this.isLoading = false;
                 return;
             }
 
