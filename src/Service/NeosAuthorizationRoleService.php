@@ -34,6 +34,7 @@ class NeosAuthorizationRoleService
         'cms_page:read',
         'language:read',
         'locale:read',
+        'media:read',
         'product:read',
         'product_manufacturer:read',
         'product_media:read',
