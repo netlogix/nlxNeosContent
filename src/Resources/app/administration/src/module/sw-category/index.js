@@ -9,15 +9,15 @@ Module.register('sw-category-detail-neos', {
             meta: {
                 parentPath: 'sw.category.index',
                 privilege: 'category.viewer',
+            },
 
-                props: {
-                    default(route) {
-                        return {
-                            neosId: route.params.id.toLowerCase(),
-                        };
-                    },
+            props: {
+                default(route) {
+                    return {
+                        neosId: route.params.id.toLowerCase(),
+                    };
                 },
-            }
+            },
         },
     },
 });

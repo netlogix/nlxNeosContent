@@ -37,6 +37,22 @@ Shopware.Component.register('neos-index', {
         shopwareVersion: {
             type: String,
             required: true,
+        },
+        cmsPageId: {
+            type: String,
+            required: false,
+        },
+        entityId: {
+            type: String,
+            required: false,
+        },
+        entityName: {
+            type: String,
+            required: false,
+        },
+        nodeIdentifier: {
+            type: String,
+            required: false,
         }
     },
 
@@ -156,8 +172,12 @@ Shopware.Component.register('neos-index', {
                 this.config.neosLoginRoute = this.nlxRoutes.getNeosIndexRoute(neosBaseUri);
             }
 
+            const queryParams = await this.getDetailQueryParams();
             if (currentRoute._value.name === 'nlx.neos.detail') {
-                const queryParams = await this.getDetailQueryParams();
+                this.config.neosLoginRoute = this.nlxRoutes.getNeosDetailRoute(neosBaseUri, queryParams);
+            }
+
+            if (currentRoute._value.name === 'nlx.neos.cbp') {
                 this.config.neosLoginRoute = this.nlxRoutes.getNeosDetailRoute(neosBaseUri, queryParams);
             }
         },
@@ -189,9 +209,10 @@ Shopware.Component.register('neos-index', {
 
         async getDetailQueryParams() {
             const queryParams = [];
-            queryParams.push({key: 'nodeIdentifier', value: this.$router.currentRoute.value.params.nodeIdentifier});
-            queryParams.push({key: 'swEntityId', value: this.$router.currentRoute.value.params.entityId ?? ''});
-            queryParams.push({key: 'swEntityName', value: this.$router.currentRoute.value.params.entityName ?? ''});
+            this.cmsPageId ? queryParams.push({key: 'swCmsPageId', value: this.cmsPageId}) : null;
+            this.entityId ? queryParams.push({key: 'swEntityId', value: this.entityId}) : null;
+            this.entityName ? queryParams.push({key: 'swEntityName', value: this.entityName ?? ''}) : null;
+            this.nodeIdentifier ? queryParams.push({key: 'nodeIdentifier', value: this.nodeIdentifier}) : null;
             return queryParams;
         }
     }

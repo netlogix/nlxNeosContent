@@ -15,6 +15,13 @@
                     "modalHeadline": "Preview Configuration"
                 }
             }
+        },
+        "neos": {
+            "cms": {
+                "layout-card": {
+                    "neos-hint": "This page is provided by the Enterprise Content Platform. Contents of this page can only be edited in the Enterprise Content Platform."
+                }
+            }
         }
     },
     "sw-product": {

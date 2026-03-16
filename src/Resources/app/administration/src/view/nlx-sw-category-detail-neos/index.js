@@ -8,6 +8,10 @@ Shopware.Component.extend(
     {
         template,
 
+        inject: [
+            'nlxCategoryStoreService',
+        ],
+
         props: {
             neosId: {
                 type: String,
@@ -15,13 +19,41 @@ Shopware.Component.extend(
             }
         },
 
-        metaInfo() {
+        data() {
             return {
-                title: 'Neos-Category'
+                nlxNeosCategory: {
+                    name: '',
+                    id: '',
+                },
             }
         },
+
+        metaInfo() {
+            return {
+                title: this.nlxNeosCategory ? this.nlxNeosCategory.name : this.$t('sw-category.detailTitle'),
+            }
+        },
+
         created() {
-            console.log('sw-category props:', this.props);
+            this.nlxCategoryStoreService.getCategory(this.neosId).then((category) => {
+                this.nlxNeosCategory = category;
+            });
+        },
+
+        watch: {
+            neosId() {
+                this.isLoading = true;
+                this.nlxCategoryStoreService.getCategory(this.neosId).then((category) => {
+                    this.nlxNeosCategory = category;
+                    this.isLoading = false;
+                });
+            },
+
+            nlxNeosCategory() {
+                if (this.nlxNeosCategory) {
+                    Shopware.State.commit('nlxNeosCategory/setData', this.nlxNeosCategory);
+                }
+            }
         }
     }
 );

@@ -3,4 +3,11 @@ import './nlx-neos-category-list-item.scss';
 
 export default {
     template,
+
+    props: {
+        pageTitle: {
+            type: String,
+            required: true,
+        }
+    }
 }

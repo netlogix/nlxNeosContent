@@ -3,7 +3,9 @@ import template from './sw-category-tree.html.twig';
 export default {
     template,
 
-    inject: ['nlxNeosContentApiService'],
+    inject: [
+        'nlxCategoryStoreService',
+    ],
 
     data() {
         return {
@@ -25,7 +27,6 @@ export default {
                 }
             });
 
-
             this.neosPagesData.forEach((page) => {
                 if (page.parentId === '' && rootParentId !== '') {
                     page.parentId = rootParentId;
@@ -45,14 +46,8 @@ export default {
         },
     },
 
-    created() {
-        this.nlxNeosContentApiService.getNeosPageTree().then((response) => {
-            if (response.success) {
-                this.neosPagesData = this.resolveNeosPageData(response.data.response.pages);
-            } else {
-                throw new Error('Failed to Neos page tree: ' + response.data.message);
-            }
-        });
+    async created() {
+        this.neosPagesData = await this.nlxCategoryStoreService.getCategories()
     },
 
     methods: {
@@ -60,6 +55,7 @@ export default {
             let routeName = 'sw.category.detail';
             if (category.data?.neos) {
                 routeName = 'sw.category.detail.neos.index';
+                Shopware.State.commit('nlxNeosCategory/setData', category);
             }
             const route = {
                 name: routeName,
@@ -71,53 +67,6 @@ export default {
             } else {
                 this.$router.push(route);
             }
-        },
-
-        resolveNeosPageData(neosPageData, parentId = '', level = 2) {
-            if (!neosPageData || !Array.isArray(neosPageData)) {
-                return [];
-            }
-
-            let pages = [];
-            neosPageData.forEach((page) => {
-                let childCount = 0;
-                if (page.children && page.children.length > 0) {
-                    childCount = page.children.length;
-                }
-
-                pages.push({
-                    active: true,
-                    breadcrumb: [],
-                    childCount: page.children.length ?? 0,
-                    children: [],
-                    cmsPageId: '',
-                    cmsPageIdSwitched: true,
-                    cmsPageVersionId: null,
-                    createdAt: new Date().toISOString(),
-                    displayNestedProducts: false,
-                    id: page.identifier,
-                    level: level,
-                    name: page.label,
-                    afterCategoryId: '',
-                    afterCategoryVersionId: null,
-                    versionId: null,
-                    parentId: parentId,
-                    type: 'page',
-                    visible: true,
-                    visibleChildCount: 0,
-                    navigationSalesChannels: [],
-                    footerSalesChannels: [],
-                    nestedProducts: [],
-                    serviceSalesChannels: [],
-                    neos: true
-                });
-
-                if (childCount > 0) {
-                    pages.push(...this.resolveNeosPageData(page.children, page.identifier, level + 1));
-                }
-            });
-
-            return pages;
         }
     }
 }

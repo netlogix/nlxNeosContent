@@ -2,20 +2,23 @@
     <mt-card
             class="sw-category-layout-card"
             position-identifier="sw-category-layout"
+{#          TODO the card title has to be renamed  #}
             :title="$tc('sw-category.base.cms.title')"
             :is-loading="false"
     >
         <div class="sw-category-layout-card__base-layout">
             <div class="sw-category-layout-card__preview" tabindex="0">
-                <nlx-neos-category-list-item/>
+                <nlx-neos-category-list-item
+                    :pageTitle="nlxNeosCategory ? nlxNeosCategory.name : $tc('sw-category.base.cms.defaultTitle')"
+                />
             </div>
             <div class="sw-category-layout-card__desc">
                 <div class="sw-category-layout-card__desc-info">
                     <div class="sw-category-layout-card__desc-headline">
-                        {{ cmsPage ? cmsPage.name : $tc('sw-category.base.cms.defaultTitle') }}
+                        {{ nlxNeosCategory ? nlxNeosCategory.name : $tc('sw-category.base.cms.defaultTitle') }}
                     </div>
                     <div class="sw-category-layout-card__desc-subheadline">
-                        {{ pageTypeTitle }}
+                        <i>{{ $tc('sw-category.neos.cms.layout-card.neos-hint') }}</i>
                     </div>
                 </div>
                 <div class="sw-category-layout-card__desc-actions">
@@ -27,18 +30,18 @@
                     >
                         {{ $tc('sw-category.base.cms.editInNeos') }}
                     </sw-button>
-                    <sw-button
-                            class="sw-product-preview__button sw-product-layout-assignment__button"
-                            size="small"
-                            :disabled="!acl.can('category.editor') || undefined"
-                            @click="openPreviewModal"
-                    >
-                        {{ $tc('sw-category.base.cms.preview.buttonText') }}
-                    </sw-button>
+{# TODO enable when Workspace-based preview is available                   <sw-button#}
+{#                            class="sw-product-preview__button sw-product-layout-assignment__button"#}
+{#                            size="small"#}
+{#                            :disabled="!acl.can('category.editor') || undefined"#}
+{#                            @click="openPreviewModal"#}
+{#                    >#}
+{#                        {{ $tc('sw-category.base.cms.preview.buttonText') }}#}
+{#                    </sw-button>#}
                     <nlx-preview-modal
                             v-if="showPreviewModal"
                             :headline="$tc('sw-category.base.cms.preview.modal.headline')"
-                            :cmsPageId="cmsPage.id"
+                            :cmsPageId="nlxNeosCategory.id"
                             @modal-preview-select="onSelectPreview"
                             @modal-close="onClosePreviewModal"
                     ></nlx-preview-modal>
