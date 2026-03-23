@@ -98,7 +98,7 @@ class NeosCmsPageLifecycleService
             $this->connection->rollBack();
             throw new RuntimeException(
                 'Failed to deactivate Neos CMS pages: ' . $e->getMessage(),
-                0,
+                1774254879,
                 $e
             );
         }
@@ -180,7 +180,7 @@ class NeosCmsPageLifecycleService
             $this->connection->rollBack();
             throw new RuntimeException(
                 'Failed to restore Neos CMS pages: ' . $e->getMessage(),
-                0,
+                1774254901,
                 $e
             );
         }
@@ -202,7 +202,8 @@ class NeosCmsPageLifecycleService
             $cmsPageId = Uuid::fromBytesToHex($queryRow['cms_page_id']);
             if (in_array($cmsPageId, $defaultCmsPageIds)) {
                 throw new RuntimeException(
-                    'Cannot remove Neos CMS page with ID ' . $cmsPageId . ' because it is set as default CMS page. Please change the default CMS page before deactivating.'
+                    'Cannot remove Neos CMS page with ID ' . $cmsPageId . ' because it is set as default CMS page. Please change the default CMS page before deactivating.',
+                    1774254918
                 );
             }
         }
@@ -261,7 +262,8 @@ class NeosCmsPageLifecycleService
             if (in_array($cmsPageId, $defaultCmsPageIds, true)) {
                 throw new RuntimeException(
                     'Cannot deactivate Neos CMS pages: Page with ID ' . $cmsPageId .
-                    ' is set as default CMS page. Please change the default CMS page before deactivating.'
+                    ' is set as default CMS page. Please change the default CMS page before deactivating.',
+                    1774254947
                 );
             }
         }
