@@ -25,7 +25,7 @@ export default class CategoryStoreService {
         if (response.success) {
             return this._resolveNeosPageData(response.data.response.pages);
         } else {
-            throw new Error('Failed to Neos page tree: ' + response.data.message);
+            throw new Error('Failed to load Neos page tree: ' + response.data.message);
         }
     }
 
