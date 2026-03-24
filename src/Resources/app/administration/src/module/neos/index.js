@@ -9,7 +9,6 @@ Shopware.Module.register('nlx-neos', {
     /*
         The navigation item we create here has to be nested under the 'sw-content' navigation item
         This is because we want to publish it in the Shopware Store and Plugins that do not follow this rule will be rejected.
-        Depending on how good our resulting product will be we might be able to get an exception to this rule.
      */
     navigation: [
         {
@@ -38,9 +37,36 @@ Shopware.Module.register('nlx-neos', {
         detail: {
             component: 'neos-index',
             name: 'nlx.neos.detail',
-            path: 'detail/:nodeIdentifier/:entityId/:entityName',
+            path: 'detail/:cmsPageId/:entityId/:entityName',
             meta: {
                 privilege: "neos.viewer"
+            },
+
+            props: {
+                default(route) {
+                    return {
+                        cmsPageId: route.params.cmsPageId.toLowerCase(),
+                        entityId: route.params.entityId.toLowerCase(),
+                        entityName: route.params.entityName.toLowerCase(),
+                    };
+                },
+            },
+        },
+
+        cbp: {
+            component: 'neos-index',
+            name: 'nlx.neos.cbp',
+            path: 'detail/:nodeIdentifier',
+            meta: {
+                privilege: "neos.viewer"
+            },
+
+            props: {
+                default(route) {
+                    return {
+                        nodeIdentifier: route.params.nodeIdentifier.toLowerCase(),
+                    };
+                },
             },
         }
     }

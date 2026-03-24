@@ -1,0 +1,13 @@
+.nlx-neos-category-list-item.sw-cms-list-item {
+  .sw-cms-list-item__image {
+    background-size: cover;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  svg {
+    width: 50%;
+  }
+}
