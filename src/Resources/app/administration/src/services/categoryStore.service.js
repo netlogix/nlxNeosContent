@@ -29,7 +29,7 @@ export default class CategoryStoreService {
         }
     }
 
-    _resolveNeosPageData(neosPageData, parentId = '', level = 2) {
+    _resolveNeosPageData(neosPageData, parentId = null, level = 2) {
         if (!neosPageData || !Array.isArray(neosPageData)) {
             return [];
         }
@@ -57,7 +57,7 @@ export default class CategoryStoreService {
                 afterCategoryId: '',
                 afterCategoryVersionId: null,
                 versionId: null,
-                parentId: parentId,
+                parentId: parentId ?? '',
                 type: 'page',
                 visible: true,
                 visibleChildCount: 0,

@@ -89,31 +89,30 @@ export default class NlxNeosContentApiService extends ApiService {
             });
     }
 
-    async getNeosPageTree() {
+    getNeosPageTree() {
         const apiRoute = `${this.getApiBasePath()}/request`;
-        const response = this.httpClient
+        return this.httpClient
             .post(
                 apiRoute,
                 {action: 'pagetree'},
-                {
-                    headers: this.getBasicHeaders(),
-                }
+                {headers: this.getBasicHeaders()}
             ).catch((error) => {
                 return {
                     success: false,
                     data: error.response.data ?? {message: 'Network error'}
                 }
+            }).then((response) => {
+                if (response.status === 200) {
+                    return {
+                        success: true,
+                        data: response.data
+                    }
+                } else {
+                    return {
+                        success: false,
+                        data: {message: 'Invalid Status'}
+                    }
+                }
             });
-              if (response.status === 200) {
-                  return {
-                      success: true,
-                      data: response.data
-                  }
-              } else {
-                  return {
-                      success: false,
-                      data: {message: 'Invalid Status'}
-                  }
-              }
     }
 }
