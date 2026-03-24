@@ -43,8 +43,11 @@ Shopware.Component.extend(
         watch: {
             neosId() {
                 this.isLoading = true;
-                this.nlxCategoryStoreService.getCategory(this.neosId).then((category) => {
+                this.nlxCategoryStoreService.getCategory(this.neosId)
+                .then((category) => {
                     this.nlxNeosCategory = category;
+                })
+                .finally(() => {
                     this.isLoading = false;
                 });
             },
