@@ -209,10 +209,12 @@ Shopware.Component.register('neos-index', {
 
         async getDetailQueryParams() {
             const queryParams = [];
-            this.cmsPageId ? queryParams.push({key: 'swCmsPageId', value: this.cmsPageId}) : null;
-            this.entityId ? queryParams.push({key: 'swEntityId', value: this.entityId}) : null;
-            this.entityName ? queryParams.push({key: 'swEntityName', value: this.entityName ?? ''}) : null;
-            this.nodeIdentifier ? queryParams.push({key: 'nodeIdentifier', value: this.nodeIdentifier}) : null;
+queryParams.push(...[
+    { key: 'swCmsPageId', value: this.cmsPageId },
+    { key: 'swEntityId', value: this.entityId },
+    { key: 'swEntityName', value: this.entityName },
+    { key: 'nodeIdentifier', value: this.nodeIdentifier }
+].filter(m => m.value));
             return queryParams;
         }
     }
