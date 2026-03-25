@@ -9,12 +9,14 @@ use nlxNeosContent\Core\Notification\NotificationService;
 use nlxNeosContent\Core\Notification\NotificationService66;
 use nlxNeosContent\Core\Notification\NotificationServiceInterface;
 use nlxNeosContent\Service\NeosAuthorizationRoleService;
+use nlxNeosContent\Service\NeosCmsPageLifecycleService;
 use RuntimeException;
 use Shopware\Core\Framework\Feature;
 use Shopware\Core\Framework\Plugin;
 use Shopware\Core\Framework\Plugin\Context\ActivateContext;
+use Shopware\Core\Framework\Plugin\Context\DeactivateContext;
 use Shopware\Core\Framework\Plugin\Context\InstallContext;
-use Shopware\Core\Framework\Uuid\Uuid;
+use Shopware\Core\Framework\Plugin\Context\UninstallContext;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -23,6 +25,7 @@ use Symfony\Component\DependencyInjection\Definition;
 
 class NlxNeosContent extends Plugin implements CompilerPassInterface
 {
+
     public function install(InstallContext $installContext): void
     {
         parent::install($installContext);
@@ -52,14 +55,18 @@ class NlxNeosContent extends Plugin implements CompilerPassInterface
     public function activate(ActivateContext $activateContext): void
     {
         parent::activate($activateContext);
+
+        $this->getNeosCmsPageLifecycleService()->restoreNeosPages();
     }
 
-    public function deactivate(Plugin\Context\DeactivateContext $deactivateContext): void
+    public function deactivate(DeactivateContext $deactivateContext): void
     {
         parent::deactivate($deactivateContext);
+
+        $this->getNeosCmsPageLifecycleService()->deactivateNeosPages();
     }
 
-    public function uninstall(Plugin\Context\UninstallContext $uninstallContext): void
+    public function uninstall(UninstallContext $uninstallContext): void
     {
         parent::uninstall($uninstallContext);
 
@@ -69,7 +76,7 @@ class NlxNeosContent extends Plugin implements CompilerPassInterface
         $neosAuthorizationRoleService->removeNeosEditorRole();
 
         //Remove cms pages
-        $this->removeCmsPages();
+        $this->getNeosCmsPageLifecycleService()->removeCmsPages();
     }
 
     private function getNeosAuthorizationRoleService(): NeosAuthorizationRoleService
@@ -92,83 +99,16 @@ class NlxNeosContent extends Plugin implements CompilerPassInterface
         );
     }
 
-    private function removeCmsPages(): void
+    private function getNeosCmsPageLifecycleService(): NeosCmsPageLifecycleService
     {
+        $container = $this->container;
+        if (!$container instanceof ContainerInterface) {
+            throw new RuntimeException('Container is not an instance of ContainerInterface');
+        }
+
         /** @var Connection $connection */
-        $connection = $this->container->get(Connection::class);
+        $connection = $container->get(Connection::class);
 
-        $cmsPageIds = $connection->executeQuery(
-            'SELECT cms_page_id FROM nlx_neos_node'
-        )->fetchAllAssociative();
-
-
-        $defaultIdsQueryResult = $connection->executeQuery(
-            'SELECT configuration_value FROM system_config WHERE configuration_key LIKE "%cms.default_%"'
-        )->fetchAllAssociative();
-
-        $defaultCmsPageIds = $this->extractDefaultCmsPageIds($defaultIdsQueryResult);
-
-        foreach ($cmsPageIds as $queryRow) {
-            $cmsPageId = $queryRow['cms_page_id'];
-            $cmsPageId = UUID::fromBytesToHex($cmsPageId);
-            if (in_array($cmsPageId, $defaultCmsPageIds)) {
-                throw new RuntimeException(
-                    'Cannot remove Neos CMS page with ID ' . $cmsPageId . ' because it is set as default CMS page. Please change the default CMS page before deactivating.'
-                );
-            }
-        }
-
-        $connection->executeStatement(
-            <<<SQL
-                    UPDATE category
-                    SET cms_page_id = NULL
-                    WHERE cms_page_id IN (
-                        SELECT cms_page_id FROM nlx_neos_node
-                    );
-                SQL
-        );
-
-        $connection->executeStatement(
-            <<<SQL
-                    UPDATE product
-                    SET cms_page_id = NULL
-                    WHERE cms_page_id IN (
-                        SELECT cms_page_id FROM nlx_neos_node
-                    );
-                SQL
-        );
-
-        $connection->executeStatement(
-            <<<SQL
-                    DELETE FROM cms_page
-                    WHERE id IN (
-                        SELECT cms_page_id FROM nlx_neos_node
-                    );
-                SQL
-        );
-
-        //FIXME Drop nlx_neos_node table, currently not possible due to creation with migrations
-        $connection->executeStatement(
-            <<<SQL
-                    DELETE FROM nlx_neos_node;
-                SQL
-        );
-    }
-
-    private function extractDefaultCmsPageIds(array $defaultCmsPageIds): array
-    {
-        $ids = [];
-        foreach ($defaultCmsPageIds as $defaultCmsPageId) {
-            if (isset($defaultCmsPageId['configuration_value'])) {
-                // Configuration value is stored like: {"_value":"0195b441757773ea96e225bb1fa260fe"}
-                $jsonDecoded = json_decode($defaultCmsPageId['configuration_value'], true);
-                if ($jsonDecoded['_value'] === null) {
-                    continue;
-                }
-                $ids[] = $jsonDecoded['_value'];
-            }
-        }
-
-        return $ids;
+        return new NeosCmsPageLifecycleService($connection);
     }
 }

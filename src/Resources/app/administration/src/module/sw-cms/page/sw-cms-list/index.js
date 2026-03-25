@@ -5,7 +5,6 @@ export default {
     data() {
         return {
             currentPage: null,
-            showNodeIdentifierChangeModal: false,
         }
     },
     computed: {

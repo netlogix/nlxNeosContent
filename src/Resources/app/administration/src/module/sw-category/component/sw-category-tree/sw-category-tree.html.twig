@@ -1,0 +1,40 @@
+{% block sw_category_tree_items %}
+    <template
+            #items="{
+                treeItems,
+                sortable,
+                draggedItem,
+                newElementId,
+                checkItem,
+                translationContext,
+                onChangeRoute,
+                disableContextMenu,
+                selectedItemsPathIds,
+                checkedItemIds,
+            }"
+    >
+        <nlx-sw-category-tree-item
+                v-for="item in treeItems"
+                :key="item.id"
+                :item="item"
+                :should-show-active-state="true"
+                :allow-duplicate="false"
+                :allow-new-categories="allowCreate || undefined"
+                :allow-delete-categories="allowDelete || undefined"
+                :active="item.active"
+                :translation-context="translationContext"
+                :on-change-route="onChangeRoute"
+                :sortable="sortable"
+                :dragged-item="draggedItem"
+                :disable-context-menu="disableContextMenu"
+                :display-checkbox="allowEdit || undefined"
+                :context-menu-tooltip-text="contextMenuTooltipText"
+                :new-element-id="newElementId"
+                :get-item-url="getCategoryUrl"
+                :get-is-highlighted="isHighlighted"
+                :active-parent-ids="selectedItemsPathIds"
+                :active-item-ids="checkedItemIds"
+                @check-item="checkItem"
+        />
+    </template>
+{% endblock %}

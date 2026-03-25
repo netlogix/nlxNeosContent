@@ -1,7 +1,8 @@
 import template from './neos-index.html.twig';
 import './neos-index.scss';
+
 const { Criteria } = Shopware.Data;
-const { api  } = Shopware.Context;
+const { api } = Shopware.Context;
 
 const getNeosBaseUri = async () => {
     const configService = Shopware.Service('systemConfigApiService');
@@ -36,6 +37,22 @@ Shopware.Component.register('neos-index', {
         shopwareVersion: {
             type: String,
             required: true,
+        },
+        cmsPageId: {
+            type: String,
+            required: false,
+        },
+        entityId: {
+            type: String,
+            required: false,
+        },
+        entityName: {
+            type: String,
+            required: false,
+        },
+        nodeIdentifier: {
+            type: String,
+            required: false,
         }
     },
 
@@ -55,6 +72,15 @@ Shopware.Component.register('neos-index', {
 
     created() {
         Shopware.Store.get('adminMenu').collapseSidebar();
+        window.addEventListener('message', (event) => {
+            if (event.data && event.data.type === 'nlxOpenCmsPage') {
+                this.$router.push({
+                    name: 'sw.cms.detail',
+                    params: {id: event.data.cmsPageId},
+                });
+            }
+        });
+
     },
 
     mounted() {
@@ -69,6 +95,7 @@ Shopware.Component.register('neos-index', {
                 script.src = 'https://server.fillout.com/embed/v1/';
                 script.async = true;
                 document.body.appendChild(script);
+                this.isLoading = false;
                 return;
             }
 
@@ -146,8 +173,12 @@ Shopware.Component.register('neos-index', {
                 this.config.neosLoginRoute = this.nlxRoutes.getNeosIndexRoute(neosBaseUri);
             }
 
+            const queryParams = await this.getDetailQueryParams();
             if (currentRoute._value.name === 'nlx.neos.detail') {
-                const queryParams = await this.getDetailQueryParams();
+                this.config.neosLoginRoute = this.nlxRoutes.getNeosDetailRoute(neosBaseUri, queryParams);
+            }
+
+            if (currentRoute._value.name === 'nlx.neos.cbp') {
                 this.config.neosLoginRoute = this.nlxRoutes.getNeosDetailRoute(neosBaseUri, queryParams);
             }
         },
@@ -179,9 +210,12 @@ Shopware.Component.register('neos-index', {
 
         async getDetailQueryParams() {
             const queryParams = [];
-            queryParams.push({key: 'nodeIdentifier', value: this.$router.currentRoute.value.params.nodeIdentifier});
-            queryParams.push({key: 'swEntityId', value: this.$router.currentRoute.value.params.entityId ?? ''});
-            queryParams.push({key: 'swEntityName', value: this.$router.currentRoute.value.params.entityName ?? ''});
+queryParams.push(...[
+    { key: 'swCmsPageId', value: this.cmsPageId },
+    { key: 'swEntityId', value: this.entityId },
+    { key: 'swEntityName', value: this.entityName },
+    { key: 'nodeIdentifier', value: this.nodeIdentifier }
+].filter(m => m.value));
             return queryParams;
         }
     }

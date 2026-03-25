@@ -77,7 +77,7 @@ class NeosLayoutPageService
             $pagesData[] = $cmsPageData;
         }
 
-        $this->cmsPageRepository->update(
+        $this->cmsPageRepository->upsert(
             $pagesData,
             $context
         );
