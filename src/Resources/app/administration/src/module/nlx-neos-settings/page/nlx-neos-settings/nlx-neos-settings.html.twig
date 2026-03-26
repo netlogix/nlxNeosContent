@@ -1,0 +1,37 @@
+<sw-meteor-page class="nlx-neos-settings sw-extension-config">
+    <template #smart-bar-icon>
+        <sw-extension-icon
+            class="sw-extension-config__extension-icon"
+            :src="image"
+            :alt="$tc('nlx-neos-settings.title')"
+        />
+    </template>
+
+    <template #smart-bar-header>
+        {{ $tc('nlx-neos-settings.title') }}
+    </template>
+
+    <template #smart-bar-header-meta>
+        <span>by netlogix GmbH &amp; Co. KG</span>
+    </template>
+
+    <template #smart-bar-actions>
+        <sw-button
+            variant="primary"
+            class="sw-extension-config__save-action"
+            size="default"
+            @click="saveAll"
+            :isLoading="isLoading"
+        >
+            {{ $tc('global.default.save') }}
+        </sw-button>
+    </template>
+
+    <template #default>
+        <sw-system-config
+            domain="NlxNeosContent.settings"
+            ref="systemConfig"
+        >
+        </sw-system-config>
+    </template>
+</sw-meteor-page>
