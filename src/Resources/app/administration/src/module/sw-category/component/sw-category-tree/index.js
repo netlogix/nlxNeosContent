@@ -12,7 +12,6 @@ export default {
 
     inject: [
         'nlxCategoryStoreService',
-        'systemConfigApiService',
     ],
 
     data() {
