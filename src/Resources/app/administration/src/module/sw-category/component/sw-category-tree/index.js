@@ -1,17 +1,11 @@
 import template from './sw-category-tree.html.twig';
 
-const isExtendedNavigationEnabled = async () => {
-    const configService = Shopware.Service('systemConfigApiService');
-    const nlxNeosContentConfig = await configService.getValues('NlxNeosContent');
-
-    return nlxNeosContentConfig['NlxNeosContent.config.extendNavigation'] ?? false;
-}
-
 export default {
     template,
 
     inject: [
         'nlxCategoryStoreService',
+        'nlxConfigService',
     ],
 
     data() {
@@ -54,7 +48,7 @@ export default {
     },
 
     async created() {
-        if (await isExtendedNavigationEnabled()) {
+        if ((await this.nlxConfigService.getConfig('extendNavigation') ?? false)) {
             this.neosPagesData = await this.nlxCategoryStoreService.getCategories()
         } else {
             this.neosPagesData = [];

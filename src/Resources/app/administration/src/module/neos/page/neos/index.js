@@ -4,17 +4,10 @@ import './neos-index.scss';
 const { Criteria } = Shopware.Data;
 const { api } = Shopware.Context;
 
-const getNeosBaseUri = async () => {
-    const configService = Shopware.Service('systemConfigApiService');
-    const nlxNeosContentConfig = await configService.getValues('NlxNeosContent');
-
-    return nlxNeosContentConfig['NlxNeosContent.config.neosBaseUri'];
-}
-
 Shopware.Component.register('neos-index', {
     template,
 
-    inject: ['systemConfigApiService', 'nlxRoutes', 'repositoryFactory', 'nlxNeosContentApiService'],
+    inject: ['nlxRoutes', 'repositoryFactory', 'nlxNeosContentApiService', 'nlxConfigService'],
 
     props: {
         neosLoginRoute: {
@@ -86,7 +79,7 @@ Shopware.Component.register('neos-index', {
     mounted() {
         this.$nextTick(async () => {
             await this.loadConfig();
-            const neosBaseUri = await getNeosBaseUri();
+            const neosBaseUri = await this.nlxConfigService.getSetting('neosBaseUri');
             this.inactiveConfiguration = !neosBaseUri;
             if (this.inactiveConfiguration) {
                 // If Neos is not active, we load the Fillout registration script
@@ -168,7 +161,7 @@ Shopware.Component.register('neos-index', {
             this.config.apiUrl = api.schemeAndHttpHost;
 
             const currentRoute = this.$router.currentRoute;
-            const neosBaseUri = await getNeosBaseUri();
+            const neosBaseUri = await this.nlxConfigService.getSetting('neosBaseUri');
             if (currentRoute._value.name === 'nlx.neos.index') {
                 this.config.neosLoginRoute = this.nlxRoutes.getNeosIndexRoute(neosBaseUri);
             }
