@@ -4,7 +4,7 @@ const isExtendedNavigationEnabled = async () => {
     const configService = Shopware.Service('systemConfigApiService');
     const nlxNeosContentConfig = await configService.getValues('NlxNeosContent');
 
-    return nlxNeosContentConfig['NlxNeosContent.config.extendNavigation'];
+    return nlxNeosContentConfig['NlxNeosContent.config.extendNavigation'] ?? false;
 }
 
 export default {
