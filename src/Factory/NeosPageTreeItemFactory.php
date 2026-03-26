@@ -7,6 +7,7 @@ namespace nlxNeosContent\Factory;
 
 use nlxNeosContent\Neos\DTO\NeosPageCollection;
 use nlxNeosContent\Neos\DTO\NeosPageDTO;
+use Psr\Log\LoggerInterface;
 use Shopware\Core\Content\Category\CategoryEntity;
 use Shopware\Core\Content\Category\SalesChannel\SalesChannelCategoryEntity;
 use Shopware\Core\Content\Category\Tree\TreeItem;
@@ -14,6 +15,12 @@ use Shopware\Core\Content\Seo\SeoUrlPlaceholderHandler;
 
 class NeosPageTreeItemFactory
 {
+    public function __construct(
+        private readonly LoggerInterface $logger
+    )
+    {
+    }
+
     function create(NeosPageCollection $pages): iterable
     {
         foreach ($pages as $page) {
@@ -23,7 +30,11 @@ class NeosPageTreeItemFactory
                     empty($page->children) ? [] : iterator_to_array($this->create($page->children))
                 );
             } catch (\Throwable $exception) {
-                dd($page, $exception);
+                $this->logger->error("Error while creating Navigation Items from received CMS-Data", [
+                    'exception' => $exception,
+                    'page' => $page,
+                ]);
+                continue;
             }
         }
     }
