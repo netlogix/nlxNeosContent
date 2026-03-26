@@ -7,6 +7,7 @@ namespace nlxNeosContent\Routing;
 use nlxNeosContent\Service\ConfigService;
 use nlxNeosContent\Storefront\Controller\NeosPageController;
 use Symfony\Component\DependencyInjection\Attribute\AsDecorator;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\DependencyInjection\Attribute\AutowireDecorated;
 use Symfony\Component\HttpKernel\CacheWarmer\WarmableInterface;
 use Symfony\Component\Routing\RequestContext;
@@ -14,11 +15,12 @@ use Symfony\Component\Routing\RouteCollection;
 use Symfony\Component\Routing\RouterInterface;
 
 #[AsDecorator('router')]
-class Router implements RouterInterface, WarmableInterface
+readonly class Router implements RouterInterface, WarmableInterface
 {
     function __construct(
         #[AutowireDecorated]
         private readonly RouterInterface $inner,
+        #[Autowire(service: ConfigService::class)]
         private readonly ConfigService $configService,
     ) {
     }
