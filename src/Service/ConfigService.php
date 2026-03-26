@@ -43,6 +43,11 @@ class ConfigService
         return rtrim($baseUrl, '/');
     }
 
+    public function isNavigationExtensionEnabled(?string $salesChannelId = null): bool
+    {
+        return $this->systemConfigService->getBool($this->getConfigKey('extendNavigation'), $salesChannelId);
+    }
+
     private function getConfigKey(string $key): string
     {
         return sprintf('%s.%s', self::CONFIG_DOMAIN, $key);

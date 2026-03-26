@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace nlxNeosContent\Routing;
 
+use nlxNeosContent\Service\ConfigService;
 use nlxNeosContent\Storefront\Controller\NeosPageController;
 use Symfony\Component\DependencyInjection\Attribute\AsDecorator;
 use Symfony\Component\DependencyInjection\Attribute\AutowireDecorated;
@@ -17,7 +18,8 @@ class Router implements RouterInterface, WarmableInterface
 {
     function __construct(
         #[AutowireDecorated]
-        private readonly RouterInterface $inner
+        private readonly RouterInterface $inner,
+        private readonly ConfigService $configService,
     ) {
     }
 
@@ -46,6 +48,12 @@ class Router implements RouterInterface, WarmableInterface
         try {
             return $this->inner->match($pathinfo);
         } catch (\Exception $e) {
+            if (
+                !$this->configService->isEnabled() ||
+                !$this->configService->isNavigationExtensionEnabled()
+            ) {
+                throw $e;
+            }
             try {
                 return $this->matchNeosPath($pathinfo);
             } catch (\Exception) {
@@ -57,11 +65,10 @@ class Router implements RouterInterface, WarmableInterface
 
     protected function matchNeosPath(string $pathinfo): array
     {
-
         return [
             'neos' => 1,
             '_routeScope' => ['storefront'],
-            '_controller'=> NeosPageController::class.'::index',
+            '_controller' => NeosPageController::class . '::index',
         ];
     }
 
