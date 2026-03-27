@@ -14,6 +14,7 @@ use Shopware\Core\System\SystemConfig\SystemConfigService;
 class ConfigService
 {
     public const CONFIG_DOMAIN = 'NlxNeosContent.config';
+    public const SETTING_DOMAIN = 'NlxNeosContent.settings';
 
     public function __construct(
         private readonly SystemConfigService $systemConfigService
@@ -31,7 +32,7 @@ class ConfigService
     public function getBaseUrl(?string $salesChannelId = null): string
     {
         try {
-            $baseUrl = $this->systemConfigService->getString($this->getConfigKey('neosBaseUri'), $salesChannelId);
+            $baseUrl = $this->systemConfigService->getString($this->getSettingKey('neosBaseUri'), $salesChannelId);
         } catch (InvalidSettingValueException $invalidSettingValueException) {
             throw new NeosUrlNotConfiguredException(
                 'The Neos URL is not configured or invalid. Please check your plugin configuration.',
@@ -43,8 +44,18 @@ class ConfigService
         return rtrim($baseUrl, '/');
     }
 
+    public function isNavigationExtensionEnabled(?string $salesChannelId = null): bool
+    {
+        return $this->systemConfigService->getBool($this->getConfigKey('extendNavigation'), $salesChannelId);
+    }
+
     private function getConfigKey(string $key): string
     {
         return sprintf('%s.%s', self::CONFIG_DOMAIN, $key);
+    }
+
+    private function getSettingKey(string $key): string
+    {
+        return sprintf('%s.%s', self::SETTING_DOMAIN, $key);
     }
 }

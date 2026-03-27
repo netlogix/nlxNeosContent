@@ -5,7 +5,7 @@ Component.register('nlx-url-test-button', {
     template,
 
     props: ['label'],
-    inject: ['nlxUrlTest'],
+    inject: ['nlxUrlTestService'],
 
     mixins: [
         Mixin.getByName('notification')
@@ -22,11 +22,23 @@ Component.register('nlx-url-test-button', {
         pluginConfig() {
             let $parent = this.$parent;
 
-            while ($parent.actualConfigData === undefined) {
+            while ($parent && $parent.actualConfigData === undefined) {
                 $parent = $parent.$parent;
             }
 
-            return $parent.actualConfigData;
+            return $parent.actualConfigData?.[null] || {};
+        },
+
+        neosBaseUri() {
+            return this.pluginConfig['NlxNeosContent.settings.neosBaseUri'];
+        }
+    },
+
+    watch: {
+        neosBaseUri(newValue, oldValue) {
+            if (newValue !== oldValue) {
+                this.isSaveSuccessful = false;
+            }
         }
     },
 
@@ -36,8 +48,17 @@ Component.register('nlx-url-test-button', {
         },
 
         check() {
+            const url = this.neosBaseUri;
+            if (!url) {
+                this.createNotificationError({
+                    title: this.$tc('nlx-url-test-button.label'),
+                    message: this.$tc('nlx-url-test-button.emptyUrlError')
+                });
+                return;
+            }
+
             this.isLoading = true;
-            this.nlxUrlTest.check(this.pluginConfig).then((res) => {
+            this.nlxUrlTestService.check(url).then((res) => {
                 if (res.success) {
                     this.isSaveSuccessful = true;
                     this.createNotificationSuccess({

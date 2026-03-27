@@ -2,50 +2,24 @@
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopware/platform/master/src/Core/System/SystemConfig/Schema/config.xsd">
     <card>
-        <title>CMS connection Settings</title>
-        <title lang="de-DE">CMS Verbindungs-Einstellungen</title>
-        <input-field type="url">
-            <name>neosBaseUri</name>
-            <required>true</required>
-            <copyable>true</copyable>
-            <label>The url of the headless neos system (https://my-neos.com)</label>
-            <label lang="de-DE">Die URL des Headless-Neos Systems (https://mein-neos.de)</label>
-
+        <title>Plugin Settings</title>
+        <title lang="de-DE">Plugin Einstellungen</title>
+        <input-field type="bool">
+            <name>extendNavigation</name>
+            <label>Enable navigation extension</label>
+            <label lang="de-DE">Navigations-Erweiterung aktivieren</label>
+            <defaultValue>false</defaultValue>
             <helpText>
-                If you don't know the url for your Neos system open the enterprise content platform page and continue
-                with the registration.
+                If enabled, the plugin extends the Shopware navigation with content pages from the connected Content
+                Management System.
+                This allows you to seamlessly integrate and display content from the CMS within your Shopware
+                storefront.
             </helpText>
             <helpText lang="de-DE">
-                Falls sie die URL für das Verknüpfte Neos System nicht kennen, öffnen sie die Enterprise Content
-                Platform Seite und fahren sie mit dem Registrierungsprozess fort.
+                Wenn aktiviert, erweitert das Plugin die Shopware Navigation um Inhaltsseiten aus dem verbundenen
+                Content Management System.
+                Dadurch können Sie Inhalte aus dem CMS nahtlos in Ihrem Shopware Storefront integrieren und anzeigen.
             </helpText>
         </input-field>
-        <component name="nlx-url-test-button">
-            <name>nlxTestUrl</name>
-            <label>Test Neos Base URL</label>
-            <label lang="de-DE">Neos Base URL testen</label>
-            <helpText>
-                Click this button to test the configured Neos Base URL.
-            </helpText>
-            <helpText lang="de-DE">
-                Klicken sie auf diesen Button um die konfigurierte Neos Base URL zu testen.
-            </helpText>
-        </component>
-        <component name="nlx-update-neos-templates-button">
-            <name>updateNeosTemplates</name>
-            <label>Update imported cms pages</label>
-            <label lang="de-DE">Importierte Cms-Seiten aktualisieren</label>
-            <helpText>
-                This button updates all imported cms pages and removes pages with outdated connections.
-            </helpText>
-            <helpText lang="de-DE">
-                Dieser Button aktualisiert alle importierten Cms-Seiten und entfernt Seiten mit veralteten Verbindungen.
-            </helpText>
-        </component>
-        <component name="nlx-invalidate-cms-page-caches-button">
-            <name>invalidateCmsPageCaches</name>
-            <label>Invalidate caches for connected Cms-Pages</label>
-            <label lang="de-DE">Cache für verknüpfte Cms-Seiten invalidieren</label>
-        </component>
     </card>
 </config>

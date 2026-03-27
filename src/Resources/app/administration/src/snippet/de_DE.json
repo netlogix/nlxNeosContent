@@ -41,6 +41,7 @@
         "label": "URL testen",
         "success": "Die URL ist erreichbar.",
         "error": "Die URL ist nicht erreichbar.",
+        "emptyUrlError": "Die URL darf nicht leer sein.",
         "loading": "URL wird getestet..."
     },
     "nlx-update-neos-templates-button": {
@@ -54,5 +55,11 @@
         "success": "Die Caches der verknüpften CMS-Seiten wurden geleert.",
         "error-title": "Die Caches der verknüpften CMS-Seiten konnten nicht geleert werden.",
         "error": "Ein unbekannter Fehler ist aufgetreten."
+    },
+    "nlx-neos-settings": {
+        "title": "Enterprise Content Platform für Shopware",
+        "descriptionTextModule": "Einstellungen für die Integration der Enterprise Content Platform in Shopware.",
+        "cardTitle": "CMS-Verbindungs-Einstellungen",
+        "messageSaveSuccess": "Die Einstellungen wurden erfolgreich gespeichert."
     }
 }

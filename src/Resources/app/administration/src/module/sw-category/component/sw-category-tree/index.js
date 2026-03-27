@@ -5,6 +5,7 @@ export default {
 
     inject: [
         'nlxCategoryStoreService',
+        'nlxConfigService',
     ],
 
     data() {
@@ -47,7 +48,11 @@ export default {
     },
 
     async created() {
-        this.neosPagesData = await this.nlxCategoryStoreService.getCategories()
+        if ((await this.nlxConfigService.getConfig('extendNavigation') ?? false)) {
+            this.neosPagesData = await this.nlxCategoryStoreService.getCategories()
+        } else {
+            this.neosPagesData = [];
+        }
     },
 
     methods: {

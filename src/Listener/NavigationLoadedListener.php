@@ -22,7 +22,12 @@ readonly class NavigationLoadedListener
 
     public function __invoke(NavigationLoadedEvent $navigationLoadedEvent): void
     {
-        if (!$this->configService->isEnabled()) {
+        if (
+            !$this->configService->isEnabled() ||
+            !$this->configService->isNavigationExtensionEnabled(
+                $navigationLoadedEvent->getSalesChannelContext()->getSalesChannelId()
+            )
+        ) {
             return;
         }
         $navigation = $navigationLoadedEvent->getNavigation();
