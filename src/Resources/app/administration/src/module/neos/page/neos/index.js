@@ -105,6 +105,7 @@ Shopware.Component.register('neos-index', {
             // send refreshed token to Neos
             loginService.addOnTokenChangedListener(async () => {
                 const iframe = this.$refs.iframe;
+                if (!iframe) return;
                 const token = await this.nlxNeosContentApiService.getNeosToken().then((response) => {
                     if (response.success) {
                         return response.data.token;
