@@ -90,11 +90,53 @@ export default class NlxNeosContentApiService extends ApiService {
     }
 
     getNeosPageTree() {
+        return this.proxyGetRequest('pagetree');
+    }
+
+    createNeosLayout(payload) {
+        return this.proxyPostRequest('createPage', payload);
+    }
+
+    proxyGetRequest(action) {
         const apiRoute = `${this.getApiBasePath()}/request`;
         return this.httpClient
             .post(
                 apiRoute,
-                {action: 'pagetree'},
+                {
+                    action: action,
+                    method: 'GET'
+                },
+                {headers: this.getBasicHeaders()}
+            ).catch((error) => {
+                return {
+                    success: false,
+                    data: error.response.data ?? {message: 'Network error'}
+                }
+            }).then((response) => {
+                if (response.status === 200) {
+                    return {
+                        success: true,
+                        data: response.data
+                    }
+                } else {
+                    return {
+                        success: false,
+                        data: {message: 'Invalid Status'}
+                    }
+                }
+            });
+    }
+
+    proxyPostRequest(action, payload) {
+        const apiRoute = `${this.getApiBasePath()}/request`;
+        return this.httpClient
+            .post(
+                apiRoute,
+                {
+                    action: action,
+                    method: 'POST',
+                    payload: payload
+                },
                 {headers: this.getBasicHeaders()}
             ).catch((error) => {
                 return {

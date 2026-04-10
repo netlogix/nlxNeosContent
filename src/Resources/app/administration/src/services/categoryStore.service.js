@@ -23,7 +23,7 @@ export default class CategoryStoreService {
     async _fetchCategories() {
         const response = await this.nlxNeosContentApiService.getNeosPageTree()
         if (response.success) {
-            return this._resolveNeosPageData(response.data.response.pages);
+            return this._resolveNeosPageData(response.data.pages);
         } else {
             throw new Error('Failed to load Neos page tree: ' + response.data.message);
         }

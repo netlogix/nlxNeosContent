@@ -2,6 +2,9 @@
 
 namespace nlxNeosContent\Service\Loader;
 
+/**
+ * @deprecated use languageId and salesChannelId as request headers instead
+ */
 abstract class AbstractNeosDimensionLoader
 {
     public function getDecorated(): AbstractNeosDimensionLoader

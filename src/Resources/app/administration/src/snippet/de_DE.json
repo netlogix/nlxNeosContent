@@ -13,16 +13,21 @@
                 "preview": {
                     "buttonText": "Vorschau öffnen",
                     "modalHeadline": "Vorschaukonfiguration"
+                },
+                "createInNeos": {
+                    "buttonText": "Layout in Enterprise Content Platform erstellen",
+                    "infoTitle": "Layout bereits vorhanden",
+                    "infoMessage": "Für {layout} ist bereits ein Layout in der Enterprise Content Platform vorhanden. Es kann dieser Kategorie zugewiesen werden."
                 }
             }
         },
-      "neos": {
-          "cms": {
-              "layout-card": {
-                  "neos-hint": "Diese Seite wird von der Enterprise Content Platform bereitgestellt. Inhalte diese Seite können nur in der Enterprise Content Platform bearbeitet werden."
-              }
-          }
-      }
+        "neos": {
+            "cms": {
+                "layout-card": {
+                    "neos-hint": "Diese Seite wird von der Enterprise Content Platform bereitgestellt. Inhalte diese Seite können nur in der Enterprise Content Platform bearbeitet werden."
+                }
+            }
+        }
     },
     "sw-product": {
         "base": {
@@ -33,6 +38,11 @@
                     "modal": {
                         "headline": "Vorschaukonfiguration"
                     }
+                },
+                "createInNeos": {
+                    "buttonText": "Layout in Enterprise Content Platform erstellen",
+                    "infoTitle": "Layout bereits vorhanden",
+                    "infoMessage": "Für {layout} ist bereits ein Layout in der Enterprise Content Platform vorhanden. Es kann diesem Produkt zugewiesen werden."
                 }
             }
         }
