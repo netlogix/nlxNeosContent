@@ -28,3 +28,16 @@
         {{ $tc('sw-category.base.cms.preview.buttonText') }}
     </sw-button>
 {% endblock %}
+{% block sw_product_layout_assignment_button_delete %}
+    {% parent %}
+    <sw-button
+        variant="primary"
+        size="small"
+        :disabled="!acl.can('category.editor')"
+        :isLoading="isCreatingInNeos"
+        @click="createInNeos"
+        v-if="!isNeosPage"
+    >
+        {{ $tc('sw-product.base.cms.createInNeos.buttonText') }}
+    </sw-button>
+{% endblock %}
