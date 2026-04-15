@@ -30,7 +30,7 @@ readonly class NeosPageTreeLoader extends AbstractNeosPageTreeLoader
         throw new DecorationPatternException(self::class);
     }
 
-    public function load(string $salesChannelId, SalesChannelContext $salesChannelContext): NeosPageCollection
+    public function load(SalesChannelContext $salesChannelContext): NeosPageCollection
     {
         $domain = $salesChannelContext->getSalesChannel()->getDomains()->filter(function ($domain) use ($salesChannelContext) {
             return $domain->getId() === $salesChannelContext->getDomainId();
@@ -39,7 +39,7 @@ readonly class NeosPageTreeLoader extends AbstractNeosPageTreeLoader
         /** @var ResponseInterface $response */
         $response = $this->neosClient->get('neos/shopware-api/pagetree', [
             'headers' => [
-                'x-sw-sales-channel-id' => $salesChannelId,
+                'x-sw-sales-channel-id' => $salesChannelContext->getSalesChannelId(),
                 'x-sw-language-id' => $salesChannelContext->getLanguageId(),
                 'x-sw-sales-channel-domain' => $domain->getUrl(),
                 'x-sw-context-token' => $salesChannelContext->getSalesChannel()->getAccessKey()

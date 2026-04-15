@@ -10,5 +10,5 @@ use Shopware\Core\System\SalesChannel\SalesChannelContext;
 readonly abstract class AbstractNeosPageTreeLoader
 {
     abstract function getDecorated(): AbstractNeosPageTreeLoader;
-    abstract function load(string $salesChannelId, SalesChannelContext $salesChannelContext): NeosPageCollection;
+    abstract function load(SalesChannelContext $salesChannelContext): NeosPageCollection;
 }

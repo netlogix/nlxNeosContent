@@ -34,7 +34,6 @@ readonly class NavigationLoadedListener
         $tree = $navigation->getTree();
 
         $pages = $this->neosPageTreeLoader->load(
-            $navigationLoadedEvent->getSalesChannelContext()->getSalesChannelId(),
             $navigationLoadedEvent->getSalesChannelContext()
         );
         $pages = iterator_to_array($this->neosPageTreeItemFactory->create($pages));
