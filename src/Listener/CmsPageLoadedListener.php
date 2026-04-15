@@ -92,8 +92,7 @@ class CmsPageLoadedListener
 
         $alternativeCmsSectionsFromNeos = $this->contentExchangeService->getAlternativeCmsSectionsFromNeos(
             $cmsPage,
-            $salesChannelContext->getLanguageId(),
-            $salesChannelContext->getSalesChannelId()
+            $salesChannelContext,
         );
 
         $this->contentExchangeService->loadSlotData($alternativeCmsSectionsFromNeos->getBlocks(), $resolverContext);
@@ -102,21 +101,20 @@ class CmsPageLoadedListener
 
     private function getNewDetailPageBlocks(
         string $productId,
-        SalesChannelContext $context,
+        SalesChannelContext $salesChannelContext,
         Request $request,
         CmsPageEntity $cmsPage,
     ): CmsSectionCollection {
         $resolverContext = $this->resolverContextService->getResolverContextForEntityNameAndId(
             ProductDefinition::ENTITY_NAME,
             $productId,
-            $context,
+            $salesChannelContext,
             $request
         );
 
         $alternativeCmsBlocksFromNeos = $this->contentExchangeService->getAlternativeCmsSectionsFromNeos(
             $cmsPage,
-            $context->getLanguageId(),
-            $context->getSalesChannelId()
+            $salesChannelContext,
         );
 
         /** @var CmsBlockEntity $cmsBlock */
@@ -142,25 +140,23 @@ class CmsPageLoadedListener
 
     private function getNewLandingPageBlocks(
         CmsPageEntity $cmsPageEntity,
-        SalesChannelContext $context
+        SalesChannelContext $salesChannelContext
     ): CmsSectionCollection {
         return $this->contentExchangeService->getAlternativeCmsSectionsFromNeos(
             $cmsPageEntity,
-            $context->getLanguageId(),
-            $context->getSalesChannelId()
+            $salesChannelContext
         );
     }
 
     private function getNewShopPageBlocks(
         CmsPageEntity $cmsPageEntity,
-        SalesChannelContext $context,
+        SalesChannelContext $salesChannelContext,
         Request $request
     ): CmsSectionCollection {
-        $resolverContext = new ResolverContext($context, $request);
+        $resolverContext = new ResolverContext($salesChannelContext, $request);
         $alternativeSections = $this->contentExchangeService->getAlternativeCmsSectionsFromNeos(
             $cmsPageEntity,
-            $context->getLanguageId(),
-            $context->getSalesChannelId()
+            $salesChannelContext,
         );
         $this->contentExchangeService->loadSlotData($alternativeSections->getBlocks(), $resolverContext);
         return $alternativeSections;
