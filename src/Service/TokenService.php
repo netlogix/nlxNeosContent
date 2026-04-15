@@ -8,7 +8,9 @@ use DateTimeImmutable;
 use Lcobucci\JWT\Configuration;
 use Lcobucci\JWT\UnencryptedToken;
 use Shopware\Core\Framework\Context;
+use Shopware\Core\PlatformRequest;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\HttpFoundation\Request;
 
 readonly class TokenService
 {
@@ -16,11 +18,15 @@ readonly class TokenService
         #[Autowire(service: 'shopware.jwt_config')]
         private Configuration $configuration,
         private PluginInfoService $pluginInfoService
-    )
-    {}
+    ) {
+    }
 
-    public function generateNeosToken(string $userId, string $clientId, DateTimeImmutable $expiration, Context $context): UnencryptedToken
-    {
+    public function generateNeosToken(
+        string $userId,
+        string $clientId,
+        DateTimeImmutable $expiration,
+        Context $context
+    ): UnencryptedToken {
         $builder = $this->configuration
             ->builder()
             ->identifiedBy('neos-token-' . $userId . '-' . $clientId)
@@ -40,5 +46,25 @@ readonly class TokenService
         $builder = $builder->relatedTo($userId);
 
         return $builder->getToken($this->configuration->signer(), $this->configuration->signingKey());
+    }
+
+    public function generateFromRequest(
+        Request $request,
+        DateTimeImmutable $expiration,
+        ?Context $context = null
+    ): UnencryptedToken {
+        $attributes = $request->attributes;
+        $clientId = $attributes->get(PlatformRequest::ATTRIBUTE_OAUTH_CLIENT_ID);
+        $userId = $attributes->get(PlatformRequest::ATTRIBUTE_OAUTH_USER_ID);
+        $context ??= $attributes->get(PlatformRequest::ATTRIBUTE_CONTEXT_OBJECT);
+
+        assert($context instanceof Context);
+
+        return $this->generateNeosToken(
+            $userId,
+            $clientId,
+            $expiration,
+            $context
+        );
     }
 }
