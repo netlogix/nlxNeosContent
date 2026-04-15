@@ -1,11 +1,19 @@
+const {Mixin} = Shopware;
 import template from './sw-category-layout-card.html.twig';
 
 export default {
     template,
 
+    inject: ['nlxNeosContentApiService'],
+
+    mixins: [
+        Mixin.getByName('notification')
+    ],
+
     data() {
         return {
             showPreviewModal: false,
+            isCreatingInNeos: false,
         };
     },
 
@@ -46,6 +54,37 @@ export default {
 
         onClosePreviewModal() {
             this.showPreviewModal = false;
-        }
+        },
+
+        createInNeos() {
+            this.isCreatingInNeos = true;
+
+            this.nlxNeosContentApiService.createNeosLayout(
+                {
+                    title: this.category.translated.name,
+                    pageType: this.cmsPage.type
+                }
+            ).then((response) => {
+                if (response.success) {
+                    if (response.data.success) {
+                        this.$router.push({
+                            name: 'nlx.neos.detail',
+                            params: {
+                                cmsPageId: response.data.cmsPageId,
+                                entityId: this.category.id,
+                                entityName: 'category',
+                            },
+                        });
+                    } else if (!response.data.success && response.data.foundPresentNode) {
+                        this.createNotificationInfo({
+                            title: this.$tc('sw-category.base.cms.createInNeos.infoTitle'),
+                            message: this.$tc('sw-category.base.cms.createInNeos.infoMessage', {
+                                layout: response.data.entityName
+                            })
+                        });
+                    }
+                }
+            }).finally(() => this.isCreatingInNeos = false);
+        },
     },
 }

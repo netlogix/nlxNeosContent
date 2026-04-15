@@ -7,6 +7,7 @@ namespace nlxNeosContent\Core\Content\Admin;
 use DateTimeInterface;
 use Lcobucci\JWT\Configuration;
 use nlxNeosContent\Service\PluginInfoService;
+use nlxNeosContent\Service\TokenService;
 use Shopware\Core\Framework\Context;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -18,9 +19,7 @@ use Symfony\Component\Routing\Annotation\Route;
 class NeosTokenRoute extends AbstractNeosTokenRoute
 {
     public function __construct(
-        #[Autowire(service: 'shopware.jwt_config')]
-        private readonly Configuration $configuration,
-        private readonly PluginInfoService $pluginInfoService
+        private readonly TokenService $tokenService,
     ) {
     }
 
@@ -40,27 +39,10 @@ class NeosTokenRoute extends AbstractNeosTokenRoute
         $userId = $request->attributes->get('oauth_user_id');
 
         $expiration = new \DateTimeImmutable('+10 minutes');
-
-        $builder = $this->configuration
-            ->builder()
-            ->identifiedBy('neos-token-' . $userId . '-' . $clientId)
-            ->issuedAt(new \DateTimeImmutable())
-            ->canOnlyBeUsedAfter(new \DateTimeImmutable())
-            ->expiresAt($expiration);
-
-        try {
-            $pluginVersion = $this->pluginInfoService->getVersion('nlxNeosContent', $context);
-        } catch (\RuntimeException $e) {
-            throw new \RuntimeException('Could not retrieve plugin version: ' . $e->getMessage());
-        }
-
-        $builder = $builder->permittedFor($clientId);
-        $builder = $builder->withClaim('scopes', ['neos']);
-        $builder = $builder->withClaim('plugin_version', $pluginVersion);
-        $builder = $builder->relatedTo($userId);
+        $token = $this->tokenService->generateNeosToken($userId, $clientId, $expiration, $context);
 
         return new JsonResponse([
-            'token' => $builder->getToken($this->configuration->signer(), $this->configuration->signingKey())->toString(),
+            'token' => $token->toString(),
             'expires' => $expiration->format(DateTimeInterface::ATOM),
         ]);
     }

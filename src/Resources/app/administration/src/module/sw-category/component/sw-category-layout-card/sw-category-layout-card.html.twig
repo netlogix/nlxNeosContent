@@ -36,3 +36,16 @@
         @modal-close="onClosePreviewModal"
     ></nlx-preview-modal>
 {% endblock %}
+{% block sw_category_detail_layout_desc_actions_remove %}
+    {% parent %}
+    <sw-button
+        variant="primary"
+        size="small"
+        :disabled="!acl.can('category.editor')"
+        :isLoading="isCreatingInNeos"
+        @click="createInNeos"
+        v-if="!isNeosPage"
+    >
+        {{ $tc('sw-category.base.cms.createInNeos.buttonText') }}
+    </sw-button>
+{% endblock %}
