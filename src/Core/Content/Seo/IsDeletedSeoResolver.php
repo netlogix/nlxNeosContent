@@ -27,6 +27,8 @@ class IsDeletedSeoResolver extends AbstractSeoResolver
 
     public function resolve(string $languageId, string $salesChannelId, string $pathInfo): array
     {
+        $decoratedResult = $this->getDecorated()->resolve($languageId, $salesChannelId, $pathInfo);
+
         $seoPathInfo = trim($pathInfo, '/');
 
         $query = (new QueryBuilder($this->connection))
@@ -42,8 +44,8 @@ class IsDeletedSeoResolver extends AbstractSeoResolver
             ->setParameter('seoPathWithSlash', $seoPathInfo . '/')
             ->setMaxResults(1);
 
-        if ($query->executeQuery()->rowCount() > 1) {
-            return $this->getDecorated()->resolve($languageId, $salesChannelId, $pathInfo);
+        if ($query->executeQuery()->rowCount() >= 1) {
+            return $decoratedResult;
         }
 
         return ['pathInfo' => $seoPathInfo, 'isCanonical' => false];
