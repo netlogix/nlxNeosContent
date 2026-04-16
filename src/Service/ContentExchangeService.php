@@ -32,13 +32,11 @@ class ContentExchangeService
      */
     public function getAlternativeCmsSectionsFromNeos(
         CmsPageEntity $cmsPage,
-        string $languageId,
-        string $salesChannelId
+        SalesChannelContext $salesChannelContext
     ): CmsSectionCollection {
         $elements = $this->fetchNeosContentForCmsPage(
             $cmsPage,
-            $languageId,
-            $salesChannelId
+            $salesChannelContext
         );
 
         return $this->serializer->denormalize($elements, NeosCmsSectionCollection::class,'json');
@@ -46,10 +44,16 @@ class ContentExchangeService
 
     public function fetchCmsSectionsFromNeosByPath(string $pathInfo, SalesChannelContext $salesChannelContext): CmsSectionCollection
     {
+        $domain = $salesChannelContext->getSalesChannel()->getDomains()->filter(function ($domain) use ($salesChannelContext) {
+            return $domain->getId() === $salesChannelContext->getDomainId();
+        })->first();
+
         $response = $this->neosClient->get(sprintf("/neos/shopware-api/content-by-path/%s", trim($pathInfo, '/')), [
             'headers' => [
                 'x-sw-language-id' => $salesChannelContext->getLanguageId(),
                 'x-sw-sales-channel-id' => $salesChannelContext->getSalesChannelId(),
+                'x-sw-sales-channel-domain' => $domain->getUrl(),
+                'x-sw-context-token' => $salesChannelContext->getSalesChannel()->getAccessKey(),
             ]
         ]);
 
@@ -61,14 +65,21 @@ class ContentExchangeService
      */
     private function fetchNeosContentForCmsPage(
         CmsPageEntity $cmsPage,
-        string $languageId,
-        string $salesChannelId
+        SalesChannelContext $salesChannelContext
     ): string {
+        $languageId = $salesChannelContext->getLanguageId();
+        $salesChannelId = $salesChannelContext->getSalesChannelId();
+        $domain = $salesChannelContext->getSalesChannel()->getDomains()->filter(function ($domain) use ($salesChannelContext) {
+            return $domain->getId() === $salesChannelContext->getDomainId();
+        })->first();
+
         try {
             $response = $this->neosClient->get(sprintf("/neos/shopware-api/content/%s/", $cmsPage->getId()), [
                 'headers' => [
                     'x-sw-language-id' => $languageId,
                     'x-sw-sales-channel-id' => $salesChannelId,
+                    'x-sw-sales-channel-domain' => $domain->getUrl(),
+                    'x-sw-context-token' => $salesChannelContext->getSalesChannel()->getAccessKey(),
                 ]
             ]);
         } catch (RequestException $e) {

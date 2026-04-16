@@ -13,6 +13,11 @@
                 "preview": {
                     "buttonText": "Open Preview",
                     "modalHeadline": "Preview Configuration"
+                },
+                "createInNeos": {
+                    "buttonText": "Create Layout in Enterprise Content Platform",
+                    "infoTitle": "Layout already exists",
+                    "infoMessage": "A layout for {layout} already exists in Enterprise Content Platform. It can be assigned to this category."
                 }
             }
         },
@@ -33,6 +38,11 @@
                     "modal": {
                         "headline": "Preview Configuration"
                     }
+                },
+                "createInNeos": {
+                    "buttonText": "Create Layout in Enterprise Content Platform",
+                    "infoTitle": "Layout already exists",
+                    "infoMessage": "A layout for {layout} already exists in Enterprise Content Platform. It can be assigned to this product."
                 }
             }
         }

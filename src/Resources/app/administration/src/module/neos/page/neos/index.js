@@ -1,8 +1,8 @@
 import template from './neos-index.html.twig';
 import './neos-index.scss';
 
-const { Criteria } = Shopware.Data;
-const { api } = Shopware.Context;
+const {Criteria} = Shopware.Data;
+const {api} = Shopware.Context;
 
 Shopware.Component.register('neos-index', {
     template,
@@ -105,6 +105,7 @@ Shopware.Component.register('neos-index', {
             // send refreshed token to Neos
             loginService.addOnTokenChangedListener(async () => {
                 const iframe = this.$refs.iframe;
+                if (!iframe) return;
                 const token = await this.nlxNeosContentApiService.getNeosToken().then((response) => {
                     if (response.success) {
                         return response.data.token;
@@ -203,12 +204,12 @@ Shopware.Component.register('neos-index', {
 
         async getDetailQueryParams() {
             const queryParams = [];
-queryParams.push(...[
-    { key: 'swCmsPageId', value: this.cmsPageId },
-    { key: 'swEntityId', value: this.entityId },
-    { key: 'swEntityName', value: this.entityName },
-    { key: 'nodeIdentifier', value: this.nodeIdentifier }
-].filter(m => m.value));
+            queryParams.push(...[
+                {key: 'swCmsPageId', value: this.cmsPageId},
+                {key: 'swEntityId', value: this.entityId},
+                {key: 'swEntityName', value: this.entityName},
+                {key: 'nodeIdentifier', value: this.nodeIdentifier}
+            ].filter(m => m.value));
             return queryParams;
         }
     }

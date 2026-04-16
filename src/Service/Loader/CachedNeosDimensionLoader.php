@@ -9,7 +9,9 @@ use Symfony\Component\DependencyInjection\Attribute\AsDecorator;
 use Symfony\Component\DependencyInjection\Attribute\AutowireDecorated;
 use Symfony\Contracts\Cache\CacheInterface;
 
-
+/**
+ * @deprecated use languageId and salesChannelId as request headers instead
+ */
 #[AsDecorator(NeosDimensionLoader::class)]
 final class CachedNeosDimensionLoader extends AbstractNeosDimensionLoader
 {
