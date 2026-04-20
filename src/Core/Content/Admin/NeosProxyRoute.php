@@ -38,7 +38,7 @@ class NeosProxyRoute extends AbstractNeosProxyRoute
     public function load(
         #[MapRequestPayload(acceptFormat: 'json')]
         NeosProxyRequestDto $neosProxyRequest,
-        #[ValueResolver(resolver: NeosTokenValueResolver::class)]
+        #[ValueResolver(resolver: NeosTokenValueResolver::RESOLVER_NAME)]
         UnencryptedToken $token,
         Context $context
     ): Response {
