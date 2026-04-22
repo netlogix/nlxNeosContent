@@ -9,20 +9,24 @@ use nlxNeosContent\Core\Content\Cms\Aggregate\CmsSection\NeosCmsSectionEntity;
 use nlxNeosContent\Service\ContentExchangeService;
 use nlxNeosContent\Service\ResolverContextService;
 use Shopware\Core\Content\Category\CategoryDefinition;
+use Shopware\Core\Content\Category\CategoryEntity;
 use Shopware\Core\Content\Cms\Aggregate\CmsSection\CmsSectionCollection;
 use Shopware\Core\Content\Cms\Aggregate\CmsSection\CmsSectionEntity;
 use Shopware\Core\Content\Cms\CmsPageEntity;
 use Shopware\Core\Content\Cms\DataResolver\FieldConfig;
 use Shopware\Core\Content\Cms\DataResolver\FieldConfigCollection;
 use Shopware\Core\Content\Product\ProductDefinition;
+use Shopware\Core\Content\Product\ProductEntity;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\NotFilter;
+use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\Entity\SalesChannelRepository;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Controller\StorefrontController;
+use Shopware\Storefront\Page\Navigation\NavigationPage;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -45,7 +49,6 @@ class CmsSectionController extends StorefrontController
         private readonly SalesChannelRepository $categoryRepository,
         private readonly ContentExchangeService $contentExchangeService,
         private readonly ResolverContextService $resolverContextService,
-        private readonly EntityRepository $cmsPageRepository,
         private readonly SerializerInterface $serializer,
     ) {
     }
@@ -150,17 +153,23 @@ class CmsSectionController extends StorefrontController
             'neosRequest' => true,
         ];
 
-        $cmsPages = $this->cmsPageRepository->search(
-            (new Criteria([$entityResponse->first()->getCmsPageId()]))
-                ->addAssociation('sections'),
-            $context->getContext()
-        );
-
-        /** @var CmsPageEntity $cmsPage */
-        $cmsPage = $cmsPages->first();
+        $cmsPage = new CmsPageEntity();
         $cmsPage->setSections(new CmsSectionCollection([$section]));
+        $cmsPage->setId(UUID::randomHex());
+
+        $navigationPage = new NavigationPage();
+        $navigationPage->setCmsPage($cmsPage);
+        $entity = $entityResponse->first();
+        if ($entity instanceof CategoryEntity) {
+            $navigationPage->setCategory($entity);
+            $cmsPage->setType('category');
+        }
+        if ($entity instanceof ProductEntity) {
+            $cmsPage->setType('product');
+        }
 
         $parameters['cmsPage'] = $cmsPage;
+        $parameters['page'] = $navigationPage;
 
         return $this->render(
             '@Storefront/storefront/page/content/detail.html.twig',
@@ -180,12 +189,12 @@ class CmsSectionController extends StorefrontController
 
         if ($entityName === CategoryDefinition::ENTITY_NAME && !$entityId) {
             $criteria->addFilter(new EqualsFilter('type', 'page'));
-            $criteria->addFilter(new EqualsFilter('productAssignmentType', 'product'));
             $criteria->addFilter(
                 new NotFilter(
                     NotFilter::CONNECTION_AND,
                     [
                         new EqualsFilter('products.id', null),
+                        new EqualsFilter('productStreamId', null),
                     ]
                 )
             );
