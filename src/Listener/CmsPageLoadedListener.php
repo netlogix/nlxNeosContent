@@ -52,7 +52,7 @@ class CmsPageLoadedListener
 
         $newCmsSections = match ($cmsPageEntity->getType()) {
             'product_list' => $this->getNewListingPageSections(
-                $cmsPageLoadedEvent->getSalesChannelContext()->getSalesChannel()->getNavigationCategoryId(),
+                $this->extractCategoryIdFromPathInfo($cmsPageLoadedEvent->getRequest()->getPathInfo()),
                 $cmsPageLoadedEvent->getSalesChannelContext(),
                 $cmsPageLoadedEvent->getRequest(),
                 $cmsPageEntity,
@@ -75,6 +75,11 @@ class CmsPageLoadedListener
         };
 
         $cmsPageEntity->setSections($newCmsSections);
+    }
+
+    private  function extractCategoryIdFromPathInfo(string $pathInfo): string
+    {
+        return str_replace('/navigation/', '', $pathInfo);
     }
 
     private function getNewListingPageSections(
