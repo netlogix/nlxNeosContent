@@ -10,15 +10,17 @@ use Psr\Http\Client\ClientInterface;
 
 class NeosClientFactory
 {
-    public function __construct() {
-    }
+    public function __construct() {}
 
     public static function create(
-        ConfigService $configService
+        ConfigService $configService,
     ): ClientInterface
     {
         return new Client([
-            'base_uri' => $configService->getBaseUrl()
+            'base_uri' => $configService->getInternalBaseUrl(),
+            'headers' => [
+                'Host' => parse_url($configService->getBaseUrl(), PHP_URL_HOST),
+            ],
         ]);
     }
 

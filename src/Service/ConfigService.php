@@ -7,6 +7,7 @@ namespace nlxNeosContent\Service;
 use nlxNeosContent\Error\NeosUrlNotConfiguredException;
 use Shopware\Core\System\SystemConfig\Exception\InvalidSettingValueException;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 /**
  * @codeCoverageIgnore
@@ -17,13 +18,19 @@ class ConfigService
     public const SETTING_DOMAIN = 'NlxNeosContent.settings';
 
     public function __construct(
-        private readonly SystemConfigService $systemConfigService
-    ) {
-    }
+        private readonly SystemConfigService $systemConfigService,
+        #[Autowire(env: 'NEOS_CONTENT_INTERNAL_BASE_URI')]
+        private readonly ?string $internalBaseUrl = null,
+    ) {}
 
     public function isEnabled(?string $salesChannelId = null): bool
     {
         return !empty($this->getBaseUrl($salesChannelId));
+    }
+
+    public function getInternalBaseUrl(?string $salesChannelId = null): string
+    {
+        return empty($this->internalBaseUrl) ? $this->getBaseUrl($salesChannelId) : $this->internalBaseUrl;
     }
 
     /**
