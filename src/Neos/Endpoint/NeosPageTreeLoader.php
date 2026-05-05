@@ -5,21 +5,20 @@ declare(strict_types=1);
 namespace nlxNeosContent\Neos\Endpoint;
 
 use nlxNeosContent\Neos\DTO\NeosPageCollection;
-use Psr\Http\Client\ClientInterface;
-use Psr\Http\Message\ResponseInterface;
 use Shopware\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\DependencyInjection\Attribute\AsAlias;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Serializer\Normalizer\UnwrappingDenormalizer;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 #[AsAlias(AbstractNeosPageTreeLoader::class)]
 readonly class NeosPageTreeLoader extends AbstractNeosPageTreeLoader
 {
     function __construct(
         #[Autowire(service: 'nlx-neos-content.neos-client')]
-        private ClientInterface $neosClient,
+        private HttpClientInterface $neosClient,
         #[Autowire(service: 'serializer')]
         private SerializerInterface $serializer,
     ) {
@@ -36,8 +35,7 @@ readonly class NeosPageTreeLoader extends AbstractNeosPageTreeLoader
             return $domain->getId() === $salesChannelContext->getDomainId();
         })->first();
 
-        /** @var ResponseInterface $response */
-        $response = $this->neosClient->get('neos/shopware-api/pagetree', [
+        $response = $this->neosClient->request('GET', 'neos/shopware-api/pagetree', [
             'headers' => [
                 'x-sw-sales-channel-id' => $salesChannelContext->getSalesChannelId(),
                 'x-sw-language-id' => $salesChannelContext->getLanguageId(),
@@ -45,9 +43,8 @@ readonly class NeosPageTreeLoader extends AbstractNeosPageTreeLoader
                 'x-sw-context-token' => $salesChannelContext->getSalesChannel()->getAccessKey()
             ]
         ]);
-        $content = $response->getBody()->getContents();
 
-        return $this->serializer->deserialize($content, NeosPageCollection::class, 'json', [
+        return $this->serializer->deserialize($response->getContent(), NeosPageCollection::class, 'json', [
             UnwrappingDenormalizer::UNWRAP_PATH => '[pages]'
         ]);
     }

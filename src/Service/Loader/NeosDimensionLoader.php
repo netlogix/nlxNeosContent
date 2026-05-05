@@ -2,9 +2,9 @@
 
 namespace nlxNeosContent\Service\Loader;
 
-use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
 use Shopware\Core\Framework\Plugin\Exception\DecorationPatternException;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 /**
  * @deprecated
@@ -12,7 +12,7 @@ use Shopware\Core\Framework\Plugin\Exception\DecorationPatternException;
 class NeosDimensionLoader extends AbstractNeosDimensionLoader
 {
     public function __construct(
-        private readonly ClientInterface $neosClient
+        private readonly HttpClientInterface $neosClient
     ) {
     }
 
@@ -24,7 +24,7 @@ class NeosDimensionLoader extends AbstractNeosDimensionLoader
     public function load(): array
     {
         try {
-            $response = $this->neosClient->get('/neos/shopware-api/dimension-mapping');
+            $response = $this->neosClient->request('GET', '/neos/shopware-api/dimension-mapping');
         } catch (GuzzleException $e) {
             throw new \Exception('Could not fetch dimension mapping from Neos: ' . $e->getMessage(), 1757507413, $e);
         }
