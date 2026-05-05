@@ -8,7 +8,6 @@ use Exception;
 use nlxNeosContent\Core\Content\NeosNode\NeosNodeEntity;
 use nlxNeosContent\Core\Notification\NotificationServiceInterface;
 use nlxNeosContent\Error\CanNotDeleteDefaultLayoutPageException;
-use Psr\Http\Client\ClientInterface;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
@@ -18,6 +17,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 #[Autoconfigure(public: true)]
@@ -29,7 +29,7 @@ class NeosLayoutPageService
         private readonly EntityRepository $cmsPageRepository,
         private readonly EntityRepository $nlxNeosNodeRepository,
         private readonly NotificationServiceInterface $notificationService,
-        private readonly ClientInterface $neosClient,
+        private readonly HttpClientInterface $neosClient,
         private readonly SystemConfigService $systemConfigService,
         private readonly TranslatorInterface $translator,
     ) {
@@ -39,7 +39,7 @@ class NeosLayoutPageService
     {
         $context = Context::createDefaultContext();
         try {
-            $response = $this->neosClient->get('/neos/shopware-api/layout/pages', [
+            $response = $this->neosClient->request('GET', '/neos/shopware-api/layout/pages', [
                 'headers' => [
                     'Accept' => 'application/json',
                     'Content-Type' => 'application/json',
@@ -54,7 +54,7 @@ class NeosLayoutPageService
             );
         }
 
-        return json_decode($response->getBody()->getContents(), true) ?? [];
+        return json_decode($response->getContent(), true) ?? [];
     }
 
     public function updateNeosCmsPages(array $neosNodes, Context $context): void

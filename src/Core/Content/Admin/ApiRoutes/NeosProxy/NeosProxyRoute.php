@@ -2,12 +2,11 @@
 
 declare(strict_types=1);
 
-namespace nlxNeosContent\Core\Content\Admin;
+namespace nlxNeosContent\Core\Content\Admin\ApiRoutes\NeosProxy;
 
 use Lcobucci\JWT\UnencryptedToken;
 use nlxNeosContent\Core\Content\Admin\Dto\NeosProxyRequestDto;
 use nlxNeosContent\Core\Content\Admin\ValueResolver\NeosTokenValueResolver;
-use Psr\Http\Client\ClientInterface;
 use Shopware\Core\DevOps\Environment\EnvironmentHelper;
 use Shopware\Core\Framework\Context;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -16,13 +15,14 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\HttpKernel\Attribute\ValueResolver;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 #[Route(defaults: ['_routeScope' => ['api']])]
 class NeosProxyRoute extends AbstractNeosProxyRoute
 {
     public function __construct(
         #[Autowire(service: 'nlx-neos-content.neos-client')]
-        private readonly ClientInterface $neosClient,
+        private readonly HttpClientInterface $neosClient,
         #[Autowire(param: 'kernel.shopware_version')]
         private readonly string $shopwareVersion,
     ) {
@@ -57,20 +57,19 @@ class NeosProxyRoute extends AbstractNeosProxyRoute
 
     private function getRequest(string $uri, Context $context): JsonResponse
     {
-        $response = $this->neosClient->get($uri, [
+        $response = $this->neosClient->request('GET', $uri, [
             'headers' => [
                 'x-sw-language-id' => $context->getLanguageId(),
             ]
         ]);
 
-        $responseData = $response->getBody()->getContents();
-        $response = json_decode($responseData, true);
+        $response = json_decode($response->getContent(), true);
         return new JsonResponse($response);
     }
 
     private function postRequest(string $uri, array $payload, UnencryptedToken $token, Context $context): JsonResponse
     {
-        $response = $this->neosClient->post($uri, [
+        $response = $this->neosClient->request('POST', $uri, [
             'headers' => [
                 'x-sw-language-id' => $context->getLanguageId(),
                 'shopwareAccessToken' => $token->toString(),
@@ -80,7 +79,7 @@ class NeosProxyRoute extends AbstractNeosProxyRoute
             'json' => $payload
         ]);
 
-        $responseData = $response->getBody()->getContents();
+        $responseData = $response->getContent();
         $response = json_decode($responseData, true);
         return new JsonResponse($response);
     }

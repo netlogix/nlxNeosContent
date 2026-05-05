@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace nlxNeosContent\Core\Content\Admin;
+namespace nlxNeosContent\Core\Content\Admin\ApiRoutes\NeosProxy;
 
 use Lcobucci\JWT\UnencryptedToken;
 use nlxNeosContent\Core\Content\Admin\Dto\NeosProxyRequestDto;

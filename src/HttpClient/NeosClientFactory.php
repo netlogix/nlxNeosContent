@@ -4,24 +4,27 @@ declare(strict_types=1);
 
 namespace nlxNeosContent\HttpClient;
 
-use GuzzleHttp\Client;
 use nlxNeosContent\Service\ConfigService;
-use Psr\Http\Client\ClientInterface;
+use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class NeosClientFactory
 {
-    public function __construct() {}
+    public function __construct()
+    {
+    }
 
     public static function create(
         ConfigService $configService,
-    ): ClientInterface
-    {
-        return new Client([
-            'base_uri' => $configService->getInternalBaseUrl(),
-            'headers' => [
-                'Host' => parse_url($configService->getBaseUrl(), PHP_URL_HOST),
-            ],
-        ]);
+    ): HttpClientInterface {
+        return HttpClient::createForBaseUri(
+            $configService->getInternalBaseUrl(),
+            [
+                'headers' => [
+                    'Host' => parse_url($configService->getBaseUrl(), PHP_URL_HOST),
+                ],
+            ]
+        );
     }
 
 }
