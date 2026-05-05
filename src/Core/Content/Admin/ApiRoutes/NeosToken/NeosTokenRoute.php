@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace nlxNeosContent\Core\Content\Admin;
+namespace nlxNeosContent\Core\Content\Admin\ApiRoutes\NeosToken;
 
 use DateTimeInterface;
 use Lcobucci\JWT\Configuration;

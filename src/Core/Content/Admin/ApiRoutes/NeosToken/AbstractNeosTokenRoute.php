@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace nlxNeosContent\Core\Content\Admin;
+namespace nlxNeosContent\Core\Content\Admin\ApiRoutes\NeosToken;
 
 use Shopware\Core\Framework\Context;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace nlxNeosContent\Core\Content\Admin;
+namespace nlxNeosContent\Core\Content\Admin\ApiRoutes\UpdateNeosPages;
 
 use Exception;
 use GuzzleHttp\Exception\GuzzleException;
@@ -14,14 +14,14 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
 #[Route(defaults: ['_routeScope' => ['api']])]
-class UpdateNeosPagesRoute extends AbstractUpdatePagesRoute
+class UpdateNeosPagesRoute extends AbstractUpdateNeosPagesRoute
 {
     public function __construct(
         private readonly NeosLayoutPageService $neosLayoutPageService
     ) {
     }
 
-    public function getDecorated(): AbstractUpdatePagesRoute
+    public function getDecorated(): AbstractUpdateNeosPagesRoute
     {
         return $this;
     }

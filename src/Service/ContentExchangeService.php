@@ -16,6 +16,7 @@ use Shopware\Core\Content\Cms\DataResolver\ResolverContext\ResolverContext;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class ContentExchangeService
 {
@@ -23,7 +24,7 @@ class ContentExchangeService
         #[Autowire(service: 'serializer')]
         private readonly SerializerInterface $serializer,
         private readonly CmsSlotsDataResolver $cmsSlotsDataResolver,
-        private readonly ClientInterface $neosClient,
+        private readonly HttpClientInterface $neosClient,
     ) {
     }
 
@@ -48,7 +49,8 @@ class ContentExchangeService
             return $domain->getId() === $salesChannelContext->getDomainId();
         })->first();
 
-        $response = $this->neosClient->get(sprintf("/neos/shopware-api/content-by-path/%s", trim($pathInfo, '/')), [
+        $uri = sprintf("/neos/shopware-api/content-by-path/%s", trim($pathInfo, '/'));
+        $response = $this->neosClient->request('GET', $uri, [
             'headers' => [
                 'x-sw-language-id' => $salesChannelContext->getLanguageId(),
                 'x-sw-sales-channel-id' => $salesChannelContext->getSalesChannelId(),
@@ -57,7 +59,7 @@ class ContentExchangeService
             ]
         ]);
 
-        return $this->serializer->denormalize($response->getBody()->getContents(), NeosCmsSectionCollection::class,'json');
+        return $this->serializer->denormalize($response->getContent(), NeosCmsSectionCollection::class,'json');
     }
 
     /**
@@ -74,7 +76,8 @@ class ContentExchangeService
         })->first();
 
         try {
-            $response = $this->neosClient->get(sprintf("/neos/shopware-api/content/%s/", $cmsPage->getId()), [
+            $uri = sprintf("/neos/shopware-api/content/%s/", $cmsPage->getId());
+            $response = $this->neosClient->request('GET', $uri, [
                 'headers' => [
                     'x-sw-language-id' => $languageId,
                     'x-sw-sales-channel-id' => $salesChannelId,
@@ -96,11 +99,11 @@ class ContentExchangeService
             );
         }
 
-        return $response->getBody()->getContents();
+        return $response->getContent();
     }
 
     /**
-     * Loads the slot data into the given blocks for given resolver context.
+     * Loads the slot data into the given blocks for the given resolver context.
      */
     public function loadSlotData(CmsBlockCollection $blocks, ResolverContext $resolverContext): void
     {

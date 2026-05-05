@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace nlxNeosContent\Core\Content\Admin;
+namespace nlxNeosContent\Core\Content\Admin\ApiRoutes\CacheInvalidation;
 
 use nlxNeosContent\Service\CachingInvalidationService;
 use Shopware\Core\Framework\Context;
