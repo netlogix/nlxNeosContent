@@ -6,8 +6,7 @@ namespace nlxNeosContent\Service;
 
 use GuzzleHttp\Exception\RequestException;
 use nlxNeosContent\Core\Content\Cms\Aggregate\CmsSection\NeosCmsSectionCollection;
-use nlxNeosContent\Error\NeosContentFetchException;
-use Psr\Http\Client\ClientInterface;
+use nlxNeosContent\Error\RequestError\NeosContentFetchException;
 use Shopware\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockCollection;
 use Shopware\Core\Content\Cms\Aggregate\CmsSection\CmsSectionCollection;
 use Shopware\Core\Content\Cms\CmsPageEntity;

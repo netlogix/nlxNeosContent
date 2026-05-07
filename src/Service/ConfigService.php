@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace nlxNeosContent\Service;
 
-use nlxNeosContent\Error\NeosUrlNotConfiguredException;
+use nlxNeosContent\Error\RequestError\NeosUrlNotConfiguredException;
 use Shopware\Core\System\SystemConfig\Exception\InvalidSettingValueException;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;

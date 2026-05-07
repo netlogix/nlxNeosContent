@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace nlxNeosContent\Error;
+namespace nlxNeosContent\Error\DataIntegrity;
 
+use nlxNeosContent\Error\NeosExceptionInterface;
 use Shopware\Core\Content\Cms\CmsPageEntity;
 
 class CanNotDeleteDefaultLayoutPageException extends \Exception implements NeosExceptionInterface

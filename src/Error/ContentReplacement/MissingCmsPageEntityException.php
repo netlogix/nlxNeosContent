@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
-namespace nlxNeosContent\Error;
+namespace nlxNeosContent\Error\ContentReplacement;
+
+use nlxNeosContent\Error\NeosExceptionInterface;
 
 class MissingCmsPageEntityException extends \Exception implements NeosExceptionInterface
 {
