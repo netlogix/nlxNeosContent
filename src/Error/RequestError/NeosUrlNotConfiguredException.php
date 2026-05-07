@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
-namespace nlxNeosContent\Error;
+namespace nlxNeosContent\Error\RequestError;
+
+use nlxNeosContent\Error\NeosExceptionInterface;
 
 class NeosUrlNotConfiguredException extends \Exception implements NeosExceptionInterface
 {

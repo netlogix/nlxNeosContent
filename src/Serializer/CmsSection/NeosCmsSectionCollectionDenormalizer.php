@@ -6,7 +6,7 @@ namespace nlxNeosContent\Serializer\CmsSection;
 
 use nlxNeosContent\Core\Content\Cms\Aggregate\CmsSection\NeosCmsSectionCollection;
 use nlxNeosContent\Core\Content\Cms\Aggregate\CmsSection\NeosCmsSectionEntity;
-use nlxNeosContent\Error\FaultyNeosSectionDataException;
+use nlxNeosContent\Error\ContentReplacement\FaultyNeosSectionDataException;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use Symfony\Component\Serializer\SerializerAwareInterface;
 use Symfony\Component\Serializer\SerializerInterface;
