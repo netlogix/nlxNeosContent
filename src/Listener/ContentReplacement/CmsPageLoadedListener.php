@@ -2,13 +2,14 @@
 
 declare(strict_types=1);
 
-namespace nlxNeosContent\Listener;
+namespace nlxNeosContent\Listener\ContentReplacement;
 
 use nlxNeosContent\Core\Content\NeosNode\NeosNodeEntity;
 use nlxNeosContent\Error\ContentReplacement\MissingCmsPageEntityException;
 use nlxNeosContent\Error\ContentReplacement\MissingEntityIdForResolverContextException;
 use nlxNeosContent\Service\ContentExchangeService;
 use nlxNeosContent\Service\ResolverContextService;
+use PageTypeEnum;
 use Shopware\Core\Content\Category\CategoryDefinition;
 use Shopware\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockEntity;
 use Shopware\Core\Content\Cms\Aggregate\CmsSection\CmsSectionCollection;
@@ -25,10 +26,6 @@ use Symfony\Component\HttpFoundation\Request;
 #[AsEventListener]
 class CmsPageLoadedListener
 {
-    private const PRODUCT_LISTING_PAGE = 'product_list';
-    private const PRODUCT_DETAIL_PAGE = 'product_detail';
-    private const SHOP_PAGE = 'page';
-
     public function __construct(
         private readonly ContentExchangeService $contentExchangeService,
         private readonly ResolverContextService $resolverContextService,
@@ -58,29 +55,28 @@ class CmsPageLoadedListener
         $pageType = $this->resolvePageTypeFromRoute($cmsPageLoadedEvent->getRequest()->attributes->get('_route'));
         $entityIdForResolverContext = $this->resolveEntityIdFromEvent($cmsPageLoadedEvent);
 
-        if($entityIdForResolverContext === null && $pageType !== self::SHOP_PAGE) {
+        if ($entityIdForResolverContext === null && $pageType !== PageTypeEnum::SHOP_PAGE) {
             //In few cases it is ok to have no id for a entity for the resolverContext
-            throw new MissingEntityIdForResolverContextException('Could not find entityId for resolverContext in request.', 1778141070);
+            throw new MissingEntityIdForResolverContextException(
+                $cmsPageLoadedEvent->getRequest(),
+                1778141070
+            );
         }
 
         $newCmsSections = match ($pageType) {
-            self::PRODUCT_LISTING_PAGE => $this->getNewListingPageSections(
+            PageTypeEnum::PRODUCT_LISTING => $this->getNewListingPageSections(
                 $entityIdForResolverContext,
                 $cmsPageLoadedEvent->getSalesChannelContext(),
                 $cmsPageLoadedEvent->getRequest(),
                 $cmsPageEntity,
             ),
-            self::PRODUCT_DETAIL_PAGE => $this->getNewDetailPageBlocks(
+            PageTypeEnum::PRODUCT_DETAIL => $this->getNewDetailPageBlocks(
                 $cmsPageLoadedEvent->getRequest()->attributes->get('productId'),
                 $cmsPageLoadedEvent->getSalesChannelContext(),
                 $cmsPageLoadedEvent->getRequest(),
                 $cmsPageEntity,
             ),
-            'landingpage' => $this->getNewLandingPageBlocks(
-                $cmsPageEntity,
-                $cmsPageLoadedEvent->getSalesChannelContext()
-            ),
-            self::SHOP_PAGE => $this->getNewShopPageBlocks(
+            PageTypeEnum::SHOP_PAGE => $this->getNewShopPageBlocks(
                 $cmsPageEntity,
                 $entityIdForResolverContext,
                 $cmsPageLoadedEvent->getSalesChannelContext(),
@@ -91,32 +87,24 @@ class CmsPageLoadedListener
         $cmsPageEntity->setSections($newCmsSections);
     }
 
-    private function resolvePageTypeFromRoute(string $route): string
+    private function resolvePageTypeFromRoute(string $route): PageTypeEnum
     {
-        switch ($route) {
-            case 'frontend.home.page':
-            case 'frontend.navigation.page':
-                return self::PRODUCT_LISTING_PAGE;
-            case 'frontend.detail.page':
-                return self::PRODUCT_DETAIL_PAGE;
-
-            default:
-                return self::SHOP_PAGE;
-        }
+        return match ($route) {
+            'frontend.home.page', 'frontend.navigation.page' => PageTypeEnum::PRODUCT_LISTING,
+            'frontend.detail.page' => PageTypeEnum::PRODUCT_DETAIL,
+            default => PageTypeEnum::SHOP_PAGE
+        };
     }
 
     private function resolveEntityIdFromEvent(CmsPageLoadedEvent $cmsPageLoadedEvent): ?string
     {
-        switch ($cmsPageLoadedEvent->getRequest()->attributes->get('_route')) {
-            case 'frontend.detail.page':
-                return $cmsPageLoadedEvent->getRequest()->attributes->get('productId');
-            case 'frontend.navigation.page':
-                return $cmsPageLoadedEvent->getRequest()->attributes->get('navigationId');
-            case 'frontend.home.page':
-                return $cmsPageLoadedEvent->getSalesChannelContext()->getSalesChannel()->getNavigationCategoryId();
-        }
-
-        return null;
+        return match ($cmsPageLoadedEvent->getRequest()->attributes->get('_route')) {
+            'frontend.detail.page' => $cmsPageLoadedEvent->getRequest()->attributes->get('productId'),
+            'frontend.navigation.page' => $cmsPageLoadedEvent->getRequest()->attributes->get('navigationId'),
+            'frontend.home.page' => $cmsPageLoadedEvent->getSalesChannelContext()
+                ->getSalesChannel()->getNavigationCategoryId(),
+            default => null
+        };
     }
 
     private function getNewListingPageSections(
@@ -180,31 +168,21 @@ class CmsPageLoadedListener
         return $alternativeCmsBlocksFromNeos;
     }
 
-    private function getNewLandingPageBlocks(
-        CmsPageEntity $cmsPageEntity,
-        SalesChannelContext $salesChannelContext
-    ): CmsSectionCollection {
-        return $this->contentExchangeService->getAlternativeCmsSectionsFromNeos(
-            $cmsPageEntity,
-            $salesChannelContext
-        );
-    }
-
     private function getNewShopPageBlocks(
         CmsPageEntity $cmsPageEntity,
         ?string $entityIdForResolverContext,
         SalesChannelContext $salesChannelContext,
         Request $request
     ): CmsSectionCollection {
-        if ($entityIdForResolverContext !== null) {
+        if ($entityIdForResolverContext === null) {
+            $resolverContext = new ResolverContext($salesChannelContext, $request);
+        } else {
             $resolverContext = $this->resolverContextService->getResolverContextForEntityNameAndId(
                 CategoryDefinition::ENTITY_NAME,
                 $entityIdForResolverContext,
                 $salesChannelContext,
                 $request
             );
-        } else {
-            $resolverContext = new ResolverContext($salesChannelContext, $request);
         }
 
         $alternativeSections = $this->contentExchangeService->getAlternativeCmsSectionsFromNeos(
