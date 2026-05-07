@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+namespace nlxNeosContent\Enum;
+
 enum PageTypeEnum
 {
     case PRODUCT_LISTING;

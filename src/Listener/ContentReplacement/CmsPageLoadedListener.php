@@ -9,7 +9,7 @@ use nlxNeosContent\Error\ContentReplacement\MissingCmsPageEntityException;
 use nlxNeosContent\Error\ContentReplacement\MissingEntityIdForResolverContextException;
 use nlxNeosContent\Service\ContentExchangeService;
 use nlxNeosContent\Service\ResolverContextService;
-use PageTypeEnum;
+use nlxNeosContent\Enum\PageTypeEnum;
 use Shopware\Core\Content\Category\CategoryDefinition;
 use Shopware\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockEntity;
 use Shopware\Core\Content\Cms\Aggregate\CmsSection\CmsSectionCollection;
