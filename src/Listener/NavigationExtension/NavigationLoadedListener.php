@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace nlxNeosContent\Listener;
+namespace nlxNeosContent\Listener\NavigationExtension;
 
 use nlxNeosContent\Factory\NeosPageTreeItemFactory;
 use nlxNeosContent\Neos\Endpoint\AbstractNeosPageTreeLoader;
