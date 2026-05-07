@@ -7,7 +7,7 @@ namespace nlxNeosContent\Service;
 use Exception;
 use nlxNeosContent\Core\Content\NeosNode\NeosNodeEntity;
 use nlxNeosContent\Core\Notification\NotificationServiceInterface;
-use nlxNeosContent\Error\CanNotDeleteDefaultLayoutPageException;
+use nlxNeosContent\Error\DataIntegrity\CanNotDeleteDefaultLayoutPageException;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;

@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-namespace nlxNeosContent\Error;
+namespace nlxNeosContent\Error\ContentReplacement;
 
 use Exception;
+use nlxNeosContent\Error\NeosExceptionInterface;
 use Throwable;
 
 class FaultyNeosSectionDataException extends Exception implements NeosExceptionInterface

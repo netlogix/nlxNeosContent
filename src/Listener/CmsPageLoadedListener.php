@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace nlxNeosContent\Listener;
 
 use nlxNeosContent\Core\Content\NeosNode\NeosNodeEntity;
-use nlxNeosContent\Error\MissingCmsPageEntityException;
+use nlxNeosContent\Error\ContentReplacement\MissingCmsPageEntityException;
+use nlxNeosContent\Error\ContentReplacement\MissingEntityIdForResolverContextException;
 use nlxNeosContent\Service\ContentExchangeService;
 use nlxNeosContent\Service\ResolverContextService;
 use Shopware\Core\Content\Category\CategoryDefinition;
@@ -24,6 +25,10 @@ use Symfony\Component\HttpFoundation\Request;
 #[AsEventListener]
 class CmsPageLoadedListener
 {
+    private const PRODUCT_LISTING_PAGE = 'product_list';
+    private const PRODUCT_DETAIL_PAGE = 'product_detail';
+    private const SHOP_PAGE = 'page';
+
     public function __construct(
         private readonly ContentExchangeService $contentExchangeService,
         private readonly ResolverContextService $resolverContextService,
@@ -50,14 +55,22 @@ class CmsPageLoadedListener
             return;
         }
 
-        $newCmsSections = match ($cmsPageEntity->getType()) {
-            'product_list' => $this->getNewListingPageSections(
-                $this->extractCategoryIdFromPathInfo($cmsPageLoadedEvent->getRequest()->getPathInfo()),
+        $pageType = $this->resolvePageTypeFromRoute($cmsPageLoadedEvent->getRequest()->attributes->get('_route'));
+        $entityIdForResolverContext = $this->resolveEntityIdFromEvent($cmsPageLoadedEvent);
+
+        if($entityIdForResolverContext === null && $pageType !== self::SHOP_PAGE) {
+            //In few cases it is ok to have no id for a entity for the resolverContext
+            throw new MissingEntityIdForResolverContextException('Could not find entityId for resolverContext in request.', 1778141070);
+        }
+
+        $newCmsSections = match ($pageType) {
+            self::PRODUCT_LISTING_PAGE => $this->getNewListingPageSections(
+                $entityIdForResolverContext,
                 $cmsPageLoadedEvent->getSalesChannelContext(),
                 $cmsPageLoadedEvent->getRequest(),
                 $cmsPageEntity,
             ),
-            'product_detail' => $this->getNewDetailPageBlocks(
+            self::PRODUCT_DETAIL_PAGE => $this->getNewDetailPageBlocks(
                 $cmsPageLoadedEvent->getRequest()->attributes->get('productId'),
                 $cmsPageLoadedEvent->getSalesChannelContext(),
                 $cmsPageLoadedEvent->getRequest(),
@@ -67,8 +80,9 @@ class CmsPageLoadedListener
                 $cmsPageEntity,
                 $cmsPageLoadedEvent->getSalesChannelContext()
             ),
-            'page' => $this->getNewShopPageBlocks(
+            self::SHOP_PAGE => $this->getNewShopPageBlocks(
                 $cmsPageEntity,
+                $entityIdForResolverContext,
                 $cmsPageLoadedEvent->getSalesChannelContext(),
                 $cmsPageLoadedEvent->getRequest()
             )
@@ -77,9 +91,32 @@ class CmsPageLoadedListener
         $cmsPageEntity->setSections($newCmsSections);
     }
 
-    private  function extractCategoryIdFromPathInfo(string $pathInfo): string
+    private function resolvePageTypeFromRoute(string $route): string
     {
-        return str_replace('/navigation/', '', $pathInfo);
+        switch ($route) {
+            case 'frontend.home.page':
+            case 'frontend.navigation.page':
+                return self::PRODUCT_LISTING_PAGE;
+            case 'frontend.detail.page':
+                return self::PRODUCT_DETAIL_PAGE;
+
+            default:
+                return self::SHOP_PAGE;
+        }
+    }
+
+    private function resolveEntityIdFromEvent(CmsPageLoadedEvent $cmsPageLoadedEvent): ?string
+    {
+        switch ($cmsPageLoadedEvent->getRequest()->attributes->get('_route')) {
+            case 'frontend.detail.page':
+                return $cmsPageLoadedEvent->getRequest()->attributes->get('productId');
+            case 'frontend.navigation.page':
+                return $cmsPageLoadedEvent->getRequest()->attributes->get('navigationId');
+            case 'frontend.home.page':
+                return $cmsPageLoadedEvent->getSalesChannelContext()->getSalesChannel()->getNavigationCategoryId();
+        }
+
+        return null;
     }
 
     private function getNewListingPageSections(
@@ -155,10 +192,21 @@ class CmsPageLoadedListener
 
     private function getNewShopPageBlocks(
         CmsPageEntity $cmsPageEntity,
+        ?string $entityIdForResolverContext,
         SalesChannelContext $salesChannelContext,
         Request $request
     ): CmsSectionCollection {
-        $resolverContext = new ResolverContext($salesChannelContext, $request);
+        if ($entityIdForResolverContext !== null) {
+            $resolverContext = $this->resolverContextService->getResolverContextForEntityNameAndId(
+                CategoryDefinition::ENTITY_NAME,
+                $entityIdForResolverContext,
+                $salesChannelContext,
+                $request
+            );
+        } else {
+            $resolverContext = new ResolverContext($salesChannelContext, $request);
+        }
+
         $alternativeSections = $this->contentExchangeService->getAlternativeCmsSectionsFromNeos(
             $cmsPageEntity,
             $salesChannelContext,
