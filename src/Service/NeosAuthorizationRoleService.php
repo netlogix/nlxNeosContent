@@ -17,8 +17,6 @@ class NeosAuthorizationRoleService
     public const NEOS_VIEWER = 'Neos-Viewer';
     public const NEOS_EDITOR = 'Neos-Editor';
 
-    private ?Context $context = null;
-
     /**
      * The first four privileges are always given to an "empty" ACL role
      * which makes sense since otherwise the admin area throws Errors at the user
@@ -81,38 +79,44 @@ class NeosAuthorizationRoleService
         ]);
     }
 
-    public function createNeosViewerRole(): void
+    public function createNeosViewerRole(
+        Context $context,
+    ): void
     {
         $this->installRole(
             $this::NEOS_VIEWER,
             'This role has viewing privileges for Neos',
-            self::NEOS_VIEWER_PRIVILEGES
+            self::NEOS_VIEWER_PRIVILEGES,
+            $context
         );
     }
 
-    public function createNeosEditorRole(): void
+    public function createNeosEditorRole(
+        Context $context,
+    ): void
     {
         $this->installRole(
             $this::NEOS_EDITOR,
             'This role has all editorial privileges for the Neos CMS',
-            self::NEOS_EDITOR_PRIVILEGES
+            self::NEOS_EDITOR_PRIVILEGES,
+            $context
         );
     }
 
-    public function removeNeosViewerRole(): void
+    public function removeNeosViewerRole(Context $context): void
     {
-        $this->removeRole($this::NEOS_VIEWER);
+        $this->removeRole($this::NEOS_VIEWER, $context);
     }
 
-    public function removeNeosEditorRole(): void
+    public function removeNeosEditorRole(Context $context): void
     {
-        $this->removeRole($this::NEOS_EDITOR);
+        $this->removeRole($this::NEOS_EDITOR, $context);
     }
 
-    private function installRole(string $roleName, string $description, array $privileges): void
+    private function installRole(string $roleName, string $description, array $privileges, Context $context): void
     {
         $roleId = $this->getRoleIdFromName($roleName);
-        if ($this->roleExists($roleId)) {
+        if ($this->roleExists($roleId, $context)) {
             return;
         }
 
@@ -123,13 +127,13 @@ class NeosAuthorizationRoleService
             'privileges' => array_merge(self::BASIC_PRIVILEGES, $privileges)
         ];
 
-        $this->aclRoleRepository->upsert([$roleData], $this->getContext());
+        $this->aclRoleRepository->upsert([$roleData], $context);
     }
 
-    private function roleExists(string $roleId): bool
+    private function roleExists(string $roleId, Context $context): bool
     {
         /** @var EntityCollection $roles */
-        $roles = $this->getRoleById($roleId);
+        $roles = $this->getRoleById($roleId, $context);
         if ($roles->count() === 0) {
             return false;
         } elseif ($roles->count() === 1) {
@@ -140,10 +144,11 @@ class NeosAuthorizationRoleService
     }
 
     private function removeRole(
-        string $roleName
+        string $roleName,
+        Context $context,
     ): void {
         $roleId = $this->getRoleIdFromName($roleName);
-        if (!$this->roleExists($roleId)) {
+        if (!$this->roleExists($roleId, $context)) {
             //Role does not exist, nothing to do
             return;
         }
@@ -151,17 +156,17 @@ class NeosAuthorizationRoleService
         $roleCriteria->setIds([$roleId]);
 
         /** @var AclRoleEntity $role */
-        $role = $this->aclRoleRepository->search($roleCriteria, $this->getContext())->first();
+        $role = $this->aclRoleRepository->search($roleCriteria, $context)->first();
         $deleteAclUserRoles = array_map(fn ($id) => [
             'aclRoleId' => $roleId,
             'userId' => $id
         ], $role->getUsers()?->getIds() ?? []);
 
         if ($deleteAclUserRoles !== []) {
-            $this->aclUserRoleRepository->delete($deleteAclUserRoles, $this->getContext());
+            $this->aclUserRoleRepository->delete($deleteAclUserRoles, $context);
         }
 
-        $this->aclRoleRepository->delete([['id' => $roleId]], $this->getContext());
+        $this->aclRoleRepository->delete([['id' => $roleId]], $context);
     }
 
     private function getRoleIdFromName(string $roleName): string
@@ -169,14 +174,9 @@ class NeosAuthorizationRoleService
         return md5($roleName);
     }
 
-    private function getRoleById(string $roleId): EntityCollection
+    private function getRoleById(string $roleId, Context $context): EntityCollection
     {
-        return $this->aclRoleRepository->search(new Criteria([$roleId]), Context::createDefaultContext())->getEntities(
+        return $this->aclRoleRepository->search(new Criteria([$roleId]), $context)->getEntities(
         );
-    }
-
-    private function getContext(): Context
-    {
-        return $this->context ??= Context::createDefaultContext();
     }
 }
