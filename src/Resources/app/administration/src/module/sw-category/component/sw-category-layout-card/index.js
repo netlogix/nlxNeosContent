@@ -25,6 +25,12 @@ export default {
 
             return this.cmsPage.extensions?.nlxNeosNode?.neosConnection;
         },
+
+        renderContextUi() {
+            const version = Shopware.Context.app.config.version;
+
+            return /^(?:6\.7\.(?:[5-9]|\d{2,})|6\.(?:[8-9]|\d{2,})\.|[7-9]\d*\.)/.test(version);
+        },
     },
 
     emits: [

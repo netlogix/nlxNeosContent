@@ -1,3 +1,4 @@
+const {Mixin} = Shopware;
 import template from './nlx-preview-modal.html.twig';
 
 export default {
