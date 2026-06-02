@@ -1,19 +1,14 @@
-{% sw_extends '@Storefront/storefront/base.html.twig' %}
+{% sw_extends '@Storefront/storefront/page/content/index.html.twig' %}
 
 {# @var page \Shopware\Storefront\Page\LandingPage\LandingPage|\Shopware\Storefront\Page\CategoryPage\CategoryPage #}
-{% block base_main_inner %}
-    <div class="container-main">
-        {% block page_content %}
 
-            {% block cms_content %}
-                {% set cmsPageClasses = ('cms-page ' ~ cmsPage.cssClass|striptags)|trim %}
-                {% set landingPage = {} %}
-                <div class="{{ cmsPageClasses }}">
-                    {% block page_content_blocks %}
-                        {% sw_include '@Storefront/storefront/page/content/detail.html.twig' with {cmsPage: cmsPage, landingPage: landingPage} %}
-                    {% endblock %}
-                </div>
-            {% endblock %}
+{% block cms_content %}
+    {% set cmsPageClasses = ('cms-page ' ~ cmsPage.cssClass|striptags)|trim %}
+    {% set landingPage = {} %}
+    <div class="{{ cmsPageClasses }}">
+        {% block page_content_blocks %}
+            {% sw_include '@Storefront/storefront/page/content/detail.html.twig' with {cmsPage: cmsPage, landingPage: landingPage} %}
         {% endblock %}
     </div>
+    {{ parent() }}
 {% endblock %}

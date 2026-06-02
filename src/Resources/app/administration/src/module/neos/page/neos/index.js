@@ -1,3 +1,4 @@
+const {Mixin} = Shopware;
 import template from './neos-index.html.twig';
 import './neos-index.scss';
 
@@ -8,6 +9,10 @@ Shopware.Component.register('neos-index', {
     template,
 
     inject: ['nlxRoutes', 'repositoryFactory', 'nlxNeosContentApiService', 'nlxConfigService'],
+
+    mixins: [
+        Mixin.getByName('notification')
+    ],
 
     props: {
         neosLoginRoute: {
@@ -94,13 +99,12 @@ Shopware.Component.register('neos-index', {
 
             const loginService = Shopware.Service('loginService');
             if (!loginService.isLoggedIn()) {
-                console.error('User is not logged in');
+                this.triggerLoginModal(loginService);
+                this.isLoading = false;
                 return;
             }
 
-            this.loadNeosIntoIframe().catch((error) => {
-                console.error('Failed to load Neos into iframe:', error);
-            });
+            this.loadNeosIntoIframe();
 
             // send refreshed token to Neos
             loginService.addOnTokenChangedListener(async () => {
@@ -114,8 +118,11 @@ Shopware.Component.register('neos-index', {
                     }
                 });
 
-                if (!this.config.neosLoginRoute) {
-                    console.error('Could not refresh token: neosLoginRoute is undefined');
+                const tokenRefreshRoute = this.nlxRoutes.getNeosIndexRoute(neosBaseUri);
+                if (!tokenRefreshRoute) {
+                    this.createNotificationWarning({
+                        message: this.$tc('neos.tokenRefresh.noRouteWarning.message'),
+                    });
                     return;
                 }
 
@@ -126,7 +133,7 @@ Shopware.Component.register('neos-index', {
                         apiUrl: api.schemeAndHttpHost,
                         shopwareVersion: this.config.shopwareVersion,
                     },
-                    this.config.neosLoginRoute
+                    tokenRefreshRoute
                 );
             });
         });
@@ -148,7 +155,7 @@ Shopware.Component.register('neos-index', {
         async loadConfig() {
             const loginService = Shopware.Service('loginService');
             if (!loginService.isLoggedIn()) {
-                console.error('User is not logged in');
+                this.triggerLoginModal(loginService);
                 return;
             }
 
@@ -199,6 +206,14 @@ Shopware.Component.register('neos-index', {
             response.json().then(content => {
                 this.iframeSrc = content.iframeUri;
                 this.isLoading = false;
+            }).catch((error) => {
+                this.createNotificationError({
+                    title: $tc('neos.loadNeosIntoIframe.loginError.title'),
+                    message: $tc('neos.loadNeosIntoIframe.loginError.message', {
+                        errorMessage: error.message
+                    })
+                });
+                this.isLoading = false;
             });
         },
 
@@ -211,6 +226,10 @@ Shopware.Component.register('neos-index', {
                 {key: 'nodeIdentifier', value: this.nodeIdentifier}
             ].filter(m => m.value));
             return queryParams;
+        },
+
+        triggerLoginModal(loginService) {
+            loginService.logout(true, true);
         }
     }
 });

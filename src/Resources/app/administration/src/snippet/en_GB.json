@@ -9,7 +9,6 @@
     "sw-category": {
         "base": {
             "cms": {
-                "editInNeos": "Edit in Enterprise Content Platform",
                 "preview": {
                     "buttonText": "Open Preview",
                     "modalHeadline": "Preview Configuration"
@@ -18,6 +17,11 @@
                     "buttonText": "Create Layout in Enterprise Content Platform",
                     "infoTitle": "Layout already exists",
                     "infoMessage": "A layout for {layout} already exists in Enterprise Content Platform. It can be assigned to this category."
+                },
+                "openInNeos": {
+                    "buttonText": "Edit in Enterprise Content Platform",
+                    "errorTitle": "Error opening layout",
+                    "errorMessage": "The layout to edit could not be found."
                 }
             }
         },
@@ -43,8 +47,32 @@
                     "buttonText": "Create Layout in Enterprise Content Platform",
                     "infoTitle": "Layout already exists",
                     "infoMessage": "A layout for {layout} already exists in Enterprise Content Platform. It can be assigned to this product."
+                },
+                "openInNeos": {
+                    "buttonText": "Edit in Enterprise Content Platform",
+                    "errorTitle": "Error opening layout",
+                    "errorMessage": "The layout to edit could not be found."
                 }
             }
+        }
+    },
+    "neos": {
+        "loadNeosIntoIframe": {
+            "loginError": {
+                "title": "Failed Login",
+                "message": "Login to Enterprise Content Platform failed: `{errorMessage}`."
+            }
+        },
+        "tokenRefresh": {
+            "noRouteWarning": {
+                "message": "Could not renew Enterprise Content Platform Login Token since the login-route is undefined!"
+            }
+        }
+    },
+    "nlx-preview-modal": {
+        "domainError": {
+            "errorTitle": "Could not resolve Domain",
+            "errorMessage": "Could not resolve domain for SalesChannel with id: {salesChannelId} and selected language with id: {languageId}."
         }
     },
     "nlx-url-test-button": {

@@ -37,7 +37,7 @@ Shopware.Module.register('nlx-neos', {
         detail: {
             component: 'neos-index',
             name: 'nlx.neos.detail',
-            path: 'detail/:cmsPageId/:entityId/:entityName',
+            path: 'detail/:cmsPageId/:entityId?/:entityName?',
             meta: {
                 privilege: "neos.viewer"
             },
@@ -46,8 +46,8 @@ Shopware.Module.register('nlx-neos', {
                 default(route) {
                     return {
                         cmsPageId: route.params.cmsPageId.toLowerCase(),
-                        entityId: route.params.entityId.toLowerCase(),
-                        entityName: route.params.entityName.toLowerCase(),
+                        entityId: route.params.entityId?.toLowerCase() || null,
+                        entityName: route.params.entityName?.toLowerCase() || null,
                     };
                 },
             },
