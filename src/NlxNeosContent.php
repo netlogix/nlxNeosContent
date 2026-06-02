@@ -11,6 +11,7 @@ use nlxNeosContent\Core\Notification\NotificationServiceInterface;
 use nlxNeosContent\Service\NeosAuthorizationRoleService;
 use nlxNeosContent\Service\NeosCmsPageLifecycleService;
 use RuntimeException;
+use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\Feature;
 use Shopware\Core\Framework\Plugin;
 use Shopware\Core\Framework\Plugin\Context\ActivateContext;
@@ -31,8 +32,12 @@ class NlxNeosContent extends Plugin implements CompilerPassInterface
         parent::install($installContext);
 
         $neosAuthorizationRoleService = $this->getNeosAuthorizationRoleService();
-        $neosAuthorizationRoleService->createNeosViewerRole($installContext->getContext());
-        $neosAuthorizationRoleService->createNeosEditorRole($installContext->getContext());
+        $installContext->getContext()->scope(
+            Context::SYSTEM_SCOPE,
+            function (Context $context) use ($neosAuthorizationRoleService) {
+                $neosAuthorizationRoleService->createNeosViewerRole($context);
+                $neosAuthorizationRoleService->createNeosEditorRole($context);
+            });
     }
 
     function build(ContainerBuilder $container): void
@@ -72,8 +77,10 @@ class NlxNeosContent extends Plugin implements CompilerPassInterface
 
         //Remove acl roles
         $neosAuthorizationRoleService = $this->getNeosAuthorizationRoleService();
-        $neosAuthorizationRoleService->removeNeosViewerRole($uninstallContext->getContext());
-        $neosAuthorizationRoleService->removeNeosEditorRole($uninstallContext->getContext());
+        $uninstallContext->getContext()->scope(Context::SYSTEM_SCOPE, function (Context $context) use ($neosAuthorizationRoleService) {
+            $neosAuthorizationRoleService->removeNeosViewerRole($context);
+            $neosAuthorizationRoleService->removeNeosEditorRole($context);
+        });
 
         //Remove cms pages
         $this->getNeosCmsPageLifecycleService()->removeCmsPages();
