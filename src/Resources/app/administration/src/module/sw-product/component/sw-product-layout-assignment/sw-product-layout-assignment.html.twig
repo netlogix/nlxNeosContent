@@ -15,7 +15,7 @@
         v-if="isNeosPage"
         @click="openInNeos"
     >
-        {{ $tc('sw-category.base.cms.editInNeos') }}
+        {{ $tc('sw-product.base.cms.openInNeos.buttonText') }}
     </sw-button>
 
     {# FIXME remove doubled class and add styling for the preview button class #}
@@ -25,7 +25,7 @@
         :disabled="!acl.can('product.editor') || undefined"
         @click="openPreviewModal"
         >
-        {{ $tc('sw-category.base.cms.preview.buttonText') }}
+        {{ $tc('sw-product.base.cms.preview.buttonText') }}
     </sw-button>
 {% endblock %}
 {% block sw_product_layout_assignment_button_delete %}

@@ -9,15 +9,21 @@
     "sw-category": {
         "base": {
             "cms": {
-                "editInNeos": "In Enterprise Content Platform bearbeiten",
                 "preview": {
                     "buttonText": "Vorschau öffnen",
-                    "modalHeadline": "Vorschaukonfiguration"
+                    "modal": {
+                        "headline": "Vorschaukonfiguration"
+                    }
                 },
                 "createInNeos": {
                     "buttonText": "Layout in Enterprise Content Platform erstellen",
                     "infoTitle": "Layout bereits vorhanden",
                     "infoMessage": "Für {layout} ist bereits ein Layout in der Enterprise Content Platform vorhanden. Es kann dieser Kategorie zugewiesen werden."
+                },
+                "openInNeos": {
+                    "buttonText": "In Enterprise Content Platform bearbeiten",
+                    "errorTitle": "Fehler beim Öffnen des Layouts",
+                    "errorMessage": "Das Layout zum bearbeiten konnte nicht gefunden werden."
                 }
             }
         },
@@ -32,7 +38,6 @@
     "sw-product": {
         "base": {
             "cms": {
-                "editInNeos": "In Enterprise Content Platform bearbeiten",
                 "preview": {
                     "buttonText": "Vorschau öffnen",
                     "modal": {
@@ -43,8 +48,32 @@
                     "buttonText": "Layout in Enterprise Content Platform erstellen",
                     "infoTitle": "Layout bereits vorhanden",
                     "infoMessage": "Für {layout} ist bereits ein Layout in der Enterprise Content Platform vorhanden. Es kann diesem Produkt zugewiesen werden."
+                },
+                "openInNeos": {
+                    "buttonText": "In Enterprise Content Platform bearbeiten",
+                    "errorTitle": "Fehler beim Öffnen des Layouts",
+                    "errorMessage": "Das Layout zum bearbeiten konnte nicht gefunden werden."
                 }
             }
+        }
+    },
+    "neos": {
+        "loadNeosIntoIframe": {
+            "loginError": {
+                "title": "Fehler beim Login",
+                "message": "Der Login zu Enterprise Content Platform ist fehlgeschlagen: `{errorMessage}`."
+            }
+        },
+        "tokenRefresh": {
+            "noRouteWarning": {
+                "message": "Der Enterprise Content Platform Login Token konnte nicht erneuert werden, da die Login-Route nicht definiert ist!"
+            }
+        }
+    },
+    "nlx-preview-modal": {
+        "domainError": {
+            "errorTitle": "Keine SalesChannel Domain gefunden",
+            "errorMessage": "Für den SalesChannel mit der ID: {salesChannelId} konnte für die Sprache mit der ID: {languageId} keine Domain gefunden werden."
         }
     },
     "nlx-url-test-button": {

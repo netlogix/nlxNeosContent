@@ -31,8 +31,8 @@ class NlxNeosContent extends Plugin implements CompilerPassInterface
         parent::install($installContext);
 
         $neosAuthorizationRoleService = $this->getNeosAuthorizationRoleService();
-        $neosAuthorizationRoleService->createNeosViewerRole();
-        $neosAuthorizationRoleService->createNeosEditorRole();
+        $neosAuthorizationRoleService->createNeosViewerRole($installContext->getContext());
+        $neosAuthorizationRoleService->createNeosEditorRole($installContext->getContext());
     }
 
     function build(ContainerBuilder $container): void
@@ -72,8 +72,8 @@ class NlxNeosContent extends Plugin implements CompilerPassInterface
 
         //Remove acl roles
         $neosAuthorizationRoleService = $this->getNeosAuthorizationRoleService();
-        $neosAuthorizationRoleService->removeNeosViewerRole();
-        $neosAuthorizationRoleService->removeNeosEditorRole();
+        $neosAuthorizationRoleService->removeNeosViewerRole($uninstallContext->getContext());
+        $neosAuthorizationRoleService->removeNeosEditorRole($uninstallContext->getContext());
 
         //Remove cms pages
         $this->getNeosCmsPageLifecycleService()->removeCmsPages();

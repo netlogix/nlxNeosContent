@@ -1,9 +1,14 @@
+const {Mixin} = Shopware;
 import template from './nlx-preview-modal.html.twig';
 
 export default {
     template,
 
     inject: ['repositoryFactory'],
+
+    mixins: [
+        Mixin.getByName('notification')
+    ],
 
     props: {
         cmsPageId: {
@@ -136,7 +141,14 @@ export default {
             const domain = domains.first();
 
             if (!domain) {
-                console.error('Could not resolve URL for SalesChannel with id: "' + this.salesChannelId + '" and language with id: "' + this.languageId + '"');
+                this.createNotificationError({
+                    title: this.$tc('nlx-preview-modal.domainError.errorTitle'),
+                    message: this.$tc('nlx-preview-modal.domainError.errorMessage', {
+                        salesChannelId: this.salesChannelId,
+                        languageId: this.languageId
+                    })
+                });
+                return;
             }
 
             const baseUrl = domain.url;

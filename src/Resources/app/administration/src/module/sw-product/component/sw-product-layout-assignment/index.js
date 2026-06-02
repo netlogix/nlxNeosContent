@@ -40,7 +40,11 @@ export default {
         openInNeos() {
             if (!this.cmsPage) {
                 // this should never happen
-                console.error('No cmsPage provided');
+                this.createNotificationError({
+                    title: this.$tc('sw-product.base.cms.openInNeos.errorTitle'),
+                    message: this.$tc('sw-product.base.cms.createInNeos.errorMessage')
+                });
+                return;
             }
 
             this.$router.push({
