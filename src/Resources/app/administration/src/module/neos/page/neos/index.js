@@ -208,8 +208,8 @@ Shopware.Component.register('neos-index', {
                 this.isLoading = false;
             }).catch((error) => {
                 this.createNotificationError({
-                    title: $tc(''),
-                    message: $tc('', {
+                    title: $tc('neos.loadNeosIntoIframe.loginError.title'),
+                    message: $tc('neos.loadNeosIntoIframe.loginError.message', {
                         errorMessage: error.message
                     })
                 });
