@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace nlxNeosContent\Twig;
 
+use nlxNeosContent\Service\ConfigService;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\AsTaggedItem;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -18,8 +19,12 @@ class ResourceHelper extends AbstractExtension
     public function __construct(
         private readonly HttpClientInterface $neosClient,
         private readonly LoggerInterface $logger,
+        private readonly ConfigService $configService,
     )
     {
+        if (!$this->configService->isEnabled()) {
+            return;
+        }
         try {
             $response = $this->neosClient->request('GET', '/neos/shopware-api/resources/');
         } catch (\Exception $e) {

@@ -8,6 +8,7 @@ use Exception;
 use nlxNeosContent\Core\Content\NeosNode\NeosNodeEntity;
 use nlxNeosContent\Core\Notification\NotificationServiceInterface;
 use nlxNeosContent\Error\DataIntegrity\CanNotDeleteDefaultLayoutPageException;
+use nlxNeosContent\Error\RequestError\NeosUrlNotConfiguredException;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
@@ -32,12 +33,25 @@ class NeosLayoutPageService
         private readonly HttpClientInterface $neosClient,
         private readonly SystemConfigService $systemConfigService,
         private readonly TranslatorInterface $translator,
+        private readonly ConfigService $configService,
     ) {
     }
 
     public function getNeosCmsPageTemplates(): array
     {
         $context = Context::createDefaultContext();
+        if (!$this->configService->isEnabled())
+        {
+            $this->createNotification(
+                $context,
+                $this->translator->trans('nlxNeosContent.notification.neosUrlNotConfigured')
+            );
+
+            throw new NeosUrlNotConfiguredException(
+                'The Neos URL is not configured. Please check your plugin configuration.',
+                1780473858
+            );
+        }
         try {
             $response = $this->neosClient->request('GET', '/neos/shopware-api/layout/pages', [
                 'headers' => [

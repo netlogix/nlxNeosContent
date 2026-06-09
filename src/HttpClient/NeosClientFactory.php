@@ -17,6 +17,9 @@ class NeosClientFactory
     public static function create(
         ConfigService $configService,
     ): HttpClientInterface {
+        if (!$configService->isEnabled()) {
+            return new MissingUrlClient();
+        }
         return HttpClient::createForBaseUri(
             $configService->getInternalBaseUrl(),
             [

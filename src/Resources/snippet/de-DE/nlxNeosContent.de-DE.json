@@ -1,7 +1,8 @@
 {
     "nlxNeosContent": {
         "notification": {
-            "neosLayoutPagesFetchError": "Neos Layout-Seiten konnten nicht abgerufen werden. Die Ursache könnte eine Fehlkonfiguration der Neos-Basis-URL oder ein Problem mit der Neos-API sein."
+            "neosLayoutPagesFetchError": "Neos Layout-Seiten konnten nicht abgerufen werden. Die Ursache könnte eine Fehlkonfiguration der Neos-Basis-URL oder ein Problem mit der Neos-API sein.",
+            "neosUrlNotConfigured": "Die Neos-Basis-URL ist nicht konfiguriert. Bitte überprüfen Sie die Einstellungen und stellen Sie sicher, dass die Neos-Basis-URL korrekt angegeben ist."
         }
     }
 }
