@@ -1,11 +1,15 @@
 {# Registration Process to get the url to activate the installation #}
 <div class="registration-form" v-if="inactiveConfiguration">
     <div class="w-100" data-fillout-id="rRTU5s2mKUeu" data-fillout-embed-type="standard"
-         data-fillout-inherit-parameters data-fillout-dynamic-resize data-fillout-domain="connect.netlogix.de"></div>
+         data-fillout-inherit-parameters data-fillout-dynamic-resize data-fillout-domain="connect.netlogix.de">
+    </div>
+    <div class="registration-info">
+        <p>If you already have a Connector-URL you can enter it in the <span class="link" @click="redirectToSettings">Enterprise-Content-Platform Settings</span></p>
+    </div>
 </div>
 
 {# Embeded Neos if the installation is active and has a valid URL #}
-<div class="neos">
+<div class="neos" v-if="!inactiveConfiguration">
     <sw-loader v-if="isLoading"></sw-loader>
     <iframe v-else
             :src="iframeSrc"
