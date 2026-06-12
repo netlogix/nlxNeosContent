@@ -230,6 +230,12 @@ Shopware.Component.register('neos-index', {
 
         triggerLoginModal(loginService) {
             loginService.logout(true, true);
+        },
+
+        redirectToSettings() {
+            this.$router.push({
+                name: 'nlx.neos.settings.index',
+            })
         }
     }
 });
