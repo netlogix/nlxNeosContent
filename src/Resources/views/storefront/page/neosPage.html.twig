@@ -7,7 +7,7 @@
     {% set landingPage = {} %}
     <div class="{{ cmsPageClasses }}">
         {% block page_content_blocks %}
-            {% sw_include '@Storefront/storefront/page/content/detail.html.twig' with {cmsPage: cmsPage, landingPage: landingPage} %}
+            {{ parent() }}
         {% endblock %}
     </div>
     {{ parent() }}
