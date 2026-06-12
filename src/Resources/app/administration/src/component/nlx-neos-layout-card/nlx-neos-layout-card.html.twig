@@ -2,7 +2,6 @@
     <mt-card
             class="sw-category-layout-card"
             position-identifier="sw-category-layout"
-{#          TODO the card title has to be renamed  #}
             :title="$tc('sw-category.base.cms.title')"
             :is-loading="false"
     >
@@ -30,14 +29,6 @@
                     >
                         {{ $tc('sw-category.base.cms.editInNeos') }}
                     </sw-button>
-{# TODO enable when Workspace-based preview is available                   <sw-button#}
-{#                            class="sw-product-preview__button sw-product-layout-assignment__button"#}
-{#                            size="small"#}
-{#                            :disabled="!acl.can('category.editor') || undefined"#}
-{#                            @click="openPreviewModal"#}
-{#                    >#}
-{#                        {{ $tc('sw-category.base.cms.preview.buttonText') }}#}
-{#                    </sw-button>#}
                     <nlx-preview-modal
                             v-if="showPreviewModal"
                             :headline="$tc('sw-category.base.cms.preview.modal.headline')"

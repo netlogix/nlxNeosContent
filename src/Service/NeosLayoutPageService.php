@@ -37,9 +37,8 @@ class NeosLayoutPageService
     ) {
     }
 
-    public function getNeosCmsPageTemplates(): array
+    public function getNeosCmsPageTemplates(Context $context): array
     {
-        $context = Context::createDefaultContext();
         if (!$this->configService->isEnabled())
         {
             $this->createNotification(

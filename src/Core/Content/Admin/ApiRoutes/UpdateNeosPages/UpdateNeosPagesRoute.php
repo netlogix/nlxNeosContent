@@ -37,7 +37,7 @@ class UpdateNeosPagesRoute extends AbstractUpdateNeosPagesRoute
         }
 
         try {
-            $neosPages = $this->neosLayoutPageService->getNeosCmsPageTemplates();
+            $neosPages = $this->neosLayoutPageService->getNeosCmsPageTemplates($context);
         } catch (GuzzleException $e) {
             $this->neosLayoutPageService->createNotification($context);
             throw new Exception('Failed to retrieve Neos templates: ' . $e->getMessage(), 1751381726, $e);
