@@ -1,7 +1,8 @@
-{# remove with plugin version for shopware 6.7 since the core will do it correctly then #}
+{# remove with plugin version for shopware 6.7 only since the core will do it correctly then #}
 {% sw_extends "@NlxNeosContent/storefront/element/cms-element-category-navigation.html.twig" %}
 {% block element_category_navigation %}
     {% if neosRequest %}
+        {# This is is needed for backwards compatibility for shopware 6.6.x versions #}
         {% set navigation = element.data.tree %}
         {% set active = null %}
     {% endif %}
