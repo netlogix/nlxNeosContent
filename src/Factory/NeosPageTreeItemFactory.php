@@ -8,6 +8,7 @@ namespace nlxNeosContent\Factory;
 use nlxNeosContent\Neos\DTO\NeosPageCollection;
 use nlxNeosContent\Neos\DTO\NeosPageDTO;
 use Psr\Log\LoggerInterface;
+use Ramsey\Uuid\Uuid;
 use Shopware\Core\Content\Category\CategoryEntity;
 use Shopware\Core\Content\Category\SalesChannel\SalesChannelCategoryEntity;
 use Shopware\Core\Content\Category\Tree\TreeItem;
@@ -50,7 +51,7 @@ class NeosPageTreeItemFactory
         //TODO figure out child count and visible child count and level
 
         $category = new SalesChannelCategoryEntity();
-        $category->setId($page->identifier);
+        $category->setId(str_replace('-', '', $page->identifier));
         $category->setName($page->label);
         $category->setType('neos-entrypoint');
         $category->setSeoUrl(
