@@ -8,7 +8,6 @@ namespace nlxNeosContent\Factory;
 use nlxNeosContent\Neos\DTO\NeosPageCollection;
 use nlxNeosContent\Neos\DTO\NeosPageDTO;
 use Psr\Log\LoggerInterface;
-use Ramsey\Uuid\Uuid;
 use Shopware\Core\Content\Category\CategoryEntity;
 use Shopware\Core\Content\Category\SalesChannel\SalesChannelCategoryEntity;
 use Shopware\Core\Content\Category\Tree\TreeItem;
