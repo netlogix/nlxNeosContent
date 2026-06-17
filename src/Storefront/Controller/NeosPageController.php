@@ -6,11 +6,15 @@ namespace nlxNeosContent\Storefront\Controller;
 
 use GuzzleHttp\Exception\ClientException;
 use nlxNeosContent\Service\ContentExchangeService;
+use nlxNeosContent\Service\NeosPageTreeService;
 use nlxNeosContent\Service\ResolverContextService;
 use Shopware\Core\Content\Category\CategoryDefinition;
 use Shopware\Core\Content\Cms\CmsPageEntity;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Controller\StorefrontController;
+use Shopware\Storefront\Page\GenericPageLoader;
+use Shopware\Storefront\Page\GenericPageLoaderInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -19,6 +23,9 @@ class NeosPageController extends StorefrontController
     function __construct(
         private readonly ContentExchangeService $contentExchangeService,
         private readonly ResolverContextService $resolverContextService,
+        private readonly NeosPageTreeService $neosPageTreeService,
+        #[Autowire(service: GenericPageLoader::class)]
+        private readonly GenericPageLoaderInterface $genericPageLoader,
     ) {
     }
 
@@ -37,6 +44,7 @@ class NeosPageController extends StorefrontController
             }
         }
 
+
         $resolverContext = $this->resolverContextService->getResolverContextForEntityNameAndId(
             entityName: CategoryDefinition::ENTITY_NAME,
             entityId: $salesChannelContext->getSalesChannel()->getNavigationCategoryId(),
@@ -47,8 +55,27 @@ class NeosPageController extends StorefrontController
         $cmsPage = new CmsPageEntity();
         $cmsPage->setSections($sections);
 
+        $treeItem = $this->neosPageTreeService->findNodeIdentifierForRequestAndContext($request, $salesChannelContext);
+        //Setting NavigationId so the navigation js can display the active page
+        $identifier = str_replace(
+            '-',
+            '',
+            $treeItem->identifier
+        );
+        $request = $this->container->get('request_stack')->getCurrentRequest();
+        $request->attributes->set('navigationId', $identifier);
+        $request->attributes->set('_route', 'frontend.navigation.page');
+        $request->attributes->set('_route_params', [
+            'neos' => "1",
+            'navigationId' => $identifier,
+        ]);
+
+        $page = $this->genericPageLoader->load($request, $salesChannelContext);
+        $page->getMetaInformation()->setMetaTitle($treeItem->label);
+        //TODO add missing Metadata
 
         return $this->renderStorefront('@Storefront/storefront/page/neosPage.html.twig', [
+            'page' => $page,
             'cmsPage' => $cmsPage,
             'landingPage' => []
         ]);
