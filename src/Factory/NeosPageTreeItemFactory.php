@@ -50,7 +50,7 @@ class NeosPageTreeItemFactory
         //TODO figure out child count and visible child count and level
 
         $category = new SalesChannelCategoryEntity();
-        $category->setId($page->identifier);
+        $category->setId(str_replace('-', '', $page->identifier));
         $category->setName($page->label);
         $category->setType('neos-entrypoint');
         $category->setSeoUrl(
