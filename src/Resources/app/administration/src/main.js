@@ -58,9 +58,9 @@ Shopware.Component.override('sw-product-detail-layout', () => import('./module/s
 Shopware.Component.override('sw-category-layout-card', () => import('./module/sw-category/component/sw-category-layout-card'), 1000);
 Shopware.Component.override('sw-product-layout-assignment', () => import('./module/sw-product/component/sw-product-layout-assignment'), 1000);
 Shopware.Component.override('sw-category-tree', () => import('./module/sw-category/component/sw-category-tree'), 1000);
-Shopware.Component.extend('nlx-sw-category-tree-item', 'sw-tree-item', () => import('./component/nlx-sw-category-tree-item'), 10000);
-Shopware.Component.extend('nlx-neos-layout-card', 'sw-category-layout-card', () => import('./component/nlx-neos-layout-card'), 10000);
-Shopware.Component.extend('nlx-neos-category-list-item', 'sw-cms-list-item', () => import('./component/nlx-neos-category-list-item'), 10000);
+Shopware.Component.extend('nlx-sw-category-tree-item', 'sw-tree-item', () => import('./component/nlx-sw-category-tree-item'));
+Shopware.Component.extend('nlx-neos-layout-card', 'sw-category-layout-card', () => import('./component/nlx-neos-layout-card'));
+Shopware.Component.extend('nlx-neos-category-list-item', 'sw-cms-list-item', () => import('./component/nlx-neos-category-list-item'));
 
 Shopware.Locale.extend('de-DE', localeDE);
 Shopware.Locale.extend('en-GB', localeEN);
