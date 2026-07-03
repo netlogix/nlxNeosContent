@@ -52,12 +52,12 @@ Application.addServiceProvider('nlxConfigService', () => {
     return new NlxConfigService();
 });
 
-Shopware.Component.override('sw-cms-list', () => import('./module/sw-cms/page/sw-cms-list'));
-Shopware.Component.override('sw-cms-list-item', () => import('./module/sw-cms/component/sw-cms-list-item'));
-Shopware.Component.override('sw-product-detail-layout', () => import('./module/sw-product/view/sw-product-detail-layout'));
-Shopware.Component.override('sw-category-layout-card', () => import('./module/sw-category/component/sw-category-layout-card'));
-Shopware.Component.override('sw-product-layout-assignment', () => import('./module/sw-product/component/sw-product-layout-assignment'));
-Shopware.Component.override('sw-category-tree', () => import('./module/sw-category/component/sw-category-tree'));
+Shopware.Component.override('sw-cms-list', () => import('./module/sw-cms/page/sw-cms-list'), 1000);
+Shopware.Component.override('sw-cms-list-item', () => import('./module/sw-cms/component/sw-cms-list-item'), 1000);
+Shopware.Component.override('sw-product-detail-layout', () => import('./module/sw-product/view/sw-product-detail-layout'), 1000);
+Shopware.Component.override('sw-category-layout-card', () => import('./module/sw-category/component/sw-category-layout-card'), 1000);
+Shopware.Component.override('sw-product-layout-assignment', () => import('./module/sw-product/component/sw-product-layout-assignment'), 1000);
+Shopware.Component.override('sw-category-tree', () => import('./module/sw-category/component/sw-category-tree'), 1000);
 Shopware.Component.extend('nlx-sw-category-tree-item', 'sw-tree-item', () => import('./component/nlx-sw-category-tree-item'));
 Shopware.Component.extend('nlx-neos-layout-card', 'sw-category-layout-card', () => import('./component/nlx-neos-layout-card'));
 Shopware.Component.extend('nlx-neos-category-list-item', 'sw-cms-list-item', () => import('./component/nlx-neos-category-list-item'));
