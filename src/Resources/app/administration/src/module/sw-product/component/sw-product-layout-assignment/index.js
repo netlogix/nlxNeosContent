@@ -21,7 +21,7 @@ export default {
     computed: {
         isNeosPage() {
             if (!this.cmsPage) {
-                return;
+                return false;
             }
 
             return this.cmsPage.extensions?.nlxNeosNode?.neosConnection;

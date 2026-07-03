@@ -36,7 +36,6 @@
     "sw-product": {
         "base": {
             "cms": {
-                "editInNeos": "Edit in Enterprise Content Platform",
                 "preview": {
                     "buttonText": "Open Preview",
                     "modal": {
