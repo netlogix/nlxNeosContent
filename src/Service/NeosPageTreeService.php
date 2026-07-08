@@ -6,6 +6,7 @@ declare(strict_types=1);
 namespace nlxNeosContent\Service;
 
 use nlxNeosContent\Neos\DTO\NeosPageCollection;
+use nlxNeosContent\Neos\DTO\NeosPageDTO;
 use nlxNeosContent\Neos\Endpoint\AbstractNeosPageTreeLoader;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
@@ -19,7 +20,7 @@ class NeosPageTreeService
     ) {
     }
 
-    public function findNodeIdentifierForRequestAndContext(Request $request, SalesChannelContext $salesChannelContext)
+    public function findNodeIdentifierForRequestAndContext(Request $request, SalesChannelContext $salesChannelContext): ?NeosPageDTO
     {
         $neosPageTree = $this->neosPageTreeLoader->load($salesChannelContext);
         $pathInfo = $request->getPathInfo();
@@ -27,7 +28,7 @@ class NeosPageTreeService
         return $this->findByPathInfoInTree($pathInfo, $neosPageTree);
     }
 
-    public function findByPathInfoInTree(string $pathInfo, NeosPageCollection $tree)
+    public function findByPathInfoInTree(string $pathInfo, NeosPageCollection $tree): ?NeosPageDTO
     {
         foreach ($tree as $treeItem) {
             if (trim($pathInfo, '/') === trim($treeItem->path, '/')) {
