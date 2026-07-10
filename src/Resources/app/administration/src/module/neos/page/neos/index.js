@@ -68,6 +68,12 @@ Shopware.Component.register('neos-index', {
         };
     },
 
+    watch: {
+        inactiveConfiguration(value) {
+            this.toggleContentScroll(value);
+        }
+    },
+
     created() {
         Shopware.Store.get('adminMenu').collapseSidebar();
         window.addEventListener('message', (event) => {
@@ -81,11 +87,16 @@ Shopware.Component.register('neos-index', {
 
     },
 
+    beforeUnmount() {
+        this.toggleContentScroll(false);
+    },
+
     mounted() {
         this.$nextTick(async () => {
             await this.loadConfig();
             const neosBaseUri = await this.nlxConfigService.getSetting('neosBaseUri');
             this.inactiveConfiguration = !neosBaseUri;
+            this.toggleContentScroll(this.inactiveConfiguration);
             if (this.inactiveConfiguration) {
                 // If Neos is not active, we load the Fillout registration script
                 const script = document.createElement('script');
@@ -236,6 +247,12 @@ Shopware.Component.register('neos-index', {
             this.$router.push({
                 name: 'nlx.neos.settings.index',
             })
+        },
+
+        toggleContentScroll(isInactive) {
+            const contentEl = document.querySelector('.sw-desktop__content');
+            if (!contentEl) return;
+            contentEl.classList.toggle('nlx-neos-inactive-configuration', isInactive);
         }
     }
 });
