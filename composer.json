@@ -20,7 +20,7 @@
         }
     ],
     "require": {
-        "shopware/core": ">=6.6.10.4",
+        "shopware/core": ">=6.6.10.14",
         "symfony/http-client": "^7.3",
         "php": "^8.2"
     },
