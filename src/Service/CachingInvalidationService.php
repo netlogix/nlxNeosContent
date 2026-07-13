@@ -3,6 +3,8 @@
 namespace nlxNeosContent\Service;
 
 
+use nlxNeosContent\Neos\Endpoint\CachedNeosPageTreeLoader;
+use Shopware\Core\Content\Category\SalesChannel\NavigationRoute;
 use Shopware\Core\Framework\Adapter\Cache\CacheInvalidator;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -18,28 +20,38 @@ class CachingInvalidationService
     ) {
     }
 
-    public function invalidateCachesForNeosCmsPages(Context $context): void
+    public function invalidateNeosCmsLayoutCaches(array $cmsPageIds, Context $context): void
     {
-        $criteria =  new Criteria();
-        $criteria->addAssociation('nlxNeosNode');
-        $criteria->addFilter(
-            new NotFilter(
-                NotFilter::CONNECTION_AND,
-                [
-                    new EqualsFilter('nlxNeosNode.id', null),
-                ]
-            )
-        );
-        $neosCmsPageIds = $this->cmsPageRepository->searchIds(
-            $criteria,
-            $context
-        );
+        if (empty($cmsPageIds)) {
+            $criteria = new Criteria();
+            $criteria->addAssociation('nlxNeosNode');
+            $criteria->addFilter(
+                new NotFilter(
+                    NotFilter::CONNECTION_AND,
+                    [
+                        new EqualsFilter('nlxNeosNode.id', null),
+                    ]
+                )
+            );
+            $neosCmsPageIds = $this->cmsPageRepository->searchIds(
+                $criteria,
+                $context
+            );
 
-        $tags = array_map(fn (string $id) => 'cms-page-' . $id, $neosCmsPageIds->getIds());
+            $cmsPageIds = $neosCmsPageIds->getIds();
+        }
+
+        $tags = array_map(fn (string $id) => 'cms-page-' . $id, $cmsPageIds);
 
         $this->cacheInvalidator->invalidate($tags);
         $this->cacheInvalidator->invalidateExpired();
+        $this->cacheInvalidator->invalidate(['nlxNeosContent']);
+    }
 
+    public function invalidateNavigationCaches(): void
+    {
+        $this->cacheInvalidator->invalidate([NavigationRoute::ALL_TAG, CachedNeosPageTreeLoader::CACHE_KEY]);
+        $this->cacheInvalidator->invalidateExpired();
         $this->cacheInvalidator->invalidate(['nlxNeosContent']);
     }
 }

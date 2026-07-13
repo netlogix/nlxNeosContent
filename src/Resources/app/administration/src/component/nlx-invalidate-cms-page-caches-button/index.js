@@ -20,7 +20,9 @@ Component.register('nlx-invalidate-cms-page-caches-button', {
     methods: {
         clearNeosPageCaches() {
             this.isLoading = true;
-            this.nlxNeosContentApiService.clearNeosPageCaches().then((response) => {
+            this.nlxNeosContentApiService.clearNeosPageCaches({
+                'type': 'all'
+            }).then((response) => {
                 if (response.success) {
                     this.createNotificationSuccess({
                         title: this.$tc('nlx-invalidate-cms-page-caches-button.label'),

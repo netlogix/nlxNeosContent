@@ -7,20 +7,23 @@ namespace nlxNeosContent\Neos\Endpoint;
 use nlxNeosContent\Neos\DTO\NeosPageCollection;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\DependencyInjection\Attribute\AsDecorator;
 use Symfony\Component\DependencyInjection\Attribute\AutowireDecorated;
-use Symfony\Contracts\Cache\CacheInterface;
+use Symfony\Contracts\Cache\ItemInterface;
+use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
 #[AsDecorator(NeosPageTreeLoader::class)]
 readonly class CachedNeosPageTreeLoader extends AbstractNeosPageTreeLoader
 {
-    private const CACHE_KEY = 'netlogix_neos_content_neos_page_tree';
+    public const CACHE_KEY = 'netlogix_neos_content_neos_page_tree';
     private const CACHE_TTL = 86400;
 
     public function __construct(
         #[AutowireDecorated]
         private AbstractNeosPageTreeLoader $decorated,
-        private CacheInterface $cache,
+        #[Autowire(service: 'cache.object')]
+        private TagAwareCacheInterface $cache,
         private LoggerInterface $logger,
     ) {
 
@@ -31,7 +34,9 @@ readonly class CachedNeosPageTreeLoader extends AbstractNeosPageTreeLoader
         try {
             return $this->cache->get(
                 self::CACHE_KEY . $salesChannelContext->getLanguageId(),
-                function() use ($salesChannelContext) {
+                function (ItemInterface $item) use ($salesChannelContext) {
+                    $item->tag(self::CACHE_KEY);
+
                     return $this->decorated->load($salesChannelContext);
                 },
                 self::CACHE_TTL
