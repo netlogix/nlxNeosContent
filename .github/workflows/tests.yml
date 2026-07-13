@@ -1,0 +1,47 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  version-matrix:
+    name: 'Generate Shopware version matrix'
+    runs-on: ubuntu-latest
+    outputs:
+      shopwareVersions: ${{ steps.shopware-version-matrix.outputs.matrix }}
+
+    steps:
+      - name: 'Checkout Code'
+        uses: actions/checkout@v6
+
+      - uses: ./.github/action/shopware-version-matrix
+        id: shopware-version-matrix
+        with:
+          minimum-version: 'v6.6.10.4'
+          minimum-minor: '6.6'
+
+      - name: 'Show generated matrix'
+        run: echo '${{ steps.shopware-version-matrix.outputs.matrix }}'
+
+  test:
+    needs: version-matrix
+    name: 'PHP ${{ matrix.phpVersion }} | Shopware ${{ matrix.shopwareVersion }}'
+    strategy:
+      fail-fast: false
+      matrix:
+        phpVersion: ['8.2', '8.3', '8.4']
+        shopwareVersion: ${{ fromJson(needs.version-matrix.outputs.shopwareVersions) }}
+    uses: ./.github/workflows/action-test.yml
+    with:
+      extension-name: ${{ github.event.repository.name }}
+      php-version: ${{ matrix.phpVersion }}
+      shopware-version: ${{ matrix.shopwareVersion }}
+      install: 'true'
+      allow-insecure-versions: 'true'

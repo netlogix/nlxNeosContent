@@ -1,0 +1,56 @@
+name: PHPStan Matrix
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'src/**'
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'src/**'
+
+jobs:
+  phpstan:
+    name: 'PHP ${{ matrix.phpVersion }} | Shopware ${{ matrix.shopwareVersion }}'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        phpVersion: ['8.2', '8.3', '8.4']
+        shopwareVersion: ['6.6.10.4', '^6.7']
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v6
+
+      - name: 'Setup PHP'
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '${{ matrix.phpVersion }}'
+          tools: composer
+          coverage: 'xdebug3'
+
+      - name: 'Validate composer.json'
+        shell: bash
+        run: composer validate --no-check-lock
+
+      - name: 'Set Shopware Version'
+        shell: bash
+        run: >
+          composer require --no-interaction --no-update
+          shopware/core:${{ matrix.shopwareVersion }}
+          shopware/storefront:*
+
+      - name: 'Install Composer Dependencies'
+        shell: bash
+        run: >
+          composer install --prefer-dist --no-progress --no-interaction --optimize-autoloader
+
+      - name: Run phpstan
+        shell: bash
+        run: vendor/bin/phpstan --memory-limit=-1 --error-format=github
