@@ -9,6 +9,11 @@
             "nlxNeosContent\\": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "nlxNeosContent\\Tests\\": "tests/"
+        }
+    },
     "authors": [
         {
             "name": "netlogix GmbH & Co. KG"
