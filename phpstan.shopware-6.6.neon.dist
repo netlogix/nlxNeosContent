@@ -8,3 +8,7 @@ parameters:
         #   NeosPageTreeItemFactory -> Shopware\Core\Content\Category\SalesChannel\SalesChannelCategoryEntity
         - src/Core/Notification/NotificationService.php
         - src/Factory/NeosPageTreeItemFactory.php
+    ignoreErrors:
+        # Ignore error, which only occurs in github workflow "Call to an undefined method Shopware\Core\Framework\Adapter\Cache\CacheTagCollector::addTag()."
+        - identifier: method.notFound
+          path: Storefront/Controller/NeosPageController.php
