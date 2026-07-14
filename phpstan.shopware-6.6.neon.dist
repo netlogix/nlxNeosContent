@@ -1,0 +1,10 @@
+includes:
+    - phpstan.neon.dist
+
+parameters:
+    excludePaths:
+        # These reference classes that only exist on Shopware >= 6.7.1:
+        #   NotificationService     -> Shopware\Core\Framework\Notification\NotificationService
+        #   NeosPageTreeItemFactory -> Shopware\Core\Content\Category\SalesChannel\SalesChannelCategoryEntity
+        - src/Core/Notification/NotificationService.php
+        - src/Factory/NeosPageTreeItemFactory.php
