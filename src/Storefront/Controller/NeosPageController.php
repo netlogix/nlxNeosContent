@@ -76,7 +76,7 @@ class NeosPageController extends StorefrontController
         //TODO add missing Metadata
 
         //Adding two cache tags, so we can invalidate a specific cached page or all of them
-        $this->cacheTagCollector->addTag(self::CACHE_TAG_PREFIX . $identifier, self::CACHE_TAG_ALL);
+        $this->cacheTagCollector->addTag(self::getCacheTagFromIdentifier($treeItem->identifier), self::CACHE_TAG_ALL);
         return $this->renderStorefront('@Storefront/storefront/page/neosPage.html.twig', [
             'page' => $page,
             'cmsPage' => $cmsPage,
@@ -87,5 +87,11 @@ class NeosPageController extends StorefrontController
     public static function sanitizeNodeIdentifier(string $identifier): string
     {
         return str_replace('-', '', $identifier);
+    }
+
+    public static function getCacheTagFromIdentifier(string $identifier): string
+    {
+        $identifier = self::sanitizeNodeIdentifier($identifier);
+        return self::CACHE_TAG_PREFIX . $identifier;
     }
 }

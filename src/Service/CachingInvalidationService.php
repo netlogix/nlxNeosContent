@@ -65,7 +65,7 @@ class CachingInvalidationService
         }
 
         $tags = array_map(
-            fn (string $identifier) => NeosPageController::CACHE_TAG_PREFIX . NeosPageController::sanitizeNodeIdentifier($identifier),
+            fn (string $identifier) => NeosPageController::getCacheTagFromIdentifier($identifier),
             $identifiers
         );
 
