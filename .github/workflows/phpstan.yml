@@ -57,4 +57,4 @@ jobs:
 
       - name: Run phpstan
         shell: bash
-        run: vendor/bin/phpstan --configuration=${{ matrix.shopware.phpstanConfig }} --memory-limit=-1 --error-format=github
+        run: vendor/bin/phpstan --configuration=${{ matrix.shopware.phpstanConfig }} --memory-limit=-1
