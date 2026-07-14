@@ -6,6 +6,7 @@ namespace nlxNeosContent\Routing;
 
 use nlxNeosContent\Service\ConfigService;
 use nlxNeosContent\Storefront\Controller\NeosPageController;
+use Shopware\Core\PlatformRequest;
 use Symfony\Component\DependencyInjection\Attribute\AsDecorator;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\DependencyInjection\Attribute\AutowireDecorated;
@@ -71,6 +72,7 @@ readonly class Router implements RouterInterface, WarmableInterface
             'neos' => 1,
             '_routeScope' => ['storefront'],
             '_controller' => NeosPageController::class . '::index',
+            PlatformRequest::ATTRIBUTE_HTTP_CACHE => true,
         ];
     }
 
