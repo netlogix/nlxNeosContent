@@ -18,6 +18,7 @@ use Shopware\Core\Framework\Plugin\Context\ActivateContext;
 use Shopware\Core\Framework\Plugin\Context\DeactivateContext;
 use Shopware\Core\Framework\Plugin\Context\InstallContext;
 use Shopware\Core\Framework\Plugin\Context\UninstallContext;
+use Shopware\Core\Framework\Plugin\Context\UpdateContext;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -37,6 +38,19 @@ class NlxNeosContent extends Plugin implements CompilerPassInterface
             function (Context $context) use ($neosAuthorizationRoleService) {
                 $neosAuthorizationRoleService->createNeosViewerRole($context);
                 $neosAuthorizationRoleService->createNeosEditorRole($context);
+            });
+    }
+
+    public function postUpdate(UpdateContext $updateContext): void
+    {
+        parent::postUpdate($updateContext);
+
+        $neosAuthorizationRoleService = $this->getNeosAuthorizationRoleService();
+        $updateContext->getContext()->scope(
+            Context::SYSTEM_SCOPE,
+            function (Context $context) use ($neosAuthorizationRoleService) {
+                $neosAuthorizationRoleService->refreshNeosViewerRole($context);
+                $neosAuthorizationRoleService->refreshNeosEditorRole($context);
             });
     }
 
