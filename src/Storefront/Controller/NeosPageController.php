@@ -10,6 +10,7 @@ use nlxNeosContent\Service\NeosPageTreeService;
 use nlxNeosContent\Service\ResolverContextService;
 use Shopware\Core\Content\Category\CategoryDefinition;
 use Shopware\Core\Content\Cms\CmsPageEntity;
+use Shopware\Core\Framework\Adapter\Cache\CacheTagCollector;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Controller\StorefrontController;
 use Shopware\Storefront\Page\GenericPageLoader;
@@ -20,12 +21,16 @@ use Symfony\Component\HttpFoundation\Response;
 
 class NeosPageController extends StorefrontController
 {
+    public const CACHE_TAG_ALL = 'nlx-cbp-page';
+    public const CACHE_TAG_PREFIX = 'nlx-cbp-page-';
+
     function __construct(
         private readonly ContentExchangeService $contentExchangeService,
         private readonly ResolverContextService $resolverContextService,
         private readonly NeosPageTreeService $neosPageTreeService,
         #[Autowire(service: GenericPageLoader::class)]
         private readonly GenericPageLoaderInterface $genericPageLoader,
+        private readonly CacheTagCollector $cacheTagCollector,
     ) {
     }
 
@@ -57,11 +62,7 @@ class NeosPageController extends StorefrontController
 
         $treeItem = $this->neosPageTreeService->findNodeIdentifierForRequestAndContext($request, $salesChannelContext);
         //Setting NavigationId so the navigation js can display the active page
-        $identifier = str_replace(
-            '-',
-            '',
-            $treeItem->identifier
-        );
+        $identifier = self::sanitizeNodeIdentifier($treeItem->identifier);
         $request = $this->container->get('request_stack')->getCurrentRequest();
         $request->attributes->set('navigationId', $identifier);
         $request->attributes->set('_route', 'frontend.navigation.page');
@@ -74,10 +75,17 @@ class NeosPageController extends StorefrontController
         $page->getMetaInformation()->setMetaTitle($treeItem->label);
         //TODO add missing Metadata
 
+        //Adding two cache tags, so we can invalidate a specific cached page or all of them
+        $this->cacheTagCollector->addTag(self::CACHE_TAG_PREFIX . $identifier, self::CACHE_TAG_ALL);
         return $this->renderStorefront('@Storefront/storefront/page/neosPage.html.twig', [
             'page' => $page,
             'cmsPage' => $cmsPage,
             'landingPage' => []
         ]);
+    }
+
+    public static function sanitizeNodeIdentifier(string $identifier): string
+    {
+        return str_replace('-', '', $identifier);
     }
 }

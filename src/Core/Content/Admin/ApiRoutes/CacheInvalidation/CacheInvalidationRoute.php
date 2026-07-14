@@ -35,6 +35,7 @@ class CacheInvalidationRoute extends AbstractCacheInvalidationRoute
         if ($cacheInvalidationDto->getType() === CacheInvalidationDto::TYPE_ALL) {
             $this->cacheInvalidationService->invalidateNeosCmsLayoutCaches([], $context);
             $this->cacheInvalidationService->invalidateNavigationCaches();
+            $this->cacheInvalidationService->invalidateNeosPageCaches();
             return new JsonResponse(['status' => 'Neos Content Cache invalidated']);
         }
 
@@ -43,6 +44,7 @@ class CacheInvalidationRoute extends AbstractCacheInvalidationRoute
         } elseif ($cacheInvalidationDto->getType() === CacheInvalidationDto::TYPE_NAVIGATION)
         {
             $this->cacheInvalidationService->invalidateNavigationCaches();
+            $this->cacheInvalidationService->invalidateNeosPageCaches($cacheInvalidationDto->getData() ?? []);
         }
 
         return new JsonResponse(['status' => 'Neos Content Cache invalidated']);
