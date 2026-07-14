@@ -34,7 +34,7 @@ class ApiRequestContextResolver implements RequestContextResolverInterface
             return;
         }
 
-        /** @var Context $context */
+        /** @var ?Context $context */
         $context = $request->attributes->get(PlatformRequest::ATTRIBUTE_CONTEXT_OBJECT);
         if ($context === null) {
             return;

@@ -10,8 +10,8 @@ class NeosDimensionExtension extends Extension
     public const NAME = 'neos-dimensions';
 
     public function __construct(
-        SalesChannelContext $context,
-        Request $request
+        public readonly SalesChannelContext $context,
+        public readonly Request $request
     )
     {
     }

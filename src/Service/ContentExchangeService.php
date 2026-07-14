@@ -14,14 +14,14 @@ use Shopware\Core\Content\Cms\DataResolver\CmsSlotsDataResolver;
 use Shopware\Core\Content\Cms\DataResolver\ResolverContext\ResolverContext;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
-use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class ContentExchangeService
 {
     public function __construct(
         #[Autowire(service: 'serializer')]
-        private readonly SerializerInterface $serializer,
+        private readonly DenormalizerInterface $serializer,
         private readonly CmsSlotsDataResolver $cmsSlotsDataResolver,
         private readonly HttpClientInterface $neosClient,
     ) {

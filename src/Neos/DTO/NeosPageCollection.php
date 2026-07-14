@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace nlxNeosContent\Neos\DTO;
 
 /**
- * @extends \ArrayObject<NeosPageDTO>
+ * @extends \ArrayObject<int, NeosPageDTO>
  */
 class NeosPageCollection extends \ArrayObject
 {

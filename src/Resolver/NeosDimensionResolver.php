@@ -34,7 +34,7 @@ class NeosDimensionResolver
         $dimensions = $this->extensions->publish(
             name: NeosDimensionExtension::NAME,
             extension: new NeosDimensionExtension($context, $request),
-            function: function () use ($context, $request) {
+            function: function () use ($context) {
                 $locale = $context->getLanguageInfo()->localeCode;
                 foreach ($this->dimensions as $dimensionName => $presets) {
                     if ($dimensionName === 'language') {

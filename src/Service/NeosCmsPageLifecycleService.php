@@ -270,7 +270,7 @@ class NeosCmsPageLifecycleService
     }
 
     /**
-     * @param array<int, array{configuration_value: string}> $defaultCmsPageIds
+     * @param array<int, array{configuration_value?: string}> $defaultCmsPageIds
      * @return string[]
      */
     private function extractDefaultCmsPageIds(array $defaultCmsPageIds): array

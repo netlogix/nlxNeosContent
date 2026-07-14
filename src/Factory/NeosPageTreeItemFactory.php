@@ -27,7 +27,7 @@ class NeosPageTreeItemFactory
             try {
                 yield $page->identifier => new TreeItem(
                     $this->createCategoryEntity($page),
-                    empty($page->children) ? [] : iterator_to_array($this->create($page->children))
+                    count($page->children) === 0 ? [] : iterator_to_array($this->create($page->children))
                 );
             } catch (\Throwable $exception) {
                 $this->logger->error("Error while creating Navigation Items from received CMS-Data", [

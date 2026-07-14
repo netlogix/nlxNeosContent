@@ -1,0 +1,22 @@
+includes:
+    - vendor/shopwarelabs/phpstan-shopware/rules.neon
+
+parameters:
+    level: 5
+    paths:
+        - src/
+    excludePaths:
+        # Cross-version compat shim: extends Shopware\Administration\Notification\NotificationService,
+        # which only exists on Shopware <= 6.7.0.0. Analysed via phpstan.shopware-6.6.neon.dist instead.
+        - src/Core/Notification/NotificationService66.php
+    # The two ignores below apply to files that only exist on one Shopware line, so on the
+    # other line the pattern is legitimately unmatched.
+    reportUnmatchedIgnoredErrors: false
+    ignoreErrors:
+        - identifier: shopware.internalClassExtends
+          path: src/Storefront/Controller/ContextControllerDecorator.php
+        # Cross-version notification shim must extend the (>= 6.7.1) @internal core NotificationService.
+        - identifier: shopware.internalClassExtends
+          path: src/Core/Notification/NotificationService.php
+        - identifier: method.notFound
+          path: src/Service/Loader/NeosDimensionLoader.php
