@@ -4,6 +4,7 @@ namespace nlxNeosContent\Service;
 
 
 use nlxNeosContent\Neos\Endpoint\CachedNeosPageTreeLoader;
+use nlxNeosContent\Storefront\Controller\NeosPageController;
 use Shopware\Core\Content\Category\SalesChannel\NavigationRoute;
 use Shopware\Core\Framework\Adapter\Cache\CacheInvalidator;
 use Shopware\Core\Framework\Context;
@@ -53,5 +54,21 @@ class CachingInvalidationService
         $this->cacheInvalidator->invalidate([NavigationRoute::ALL_TAG, CachedNeosPageTreeLoader::CACHE_KEY]);
         $this->cacheInvalidator->invalidateExpired();
         $this->cacheInvalidator->invalidate(['nlxNeosContent']);
+    }
+
+    public function invalidateNeosPageCaches(array $identifiers = []): void
+    {
+        if (empty($identifiers)) {
+            $this->cacheInvalidator->invalidate([NeosPageController::CACHE_TAG_ALL]);
+
+            return;
+        }
+
+        $tags = array_map(
+            fn (string $identifier) => NeosPageController::getCacheTagFromIdentifier($identifier),
+            $identifiers
+        );
+
+        $this->cacheInvalidator->invalidate($tags);
     }
 }
