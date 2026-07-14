@@ -1,0 +1,3 @@
+validation:
+    ignore:
+        - identifier: assets.administration.build_missing
