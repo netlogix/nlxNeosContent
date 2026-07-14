@@ -47,8 +47,8 @@
             "en-GB": "https://www.netlogix.de"
         },
         "supportLink": {
-            "de-DE": "https://www.netlogix.de",
-            "en-GB": "https://www.netlogix.de"
+            "de-DE": "https://websolutions.netlogix.de/kontakt/",
+            "en-GB": "https://websolutions.netlogix.de/kontakt/"
         },
         "description": {
             "de-DE": "Dieses Plugin ermöglicht es, Shopware Templates mit einem Enterprise-CMS aus Neos zu gestalten und Inhalte redaktionell zu pflegen sowie direkt im Storefront auszuspielen.",
