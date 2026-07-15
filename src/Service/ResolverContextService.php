@@ -95,7 +95,7 @@ class ResolverContextService
         }
 
         return $this->getLandingPageResolverContextFromEntityId(
-            $entity->getId(),
+            $entity->getUniqueIdentifier(),
             $context,
             $request,
             false

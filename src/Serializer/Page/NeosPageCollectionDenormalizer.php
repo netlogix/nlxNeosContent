@@ -13,10 +13,11 @@ use Symfony\Component\Serializer\SerializerInterface;
 class NeosPageCollectionDenormalizer implements DenormalizerInterface, SerializerAwareInterface
 {
 
-    public SerializerInterface $serializer;
+    public DenormalizerInterface $serializer;
 
     public function setSerializer(SerializerInterface $serializer): void
     {
+        assert($serializer instanceof DenormalizerInterface);
         $this->serializer = $serializer;
     }
 

@@ -31,7 +31,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 
 /**
  * @internal
@@ -49,7 +49,7 @@ class CmsSectionController extends StorefrontController
         private readonly SalesChannelRepository $categoryRepository,
         private readonly ContentExchangeService $contentExchangeService,
         private readonly ResolverContextService $resolverContextService,
-        private readonly SerializerInterface $serializer,
+        private readonly DenormalizerInterface $serializer,
     ) {
     }
 
@@ -99,7 +99,7 @@ class CmsSectionController extends StorefrontController
         }
 
         if (empty($entityId)) {
-            $entityId = $entityResponse->first()->getId();
+            $entityId = $entityResponse->first()->getUniqueIdentifier();
         }
 
         $entity = $entityResponse->first();

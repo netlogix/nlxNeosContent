@@ -15,10 +15,11 @@ use Symfony\Component\Serializer\SerializerInterface;
 
 class NeosCmsBlockEntityDenormalizer implements DenormalizerInterface, SerializerAwareInterface
 {
-    protected SerializerInterface $serializer;
+    protected DenormalizerInterface $serializer;
 
     public function setSerializer(SerializerInterface $serializer): void
     {
+        assert($serializer instanceof DenormalizerInterface);
         $this->serializer = $serializer;
     }
 

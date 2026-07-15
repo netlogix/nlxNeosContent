@@ -11,7 +11,9 @@
             "cms": {
                 "preview": {
                     "buttonText": "Open Preview",
-                    "modalHeadline": "Preview Configuration"
+                    "modal": {
+                        "headline": "Preview Configuration"
+                    }
                 },
                 "createInNeos": {
                     "buttonText": "Create Layout in Enterprise Content Platform",

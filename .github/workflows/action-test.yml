@@ -1,0 +1,60 @@
+name: Reusable Install Check
+
+on:
+  workflow_call:
+    inputs:
+      extension-name:
+        description: 'Shopware extension directory and plugin name'
+        required: true
+        type: string
+      php-version:
+        description: 'PHP version used by the Shopware setup action'
+        required: true
+        type: string
+      shopware-version:
+        description: 'Shopware version used by the Shopware setup action'
+        required: true
+        type: string
+      install:
+        description: 'Whether the Shopware setup action should install Shopware and activate the plugin'
+        required: false
+        type: string
+        default: 'true'
+      allow-insecure-versions:
+        description: 'Whether the Shopware setup action should allow insecure Shopware versions'
+        required: false
+        type: string
+        default: 'false'
+
+jobs:
+  install:
+    name: Install
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 'Setup Shopware and Extension'
+        uses: shopware/github-actions/setup-extension@main
+        with:
+          extensionName: ${{ inputs.extension-name }}
+          shopware-github-token: ${{ github.token }}
+          phpVersion: ${{ inputs.php-version }}
+          shopwareVersion: ${{ inputs.shopware-version }}
+          node-version: 22
+          skip-js-build: true
+          install: ${{ inputs.install }}
+          env: test
+          keep-composer-tools: true
+          allow-insecure-versions: ${{ inputs.allow-insecure-versions }}
+          extraRepositories: |
+            {
+              "${{ inputs.extension-name }}": {
+                "type": "path",
+                "url": "custom/plugins/${{ inputs.extension-name }}",
+                "symlink": true
+              }
+            }
+
+      - name: 'Validate composer.json'
+        working-directory: custom/plugins/${{ inputs.extension-name }}
+        shell: bash
+        run: composer validate --no-check-lock

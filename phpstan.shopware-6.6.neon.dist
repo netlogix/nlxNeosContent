@@ -1,0 +1,14 @@
+includes:
+    - phpstan.neon.dist
+
+parameters:
+    excludePaths:
+        # These reference classes that only exist on Shopware >= 6.7.1:
+        #   NotificationService     -> Shopware\Core\Framework\Notification\NotificationService
+        #   NeosPageTreeItemFactory -> Shopware\Core\Content\Category\SalesChannel\SalesChannelCategoryEntity
+        - src/Core/Notification/NotificationService.php
+        - src/Factory/NeosPageTreeItemFactory.php
+    ignoreErrors:
+        # Ignore error, which only occurs in github workflow "Call to an undefined method Shopware\Core\Framework\Adapter\Cache\CacheTagCollector::addTag()."
+        - identifier: method.notFound
+          path: src/Storefront/Controller/NeosPageController.php

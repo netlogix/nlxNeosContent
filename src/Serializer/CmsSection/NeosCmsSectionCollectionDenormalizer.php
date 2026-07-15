@@ -13,7 +13,7 @@ use Symfony\Component\Serializer\SerializerInterface;
 
 class NeosCmsSectionCollectionDenormalizer implements DenormalizerInterface, SerializerAwareInterface
 {
-    protected SerializerInterface $serializer;
+    protected DenormalizerInterface $serializer;
 
     public function denormalize(mixed $data, string $type, ?string $format = null, array $context = []): NeosCmsSectionCollection
     {
@@ -58,6 +58,7 @@ class NeosCmsSectionCollectionDenormalizer implements DenormalizerInterface, Ser
 
     public function setSerializer(SerializerInterface $serializer): void
     {
+        assert($serializer instanceof DenormalizerInterface);
         $this->serializer = $serializer;
     }
 }

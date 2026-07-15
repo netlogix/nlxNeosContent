@@ -1,0 +1,8 @@
+/.github export-ignore
+
+/tests export-ignore
+
+/.env.test export-ignore
+/.gitignore export-ignore
+/phpunit.xml.dist export-ignore
+.shopware-extension.yml export-ignore
