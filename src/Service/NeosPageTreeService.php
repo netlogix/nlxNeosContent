@@ -5,6 +5,7 @@ declare(strict_types=1);
 
 namespace nlxNeosContent\Service;
 
+use nlxNeosContent\Error\PageTree\NoTreeItemFoundException;
 use nlxNeosContent\Neos\DTO\NeosPageCollection;
 use nlxNeosContent\Neos\DTO\NeosPageDTO;
 use nlxNeosContent\Neos\Endpoint\AbstractNeosPageTreeLoader;
@@ -20,7 +21,7 @@ class NeosPageTreeService
     ) {
     }
 
-    public function findNodeIdentifierForRequestAndContext(Request $request, SalesChannelContext $salesChannelContext): ?NeosPageDTO
+    public function findNodeIdentifierForRequestAndContext(Request $request, SalesChannelContext $salesChannelContext): NeosPageDTO
     {
         $neosPageTree = $this->neosPageTreeLoader->load($salesChannelContext);
         $pathInfo = $request->getPathInfo();
@@ -28,21 +29,21 @@ class NeosPageTreeService
         return $this->findByPathInfoInTree($pathInfo, $neosPageTree);
     }
 
-    public function findByPathInfoInTree(string $pathInfo, NeosPageCollection $tree): ?NeosPageDTO
+    public function findByPathInfoInTree(string $pathInfo, NeosPageCollection $tree): NeosPageDTO
     {
         foreach ($tree as $treeItem) {
             if (trim($pathInfo, '/') === trim($treeItem->path, '/')) {
                 return $treeItem;
             }
 
-            $foundTreeItem = $this->findByPathInfoInTree($pathInfo, $treeItem->children);
-
-            if ($foundTreeItem !== null) {
-                return $foundTreeItem;
+            try {
+                return $this->findByPathInfoInTree($pathInfo, $treeItem->children);
+            } catch (NoTreeItemFoundException $noTreeItemFoundException) {
+                continue;
             }
         }
 
-        return null;
+        throw new NoTreeItemFoundException($pathInfo);
     }
 
     public function findPathInfoForIdentifierAndContext($nodeIdentifier, SalesChannelContext $salesChannelContext): string

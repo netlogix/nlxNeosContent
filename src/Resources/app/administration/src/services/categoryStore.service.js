@@ -36,6 +36,10 @@ export default class CategoryStoreService {
 
         let pages = [];
         neosPageData.forEach((page) => {
+            if (page.hiddenInIndex) {
+                return;
+            }
+
             let childCount = 0;
             if (page.children && page.children.length > 0) {
                 childCount = page.children.length;
