@@ -113,6 +113,26 @@ class NeosAuthorizationRoleService
         $this->removeRole($this::NEOS_EDITOR, $context);
     }
 
+    public function refreshNeosViewerRole(Context $context): void
+    {
+        $this->refreshRole(
+            $this::NEOS_VIEWER,
+            'This role has viewing privileges for Neos',
+            self::NEOS_VIEWER_PRIVILEGES,
+            $context
+        );
+    }
+
+    public function refreshNeosEditorRole(Context $context): void
+    {
+        $this->refreshRole(
+            $this::NEOS_EDITOR,
+            'This role has all editorial privileges for the Neos CMS',
+            self::NEOS_EDITOR_PRIVILEGES,
+            $context
+        );
+    }
+
     private function installRole(string $roleName, string $description, array $privileges, Context $context): void
     {
         $roleId = $this->getRoleIdFromName($roleName);
@@ -120,6 +140,18 @@ class NeosAuthorizationRoleService
             return;
         }
 
+        $this->upsertRole($roleId, $roleName, $description, $privileges, $context);
+    }
+
+    private function refreshRole(string $roleName, string $description, array $privileges, Context $context): void
+    {
+        $roleId = $this->getRoleIdFromName($roleName);
+
+        $this->upsertRole($roleId, $roleName, $description, $privileges, $context);
+    }
+
+    private function upsertRole(string $roleId, string $roleName, string $description, array $privileges, Context $context): void
+    {
         $roleData = [
             'id' => $roleId,
             'name' => $roleName,

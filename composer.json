@@ -1,12 +1,17 @@
 {
     "name": "netlogix/neos-content",
     "description": "This plugin enables Shopware templates to be designed with an Enterprise CMS.",
-    "version": "0.1.49",
+    "version": "0.1.50",
     "type": "shopware-platform-plugin",
     "license": "MIT",
     "autoload": {
         "psr-4": {
             "nlxNeosContent\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "nlxNeosContent\\Tests\\": "tests/"
         }
     },
     "authors": [
@@ -15,9 +20,23 @@
         }
     ],
     "require": {
-        "shopware/core": ">=6.6.10.4",
+        "shopware/core": ">=6.6.10.14",
         "symfony/http-client": "^7.3",
         "php": "^8.2"
+    },
+    "require-dev": {
+        "phpstan/phpstan": "^2.0",
+        "shopware/storefront": "*",
+        "shopwarelabs/phpstan-shopware": "^0.1.14"
+    },
+    "config": {
+        "allow-plugins": {
+            "php-http/discovery": true,
+            "symfony/runtime": true
+        },
+        "audit": {
+            "block-insecure": false
+        }
     },
     "extra": {
         "shopware-plugin-class": "nlxNeosContent\\NlxNeosContent",
@@ -26,9 +45,17 @@
             "de-DE": "Enterprise Content Platform für Shopware",
             "en-GB": "Enterprise Content Platform for Shopware"
         },
+        "manufacturerLink": {
+            "de-DE": "https://www.netlogix.de",
+            "en-GB": "https://www.netlogix.de"
+        },
+        "supportLink": {
+            "de-DE": "https://websolutions.netlogix.de/kontakt/",
+            "en-GB": "https://websolutions.netlogix.de/kontakt/"
+        },
         "description": {
-            "de-DE": "Diese Plugin ermöglicht es Shopware Templates mit einem Enterprise CMS zu gestalten.",
-            "en-GB": "This plugin enables Shopware templates to be designed within an Enterprise CMS."
+            "de-DE": "Dieses Plugin ermöglicht es, Shopware Templates mit einem Enterprise-CMS aus Neos zu gestalten und Inhalte redaktionell zu pflegen sowie direkt im Storefront auszuspielen.",
+            "en-GB": "This plugin lets you design Shopware templates with an enterprise CMS powered by Neos, manage content editorially and deliver it straight into your Shopware storefront."
         },
         "shopware-admin": "Resources/app/administration"
     }

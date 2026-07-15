@@ -26,7 +26,7 @@ class NeosNodeEntity extends Entity
         return $this->neosConnection;
     }
 
-    public function neosConnection(bool $neosConnection): void
+    public function setNeosConnection(bool $neosConnection): void
     {
         $this->neosConnection = $neosConnection;
     }

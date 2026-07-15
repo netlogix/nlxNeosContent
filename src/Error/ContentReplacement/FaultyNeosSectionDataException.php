@@ -10,7 +10,7 @@ use Throwable;
 
 class FaultyNeosSectionDataException extends Exception implements NeosExceptionInterface
 {
-    public function __construct(string $message = "", int $code = 0, ?Throwable $previous = null, mixed $sectionData = null)
+    public function __construct(string $message = "", int $code = 0, ?Throwable $previous = null)
     {
         parent::__construct($message, $code, $previous);
     }

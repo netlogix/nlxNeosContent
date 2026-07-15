@@ -16,10 +16,11 @@ use Symfony\Component\Serializer\SerializerInterface;
 
 class NeosCmsSlotEntityDenormalizer implements DenormalizerInterface, SerializerAwareInterface
 {
-    protected SerializerInterface $serializer;
+    protected DenormalizerInterface $serializer;
 
     public function setSerializer(SerializerInterface $serializer): void
     {
+        assert($serializer instanceof DenormalizerInterface);
         $this->serializer = $serializer;
     }
 
@@ -28,7 +29,6 @@ class NeosCmsSlotEntityDenormalizer implements DenormalizerInterface, Serializer
         $cmsSlotEntity = new NeosCmsSlotEntity();
         $fieldVisibility = new FieldVisibility([]);
         $data['_class'] = CmsSlotEntity::class;
-        assert($cmsSlotEntity instanceof CmsSlotEntity);
         $cmsSlotEntity->setType($data['type']);
         $cmsSlotEntity->setVersionId(Defaults::LIVE_VERSION);
         $cmsSlotEntity->setId($data['id'] ?? Uuid::randomHex());

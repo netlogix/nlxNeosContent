@@ -114,10 +114,13 @@ class PreviewController extends StorefrontController
     {
         $criteria = new Criteria([$cmsPageId]);
         $criteria->addAssociation('sections.blocks');
-        return $this->cmsPageRepository->search(
+        /** @var CmsPageEntity $page */
+        $page = $this->cmsPageRepository->search(
             ($criteria),
             $context
         )->first();
+
+        return $page;
     }
 
     private function loadProductDetailPage(
@@ -126,7 +129,7 @@ class PreviewController extends StorefrontController
     ): Response {
         $this->eventDispatcher->addListener(
             SalesChannelProcessCriteriaEvent::class,
-            function (SalesChannelProcessCriteriaEvent $event) use ($salesChannelContext) {
+            function (SalesChannelProcessCriteriaEvent $event) {
                 $criteria = $event->getCriteria();
                 $filters = $criteria->getFilters();
                 $criteria->resetFilters();
@@ -152,7 +155,7 @@ class PreviewController extends StorefrontController
     ): Response {
         $this->eventDispatcher->addListener(
             SalesChannelProcessCriteriaEvent::class,
-            function (SalesChannelProcessCriteriaEvent $event) use ($salesChannelContext) {
+            function (SalesChannelProcessCriteriaEvent $event) {
                 $criteria = $event->getCriteria();
                 $filters = $criteria->getFilters();
                 $criteria->resetFilters();
