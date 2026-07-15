@@ -10,7 +10,8 @@ readonly class NeosPageDTO
         public string $identifier,
         public string $label,
         public string $path,
-        public NeosPageCollection $children
+        public NeosPageCollection $children,
+        public bool $hiddenInIndex = false,
     ) {
     }
 }

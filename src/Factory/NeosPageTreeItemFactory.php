@@ -24,6 +24,10 @@ class NeosPageTreeItemFactory
     function create(NeosPageCollection $pages): iterable
     {
         foreach ($pages as $page) {
+            if ($page->hiddenInIndex) {
+                continue;
+            }
+
             try {
                 yield $page->identifier => new TreeItem(
                     $this->createCategoryEntity($page),
