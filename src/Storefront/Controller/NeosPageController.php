@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace nlxNeosContent\Storefront\Controller;
 
-use GuzzleHttp\Exception\ClientException;
+use nlxNeosContent\Neos\DTO\NeosResults\NeosContentResult;
+use nlxNeosContent\Neos\DTO\NeosResults\NeosRedirectResult;
 use nlxNeosContent\Service\ContentExchangeService;
 use nlxNeosContent\Service\NeosPageTreeService;
 use nlxNeosContent\Service\ResolverContextService;
@@ -16,6 +17,8 @@ use Shopware\Storefront\Controller\StorefrontController;
 use Shopware\Storefront\Page\GenericPageLoader;
 use Shopware\Storefront\Page\GenericPageLoaderInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\HttpClient\Exception\ClientException;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -37,7 +40,7 @@ class NeosPageController extends StorefrontController
     function index(Request $request, SalesChannelContext $salesChannelContext): Response
     {
         try {
-            $sections = $this->contentExchangeService->fetchCmsSectionsFromNeosByPath(
+            $neosContentResult = $this->contentExchangeService->fetchCmsSectionsFromNeosByPath(
                 $request->getPathInfo(),
                 $salesChannelContext
             );
@@ -49,7 +52,11 @@ class NeosPageController extends StorefrontController
             }
         }
 
+        if ($neosContentResult instanceof NeosRedirectResult) {
+            return new RedirectResponse($neosContentResult->getRedirectPathInfo(), Response::HTTP_SEE_OTHER);
+        }
 
+        $sections = $neosContentResult->getSections();
         $resolverContext = $this->resolverContextService->getResolverContextForEntityNameAndId(
             entityName: CategoryDefinition::ENTITY_NAME,
             entityId: $salesChannelContext->getSalesChannel()->getNavigationCategoryId(),
