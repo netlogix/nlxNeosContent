@@ -9,7 +9,6 @@ use nlxNeosContent\Core\Content\Cms\Aggregate\CmsSection\NeosCmsSectionCollectio
 use nlxNeosContent\Error\RequestError\NeosContentFetchException;
 use nlxNeosContent\Neos\DTO\NeosResults\NeosContentResult;
 use nlxNeosContent\Neos\DTO\NeosResults\NeosRedirectResult;
-use nlxNeosContent\Neos\DTO\NeosResults\NeosResult;
 use Shopware\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockCollection;
 use Shopware\Core\Content\Cms\Aggregate\CmsSection\CmsSectionCollection;
 use Shopware\Core\Content\Cms\CmsPageEntity;
@@ -48,7 +47,7 @@ class ContentExchangeService
         return $this->serializer->denormalize($elements, NeosCmsSectionCollection::class,'json');
     }
 
-    public function fetchCmsSectionsFromNeosByPath(string $pathInfo, SalesChannelContext $salesChannelContext): NeosResult
+    public function fetchCmsSectionsFromNeosByPath(string $pathInfo, SalesChannelContext $salesChannelContext): NeosContentResult|NeosRedirectResult
     {
         $domain = $salesChannelContext->getSalesChannel()->getDomains()->filter(function ($domain) use ($salesChannelContext) {
             return $domain->getId() === $salesChannelContext->getDomainId();

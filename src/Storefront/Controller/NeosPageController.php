@@ -55,9 +55,6 @@ class NeosPageController extends StorefrontController
         if ($neosContentResult instanceof NeosRedirectResult) {
             return new RedirectResponse($neosContentResult->getRedirectPathInfo(), Response::HTTP_SEE_OTHER);
         }
-        if (!$neosContentResult instanceof NeosContentResult) {
-            throw new \RuntimeException('Unexpected NeosResult type', 1784195659);
-        }
 
         $sections = $neosContentResult->getSections();
         $resolverContext = $this->resolverContextService->getResolverContextForEntityNameAndId(

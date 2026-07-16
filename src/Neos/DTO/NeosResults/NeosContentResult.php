@@ -6,7 +6,7 @@ namespace nlxNeosContent\Neos\DTO\NeosResults;
 
 use Shopware\Core\Content\Cms\Aggregate\CmsSection\CmsSectionCollection;
 
-readonly class NeosContentResult implements NeosResult
+readonly final class NeosContentResult
 {
     public function __construct(
         protected CmsSectionCollection $sections,
