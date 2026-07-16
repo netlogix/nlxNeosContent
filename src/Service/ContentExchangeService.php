@@ -7,7 +7,9 @@ namespace nlxNeosContent\Service;
 use GuzzleHttp\Exception\RequestException;
 use nlxNeosContent\Core\Content\Cms\Aggregate\CmsSection\NeosCmsSectionCollection;
 use nlxNeosContent\Error\RequestError\NeosContentFetchException;
-use nlxNeosContent\Neos\DTO\NeosContentResult;
+use nlxNeosContent\Neos\DTO\NeosResults\NeosContentResult;
+use nlxNeosContent\Neos\DTO\NeosResults\NeosRedirectResult;
+use nlxNeosContent\Neos\DTO\NeosResults\NeosResult;
 use Shopware\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockCollection;
 use Shopware\Core\Content\Cms\Aggregate\CmsSection\CmsSectionCollection;
 use Shopware\Core\Content\Cms\CmsPageEntity;
@@ -46,7 +48,7 @@ class ContentExchangeService
         return $this->serializer->denormalize($elements, NeosCmsSectionCollection::class,'json');
     }
 
-    public function fetchCmsSectionsFromNeosByPath(string $pathInfo, SalesChannelContext $salesChannelContext): NeosContentResult
+    public function fetchCmsSectionsFromNeosByPath(string $pathInfo, SalesChannelContext $salesChannelContext): NeosResult
     {
         $domain = $salesChannelContext->getSalesChannel()->getDomains()->filter(function ($domain) use ($salesChannelContext) {
             return $domain->getId() === $salesChannelContext->getDomainId();
@@ -65,7 +67,7 @@ class ContentExchangeService
 
         $statusCode = $response->getStatusCode();
         if ($statusCode >= 300 && $statusCode < 400) {
-            return new NeosContentResult(redirectPathInfo: $this->extractRedirectPathInfo($response));
+            return new NeosRedirectResult(redirectPathInfo: $this->extractRedirectPathInfo($response));
         }
 
         $sections = $this->serializer->denormalize($response->getContent(), NeosCmsSectionCollection::class, 'json');
