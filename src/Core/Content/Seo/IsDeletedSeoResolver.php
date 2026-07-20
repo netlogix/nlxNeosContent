@@ -2,6 +2,7 @@
 
 namespace nlxNeosContent\Core\Content\Seo;
 
+use Deprecated;
 use Doctrine\DBAL\Connection;
 use Shopware\Core\Content\Seo\AbstractSeoResolver;
 use Shopware\Core\Content\Seo\SeoResolver;
@@ -11,6 +12,7 @@ use Symfony\Component\DependencyInjection\Attribute\AsDecorator;
 use Symfony\Component\DependencyInjection\Attribute\AutowireDecorated;
 
 #[AsDecorator(SeoResolver::class, priority: 100)]
+#[Deprecated(message:'Is obsolete in shopware versions >=6.7.10.0. Can be removed if the version below are not supported anymore.')]
 class IsDeletedSeoResolver extends AbstractSeoResolver
 {
     function __construct(
@@ -47,6 +49,24 @@ class IsDeletedSeoResolver extends AbstractSeoResolver
         if ($query->executeQuery()->rowCount() >= 1) {
             return $decoratedResult;
         }
+
+        $query = (new QueryBuilder($this->connection))
+            ->select('path_info pathInfo', 'seo_path_info seoPathInfo')
+            ->from('seo_url')
+            ->where('language_id = :language_id')
+            ->andWhere('sales_channel_id = :sales_channel_id')
+            ->andWhere('path_info = :pathInfo')
+            ->andWhere('is_canonical = 1')
+            ->andWhere('is_deleted = 0')
+            ->setMaxResults(1)
+            ->setParameter('language_id', Uuid::fromHexToBytes($languageId))
+            ->setParameter('sales_channel_id', Uuid::fromHexToBytes($salesChannelId))
+            ->setParameter('pathInfo', '/' . ltrim($seoPathInfo, '/'));
+
+        if ($query->executeQuery()->rowCount() >= 1) {
+            return $decoratedResult;
+        }
+
 
         return ['pathInfo' => $seoPathInfo, 'isCanonical' => false];
     }
