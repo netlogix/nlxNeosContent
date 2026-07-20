@@ -12,7 +12,6 @@ use Symfony\Component\DependencyInjection\Attribute\AsDecorator;
 use Symfony\Component\DependencyInjection\Attribute\AutowireDecorated;
 
 #[AsDecorator(SeoResolver::class, priority: 100)]
-#[Deprecated(message:'Is obsolete in shopware versions >=6.7.10.0. Can be removed if the version below are not supported anymore.')]
 class IsDeletedSeoResolver extends AbstractSeoResolver
 {
     function __construct(
@@ -27,6 +26,7 @@ class IsDeletedSeoResolver extends AbstractSeoResolver
         return $this->decorated;
     }
 
+    #[Deprecated(message:'Obsolete in Shopware versions >= 6.7.10.0. Can be removed once versions below that are no longer supported.')]
     public function resolve(string $languageId, string $salesChannelId, string $pathInfo): array
     {
         $decoratedResult = $this->getDecorated()->resolve($languageId, $salesChannelId, $pathInfo);
@@ -51,7 +51,7 @@ class IsDeletedSeoResolver extends AbstractSeoResolver
         }
 
         $query = (new QueryBuilder($this->connection))
-            ->select('path_info pathInfo', 'seo_path_info seoPathInfo')
+            ->select('id')
             ->from('seo_url')
             ->where('language_id = :language_id')
             ->andWhere('sales_channel_id = :sales_channel_id')
