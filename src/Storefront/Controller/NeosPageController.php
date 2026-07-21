@@ -39,11 +39,22 @@ class NeosPageController extends StorefrontController
 
     function index(Request $request, SalesChannelContext $salesChannelContext): Response
     {
+        if ($request->isMethod('POST') && !$this->hasFormLikeRequestStructure($request)) {
+            return new Response(status: Response::HTTP_BAD_REQUEST);
+        }
+
         try {
-            $neosContentResult = $this->contentExchangeService->fetchCmsSectionsFromNeosByPath(
-                $request->getPathInfo(),
-                $salesChannelContext
-            );
+           $neosContentResult = match($request->getMethod()){
+               'POST' => $this->contentExchangeService->submitFormToNeosByPath(
+                        $request->getPathInfo(),
+                        $request,
+                        $salesChannelContext
+                    ),
+           default =>  $this->contentExchangeService->fetchCmsSectionsFromNeosByPath(
+                        $request->getPathInfo(),
+                        $salesChannelContext
+                    )
+                };
         } catch (ClientException $e) {
             if ($e->getCode() === 404) {
                 throw $this->createNotFoundException(previous: $e);
@@ -89,6 +100,31 @@ class NeosPageController extends StorefrontController
             'cmsPage' => $cmsPage,
             'landingPage' => []
         ]);
+    }
+
+    private function hasFormLikeRequestStructure(Request $request): bool
+    {
+        $contentType = $request->headers->get('Content-Type', '');
+        $isJson = str_starts_with($contentType, 'application/json');
+        $isFormEncoded = str_starts_with($contentType, 'multipart/form-data')
+            || str_starts_with($contentType, 'application/x-www-form-urlencoded');
+        if (!$isJson && !$isFormEncoded) {
+            return false;
+        }
+
+        $hasBody = $isJson
+            ? $request->getContent() !== ''
+            : ($request->request->count() > 0 || $request->files->count() > 0);
+        if (!$hasBody) {
+            return false;
+        }
+
+        $origin = $request->headers->get('Origin');
+        if ($origin !== null && rtrim($origin, '/') !== rtrim($request->getSchemeAndHttpHost(), '/')) {
+            return false;
+        }
+
+        return true;
     }
 
     public static function sanitizeNodeIdentifier(string $identifier): string
