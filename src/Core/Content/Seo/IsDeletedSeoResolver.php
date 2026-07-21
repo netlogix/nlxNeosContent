@@ -2,6 +2,7 @@
 
 namespace nlxNeosContent\Core\Content\Seo;
 
+use Deprecated;
 use Doctrine\DBAL\Connection;
 use Shopware\Core\Content\Seo\AbstractSeoResolver;
 use Shopware\Core\Content\Seo\SeoResolver;
@@ -25,6 +26,7 @@ class IsDeletedSeoResolver extends AbstractSeoResolver
         return $this->decorated;
     }
 
+    #[Deprecated(message:'Obsolete in Shopware versions >= 6.7.10.0. Can be removed once versions below that are no longer supported.')]
     public function resolve(string $languageId, string $salesChannelId, string $pathInfo): array
     {
         $decoratedResult = $this->getDecorated()->resolve($languageId, $salesChannelId, $pathInfo);
@@ -47,6 +49,24 @@ class IsDeletedSeoResolver extends AbstractSeoResolver
         if ($query->executeQuery()->rowCount() >= 1) {
             return $decoratedResult;
         }
+
+        $query = (new QueryBuilder($this->connection))
+            ->select('id')
+            ->from('seo_url')
+            ->where('language_id = :language_id')
+            ->andWhere('sales_channel_id = :sales_channel_id')
+            ->andWhere('path_info = :pathInfo')
+            ->andWhere('is_canonical = 1')
+            ->andWhere('is_deleted = 0')
+            ->setMaxResults(1)
+            ->setParameter('language_id', Uuid::fromHexToBytes($languageId))
+            ->setParameter('sales_channel_id', Uuid::fromHexToBytes($salesChannelId))
+            ->setParameter('pathInfo', '/' . ltrim($seoPathInfo, '/'));
+
+        if ($query->executeQuery()->rowCount() >= 1) {
+            return $decoratedResult;
+        }
+
 
         return ['pathInfo' => $seoPathInfo, 'isCanonical' => false];
     }
