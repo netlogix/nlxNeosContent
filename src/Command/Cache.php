@@ -87,6 +87,7 @@ class Cache extends Command
 
             if ($type === CacheInvalidationDto::TYPE_ALL || $type === CacheInvalidationDto::TYPE_NAVIGATION) {
                 $this->cacheInvalidationService->invalidateNavigationCaches();
+                $this->cacheInvalidationService->invalidateNeosPageCaches();
                 $output->writeln('<info>Navigation caches invalidated successfully.</info>');
             }
         } catch (\Throwable $e) {

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace nlxNeosContent\Storefront\Controller;
 
+use nlxNeosContent\Error\Routing\NeosRoutingException;
 use nlxNeosContent\Service\NeosPageTreeService;
 use Shopware\Core\Framework\Routing\RoutingException;
 use Shopware\Core\Framework\Uuid\Uuid;
@@ -16,8 +17,6 @@ use Shopware\Core\System\SalesChannel\SalesChannel\AbstractContextSwitchRoute;
 use Shopware\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Controller\ContextController;
-use Shopware\Storefront\Framework\Routing\RequestTransformer;
-use Shopware\Storefront\Framework\Routing\Router;
 use Symfony\Component\DependencyInjection\Attribute\AsDecorator;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\DependencyInjection\Attribute\AutowireDecorated;
@@ -91,10 +90,15 @@ class ContextControllerDecorator extends ContextController
                 throw RoutingException::languageNotFound($languageId);
             }
 
+            if ($newTokenResponse->getRedirectUrl() === null) {
+                $url = $this->getDomainUrlByLanguageId($newContext, $languageId);
+                return new RedirectResponse(rtrim($url, '/') . '/' . ltrim($pathInfo, '/'), Response::HTTP_FOUND);
+            }
+
             $parsedUrl = parse_url($newTokenResponse->getRedirectUrl());
 
             if (!$parsedUrl) {
-                throw RoutingException::languageNotFound($languageId);
+                throw NeosRoutingException::redirectUrlNotParsable($newTokenResponse->getRedirectUrl());
             }
 
             $redirectRequest = Request::create($newTokenResponse->getRedirectUrl());
@@ -103,5 +107,22 @@ class ContextControllerDecorator extends ContextController
 
         }
         return $this->inner->switchLanguage($request, $context);
+    }
+
+    private function getDomainUrlByLanguageId(SalesChannelContext $context, string $languageId): string
+    {
+        $domains = $context->getSalesChannel()->getDomains();
+
+        if ($domains === null) {
+            throw NeosRoutingException::salesChannelDomainsNotLoaded($context->getSalesChannelId(), $languageId);
+        }
+
+        $langDomain = $domains->filterByProperty('languageId', $languageId)->first();
+
+        if ($langDomain === null) {
+            throw NeosRoutingException::domainNotFoundForLanguage($languageId, $context->getSalesChannelId());
+        }
+
+        return $langDomain->getUrl();
     }
 }
