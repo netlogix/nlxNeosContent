@@ -44,16 +44,17 @@ class NeosPageController extends StorefrontController
         }
 
         try {
-            $neosContentResult = $request->isMethod('POST')
-                ? $this->contentExchangeService->submitFormToNeosByPath(
-                    $request->getPathInfo(),
-                    $request,
-                    $salesChannelContext
-                )
-                : $this->contentExchangeService->fetchCmsSectionsFromNeosByPath(
-                    $request->getPathInfo(),
-                    $salesChannelContext
-                );
+           $neosContentResult = match($request->getMethod()){
+               'POST' => $this->contentExchangeService->submitFormToNeosByPath(
+                        $request->getPathInfo(),
+                        $request,
+                        $salesChannelContext
+                    ),
+           default =>  $this->contentExchangeService->fetchCmsSectionsFromNeosByPath(
+                        $request->getPathInfo(),
+                        $salesChannelContext
+                    )
+                };
         } catch (ClientException $e) {
             if ($e->getCode() === 404) {
                 throw $this->createNotFoundException(previous: $e);
