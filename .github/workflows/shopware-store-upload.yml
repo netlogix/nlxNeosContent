@@ -1,0 +1,17 @@
+name: Upload to Shopware Store
+
+on:
+  push:
+    tags:
+      - '*'
+  workflow_dispatch:
+
+jobs:
+  upload:
+    uses: FriendsOfShopware/actions/.github/workflows/store-shopware-cli.yml@main
+    with:
+      extensionName: ${{ github.event.repository.name }}
+    secrets:
+      accountUser: ${{ secrets.SHOPWARE_ACCOUNT_USER }}
+      accountPassword: ${{ secrets.SHOPWARE_ACCOUNT_PASSWORD }}
+      ghToken: ${{ github.token }}
