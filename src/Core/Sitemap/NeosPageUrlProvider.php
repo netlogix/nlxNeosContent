@@ -1,6 +1,8 @@
 <?php
 
-namespace nlxNeosContent\Core\Content\Sitemap;
+declare(strict_types=1);
+
+namespace nlxNeosContent\Core\Sitemap;
 
 use nlxNeosContent\Neos\Endpoint\AbstractNeosPageTreeLoader;
 use nlxNeosContent\Neos\DTO\NeosPageCollection;
