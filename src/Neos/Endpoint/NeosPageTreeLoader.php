@@ -6,6 +6,7 @@ namespace nlxNeosContent\Neos\Endpoint;
 
 use nlxNeosContent\Neos\DTO\NeosPageCollection;
 use Shopware\Core\Framework\Plugin\Exception\DecorationPatternException;
+use Shopware\Core\System\SalesChannel\Aggregate\SalesChannelDomain\SalesChannelDomainEntity;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\DependencyInjection\Attribute\AsAlias;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -31,9 +32,15 @@ readonly class NeosPageTreeLoader extends AbstractNeosPageTreeLoader
 
     public function load(SalesChannelContext $salesChannelContext): NeosPageCollection
     {
-        $domain = $salesChannelContext->getSalesChannel()->getDomains()->filter(function ($domain) use ($salesChannelContext) {
-            return $domain->getId() === $salesChannelContext->getDomainId();
-        })->first();
+        $domain = $salesChannelContext->getSalesChannel()
+            ->getDomains()
+            ->filter(fn (SalesChannelDomainEntity $domain) => $domain->getId() === $salesChannelContext->getDomainId()
+                || $domain->getLanguageId() === $salesChannelContext->getLanguageId())
+            ->first();
+
+        if (!$domain instanceof SalesChannelDomainEntity) {
+            throw new \InvalidArgumentException("The salesChannelContext dosn't contain the relevant domain.");
+        }
 
         $response = $this->neosClient->request('GET', 'neos/shopware-api/pagetree', [
             'headers' => [
