@@ -40,17 +40,6 @@ class NeosPageUrlProvider extends AbstractUrlProvider
         }
 
         try {
-//            if ($context->getDomainId() === null) {
-//                $domain = $context->getSalesChannel()->getDomains()
-//                    ->filter(fn ($d) => $d->getLanguageId() === $context->getLanguageId())
-//                    ->first()
-//                    ?? $context->getSalesChannel()->getDomains()->first();
-//
-//                if ($domain !== null) {
-//                    $context->setDomainId($domain->getId());
-//                }
-//            }
-
             $tree = $this->loader->load($context);
         } catch (\Throwable $e) {
             $this->logger->error('Neos sitemap fetch failed', ['exception' => $e]);
