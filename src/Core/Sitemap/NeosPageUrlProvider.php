@@ -6,6 +6,7 @@ namespace nlxNeosContent\Core\Sitemap;
 
 use nlxNeosContent\Neos\Endpoint\AbstractNeosPageTreeLoader;
 use nlxNeosContent\Neos\DTO\NeosPageCollection;
+use nlxNeosContent\Neos\DTO\NeosPageDTO;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Content\Sitemap\Provider\AbstractUrlProvider;
 use Shopware\Core\Content\Sitemap\Struct\Url;
@@ -46,25 +47,33 @@ class NeosPageUrlProvider extends AbstractUrlProvider
             return new UrlResult([], null);
         }
 
-        $urls = [];
-        $this->collect($tree, $urls);
+        $urls = array_map(
+            fn (NeosPageDTO $page) => $this->convert($page),
+            iterator_to_array($this->flatten($tree), false)
+        );
 
         return new UrlResult($urls, null);
     }
 
-    private function collect(NeosPageCollection $pages, array &$urls): void
+    private function flatten(NeosPageCollection $pages): \Generator
     {
         foreach ($pages as $page) {
             if (!$page->hiddenInIndex) {
-                $url = new Url();
-                $url->setLoc(trim($page->path, '/'));
-                $url->setLastmod(new \DateTime());
-                $url->setChangefreq('daily');
-                $url->setResource('neos_page');
-                $url->setIdentifier(str_replace('-', '', $page->identifier));
-                $urls[] = $url;
+                yield $page;
             }
-            $this->collect($page->children, $urls);
+            yield from $this->flatten($page->children);
         }
+    }
+
+    private function convert(NeosPageDTO $page): Url
+    {
+        $url = new Url();
+        $url->setLoc(trim($page->path, '/'));
+        $url->setLastmod(new \DateTime());
+        $url->setChangefreq('daily');
+        $url->setResource('neos_page');
+        $url->setIdentifier(str_replace('-', '', $page->identifier));
+
+        return $url;
     }
 }
