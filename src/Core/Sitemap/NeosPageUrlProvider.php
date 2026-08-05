@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace nlxNeosContent\Core\Sitemap;
 
 use nlxNeosContent\Error\Sitemap\OffsetPagingNotSupportedException;
+use nlxNeosContent\Error\Sitemap\PageTreeCouldNotBeLoaddedException;
 use nlxNeosContent\Neos\Endpoint\AbstractNeosPageTreeLoader;
 use nlxNeosContent\Neos\DTO\NeosPageCollection;
 use nlxNeosContent\Neos\DTO\NeosPageDTO;
@@ -44,8 +45,7 @@ class NeosPageUrlProvider extends AbstractUrlProvider
         try {
             $tree = $this->loader->load($context);
         } catch (\Throwable $e) {
-            $this->logger->error('Neos sitemap fetch failed', ['exception' => $e]);
-            return new UrlResult([], null);
+            throw new PageTreeCouldNotBeLoaddedException($e);
         }
 
         $urls = array_map(
