@@ -9,8 +9,9 @@ use nlxNeosContent\Error\NeosExceptionInterface;
 class PageTreeCouldNotBeLoaddedException extends \Exception implements NeosExceptionInterface
 {
     public function __construct(
+        int $code = 0,
         ?\Throwable $previous = null,
     ) {
-        parent::__construct('Neos sitemap fetch failed', 1738078146, $previous);
+        parent::__construct('Neos sitemap fetch failed', $code, $previous);
     }
 }

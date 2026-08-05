@@ -37,13 +37,13 @@ class NeosPageUrlProvider extends AbstractUrlProvider
     public function getUrls(SalesChannelContext $context, int $limit, ?int $offset = null): UrlResult
     {
         if ($offset !== null) {
-            throw new OffsetPagingNotSupportedException($this->getName(), $offset);
+            throw new OffsetPagingNotSupportedException(providerName: $this->getName(), offset: $offset, code: 1738074123);
         }
 
         try {
             $tree = $this->loader->load($context);
         } catch (\Throwable $e) {
-            throw new PageTreeCouldNotBeLoaddedException($e);
+            throw new PageTreeCouldNotBeLoaddedException(code: 1738078146, previous: $e);
         }
 
         $urls = array_map(

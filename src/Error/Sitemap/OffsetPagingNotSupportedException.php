@@ -11,7 +11,7 @@ class OffsetPagingNotSupportedException extends \Exception implements NeosExcept
     public function __construct(
         public readonly string $providerName,
         public readonly int $offset,
-        int $code = 1738074123,
+        int $code = 0,
         ?\Throwable $previous = null,
     ) {
         parent::__construct(
