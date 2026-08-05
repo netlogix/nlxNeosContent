@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace nlxNeosContent\Core\Sitemap;
 
+use nlxNeosContent\Error\Sitemap\OffsetPagingNotSupportedException;
 use nlxNeosContent\Neos\Endpoint\AbstractNeosPageTreeLoader;
 use nlxNeosContent\Neos\DTO\NeosPageCollection;
 use nlxNeosContent\Neos\DTO\NeosPageDTO;
@@ -36,8 +37,8 @@ class NeosPageUrlProvider extends AbstractUrlProvider
 
     public function getUrls(SalesChannelContext $context, int $limit, ?int $offset = null): UrlResult
     {
-        if ($offset) {
-            return new UrlResult([], null);
+        if ($offset !== null) {
+            throw new OffsetPagingNotSupportedException($this->getName(), $offset);
         }
 
         try {
