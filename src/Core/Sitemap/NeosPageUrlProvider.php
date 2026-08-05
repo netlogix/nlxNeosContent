@@ -9,7 +9,6 @@ use nlxNeosContent\Error\Sitemap\PageTreeCouldNotBeLoaddedException;
 use nlxNeosContent\Neos\Endpoint\AbstractNeosPageTreeLoader;
 use nlxNeosContent\Neos\DTO\NeosPageCollection;
 use nlxNeosContent\Neos\DTO\NeosPageDTO;
-use Psr\Log\LoggerInterface;
 use Shopware\Core\Content\Sitemap\Provider\AbstractUrlProvider;
 use Shopware\Core\Content\Sitemap\Struct\Url;
 use Shopware\Core\Content\Sitemap\Struct\UrlResult;
@@ -22,7 +21,6 @@ class NeosPageUrlProvider extends AbstractUrlProvider
 {
     public function __construct(
         private readonly AbstractNeosPageTreeLoader $loader,
-        private readonly LoggerInterface $logger,
     ) {
     }
 
