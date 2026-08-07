@@ -15,6 +15,7 @@ import NlxUrlTestService from './services/urlTest.service';
 import NlxNeosContentApiService from './services/api.service';
 import NlxCategoryStoreService from './services/categoryStore.service';
 import NlxConfigService from './services/config.service';
+import AsyncService from './services/async.service';
 
 import './state/nlxNeosCategory';
 
@@ -27,6 +28,10 @@ Shopware.Component.register('nlx-preview-modal', () => import('./module/nlx-prev
 
 Shopware.Service().register('nlxRoutes', () => {
     return new RouteService();
+});
+
+Shopware.Service().register('nlxAsyncService', () => {
+    return new AsyncService();
 });
 
 Application.addServiceProvider('nlxUrlTestService', (container) => {
