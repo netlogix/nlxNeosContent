@@ -15,6 +15,10 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\NotFilter;
 
 class CachingInvalidationService
 {
+    public const CACHE_TAG = 'nlxNeosContent';
+
+    public const CMS_PAGE_CACHE_TAG_PREFIX = 'cms-page-';
+
     public function __construct(
         private readonly CacheInvalidator $cacheInvalidator,
         private readonly EntityRepository $cmsPageRepository,
@@ -42,18 +46,18 @@ class CachingInvalidationService
             $cmsPageIds = $neosCmsPageIds->getIds();
         }
 
-        $tags = array_map(fn (string $id) => 'cms-page-' . $id, $cmsPageIds);
+        $tags = array_map(fn (string $id) => self::CMS_PAGE_CACHE_TAG_PREFIX . $id, $cmsPageIds);
 
         $this->cacheInvalidator->invalidate($tags);
         $this->cacheInvalidator->invalidateExpired();
-        $this->cacheInvalidator->invalidate(['nlxNeosContent']);
+        $this->cacheInvalidator->invalidate([self::CACHE_TAG]);
     }
 
     public function invalidateNavigationCaches(): void
     {
         $this->cacheInvalidator->invalidate([NavigationRoute::ALL_TAG, CachedNeosPageTreeLoader::CACHE_KEY]);
         $this->cacheInvalidator->invalidateExpired();
-        $this->cacheInvalidator->invalidate(['nlxNeosContent']);
+        $this->cacheInvalidator->invalidate([self::CACHE_TAG]);
     }
 
     public function invalidateNeosPageCaches(array $identifiers = []): void
