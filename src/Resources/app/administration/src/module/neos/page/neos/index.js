@@ -260,11 +260,14 @@ Shopware.Component.register('neos-index', {
 
             const doLogin = async () => {
                 const salesChannel = await this.getSalesChannels.then(sc => sc.first());
-                const response = await fetch(this.config.neosLoginRoute, {
+
+                const abortController = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+                const timeoutId = abortController ? setTimeout(() => abortController.abort(), DEFAULT_TIMEOUT_MS) : null;
+
+                const fetchOptions = {
                     method: 'POST',
                     credentials: 'include',
                     redirect: 'follow',
-                    signal: AbortSignal.timeout(DEFAULT_TIMEOUT_MS),
                     headers: {
                         'x-sw-language-id': api.language.id,
                         'x-sw-sales-channel-id': salesChannel.id,
@@ -276,8 +279,20 @@ Shopware.Component.register('neos-index', {
                         apiUrl: this.config.apiUrl,
                         shopwareVersion: this.config.shopwareVersion,
                     })
-                });
-                return (await response.json()).iframeUri;
+                };
+
+                if (abortController) {
+                    fetchOptions.signal = abortController.signal;
+                }
+
+                try {
+                    const response = await fetch(this.config.neosLoginRoute, fetchOptions);
+                    return (await response.json()).iframeUri;
+                } finally {
+                    if (timeoutId) {
+                        clearTimeout(timeoutId);
+                    }
+                }
             };
             // doLogin() already bounds the fetch itself via AbortSignal; withTimeout additionally
             // covers the sales channel lookup ahead of it, which has no abort signal of its own.
@@ -290,12 +305,22 @@ Shopware.Component.register('neos-index', {
             }
 
             return navigator.locks.request('nlx-neos-login', async () => {
-                const cached = JSON.parse(localStorage.getItem(storageKey) || 'null');
+                let cached = null;
+                try {
+                    cached = JSON.parse(localStorage.getItem(storageKey) || 'null');
+                } catch (e) {
+                    cached = null;
+                }
+
                 if (cached && Date.now() - cached.timestamp < MIN_INTERVAL_MS) {
                     return cached.iframeUri;
                 }
                 const iframeUri = await doLoginWithRetry();
-                localStorage.setItem(storageKey, JSON.stringify({timestamp: Date.now(), iframeUri}));
+                try {
+                    localStorage.setItem(storageKey, JSON.stringify({timestamp: Date.now(), iframeUri}));
+                } catch (e) {
+                    // ignore cache write errors
+                }
                 return iframeUri;
             });
         },
