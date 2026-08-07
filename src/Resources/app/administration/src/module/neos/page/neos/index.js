@@ -5,10 +5,12 @@ import './neos-index.scss';
 const {Criteria} = Shopware.Data;
 const {api} = Shopware.Context;
 
+const DEFAULT_TIMEOUT_MS = 15000;
+
 Shopware.Component.register('neos-index', {
     template,
 
-    inject: ['nlxRoutes', 'repositoryFactory', 'nlxNeosContentApiService', 'nlxConfigService'],
+    inject: ['nlxRoutes', 'repositoryFactory', 'nlxNeosContentApiService', 'nlxConfigService', 'nlxAsyncService'],
 
     mixins: [
         Mixin.getByName('notification')
@@ -76,77 +78,37 @@ Shopware.Component.register('neos-index', {
 
     created() {
         Shopware.Store.get('adminMenu').collapseSidebar();
-        window.addEventListener('message', (event) => {
+        this._isUnmounted = false;
+        this._onWindowMessage = (event) => {
             if (event.data && event.data.type === 'nlxOpenCmsPage') {
                 this.$router.push({
                     name: 'sw.cms.detail',
                     params: {id: event.data.cmsPageId},
                 });
             }
-        });
-
+        };
+        window.addEventListener('message', this._onWindowMessage);
     },
 
     beforeUnmount() {
         this.toggleContentScroll(false);
+        this._isUnmounted = true;
+        window.removeEventListener('message', this._onWindowMessage);
     },
 
     mounted() {
         this.$nextTick(async () => {
-            await this.loadConfig();
-            const neosBaseUri = await this.nlxConfigService.getSetting('neosBaseUri');
-            this.inactiveConfiguration = !neosBaseUri;
-            this.toggleContentScroll(this.inactiveConfiguration);
-            if (this.inactiveConfiguration) {
-                // If Neos is not active, we load the Fillout registration script
-                const script = document.createElement('script');
-                script.id = 'fillout-registration';
-                script.src = 'https://server.fillout.com/embed/v1/';
-                script.async = true;
-                document.body.appendChild(script);
-                this.isLoading = false;
-                return;
-            }
-
-            const loginService = Shopware.Service('loginService');
-            if (!loginService.isLoggedIn()) {
-                this.triggerLoginModal(loginService);
-                this.isLoading = false;
-                return;
-            }
-
-            this.loadNeosIntoIframe();
-
-            // send refreshed token to Neos
-            loginService.addOnTokenChangedListener(async () => {
-                const iframe = this.$refs.iframe;
-                if (!iframe) return;
-                const token = await this.nlxNeosContentApiService.getNeosToken().then((response) => {
-                    if (response.success) {
-                        return response.data.token;
-                    } else {
-                        throw new Error('Failed to retrieve Neos token: ' + response.data.message);
-                    }
+            try {
+                await this.bootstrapNeosIframe();
+            } catch (error) {
+                this.createNotificationError({
+                    title: this.$tc('neos.loadNeosIntoIframe.loginError.title'),
+                    message: this.$tc('neos.loadNeosIntoIframe.loginError.message', {
+                        errorMessage: error.message
+                    })
                 });
-
-                const tokenRefreshRoute = this.nlxRoutes.getNeosIndexRoute(neosBaseUri);
-                if (!tokenRefreshRoute) {
-                    this.createNotificationWarning({
-                        message: this.$tc('neos.tokenRefresh.noRouteWarning.message'),
-                    });
-                    return;
-                }
-
-                iframe.contentWindow.postMessage(
-                    {
-                        nlxShopwareMessageType: 'token-changed',
-                        token: token,
-                        apiUrl: api.schemeAndHttpHost,
-                        shopwareVersion: this.config.shopwareVersion,
-                    },
-                    tokenRefreshRoute
-                );
-            });
+                this.isLoading = false;
+            }
         });
     },
 
@@ -163,6 +125,84 @@ Shopware.Component.register('neos-index', {
     },
 
     methods: {
+        async bootstrapNeosIframe() {
+            await this.loadConfig();
+
+            const neosBaseUri = await this.nlxAsyncService.withRetry(() => this.nlxAsyncService.withTimeout(
+                this.nlxConfigService.getSetting('neosBaseUri'), DEFAULT_TIMEOUT_MS, 'Loading Neos configuration'
+            ));
+            this.inactiveConfiguration = !neosBaseUri;
+            this.toggleContentScroll(this.inactiveConfiguration);
+            if (this.inactiveConfiguration) {
+                this.loadFilloutRegistrationScript();
+                this.isLoading = false;
+                return;
+            }
+
+            const loginService = Shopware.Service('loginService');
+            if (!loginService.isLoggedIn()) {
+                this.triggerLoginModal(loginService);
+                this.isLoading = false;
+                return;
+            }
+
+            this.loadNeosIntoIframe();
+            this.registerTokenRefreshListener(loginService, neosBaseUri);
+        },
+
+        loadFilloutRegistrationScript() {
+            const script = document.createElement('script');
+            script.id = 'fillout-registration';
+            script.src = 'https://server.fillout.com/embed/v1/';
+            script.async = true;
+            document.body.appendChild(script);
+        },
+
+        registerTokenRefreshListener(loginService, neosBaseUri) {
+            loginService.addOnTokenChangedListener(() => this.refreshNeosToken(neosBaseUri));
+        },
+
+        async refreshNeosToken(neosBaseUri) {
+            if (this._isUnmounted) return;
+            const iframe = this.$refs.iframe;
+            if (!iframe) return;
+
+            let token;
+            try {
+                token = await this.nlxAsyncService.withRetry(async () => {
+                    const response = await this.nlxAsyncService.withTimeout(
+                        this.nlxNeosContentApiService.getNeosToken(), DEFAULT_TIMEOUT_MS, 'Refreshing Neos token'
+                    );
+                    if (!response.success) {
+                        throw new Error('Failed to retrieve Neos token: ' + response.data.message);
+                    }
+                    return response.data.token;
+                });
+            } catch (error) {
+                // Best-effort background refresh - Shopware fires another token-changed event in
+                // ~5 minutes, so a failed attempt here isn't worth interrupting the user for.
+                return;
+            }
+
+            const tokenRefreshRoute = this.nlxRoutes.getNeosIndexRoute(neosBaseUri);
+            if (!tokenRefreshRoute) {
+                this.createNotificationWarning({
+                    message: this.$tc('neos.tokenRefresh.noRouteWarning.message'),
+                });
+                return;
+            }
+
+            iframe.contentWindow.postMessage(
+                {
+                    nlxShopwareMessageType: 'token-changed',
+                    token: token,
+                    apiUrl: api.schemeAndHttpHost,
+                    shopwareVersion: this.config.shopwareVersion,
+                },
+                tokenRefreshRoute
+            );
+        },
+
         async loadConfig() {
             const loginService = Shopware.Service('loginService');
             if (!loginService.isLoggedIn()) {
@@ -170,17 +210,21 @@ Shopware.Component.register('neos-index', {
                 return;
             }
 
-            this.config.token = await this.nlxNeosContentApiService.getNeosToken().then((response) => {
-                if (response.success) {
-                    return response.data.token;
-                } else {
+            this.config.token = await this.nlxAsyncService.withRetry(async () => {
+                const response = await this.nlxAsyncService.withTimeout(
+                    this.nlxNeosContentApiService.getNeosToken(), DEFAULT_TIMEOUT_MS, 'Fetching Neos token'
+                );
+                if (!response.success) {
                     throw new Error('Failed to retrieve Neos token: ' + response.data.message);
                 }
+                return response.data.token;
             });
             this.config.apiUrl = api.schemeAndHttpHost;
 
             const currentRoute = this.$router.currentRoute;
-            const neosBaseUri = await this.nlxConfigService.getSetting('neosBaseUri');
+            const neosBaseUri = await this.nlxAsyncService.withRetry(() => this.nlxAsyncService.withTimeout(
+                this.nlxConfigService.getSetting('neosBaseUri'), DEFAULT_TIMEOUT_MS, 'Loading Neos configuration'
+            ));
             if (currentRoute._value.name === 'nlx.neos.index') {
                 this.config.neosLoginRoute = this.nlxRoutes.getNeosIndexRoute(neosBaseUri);
             }
@@ -196,35 +240,88 @@ Shopware.Component.register('neos-index', {
         },
 
         async loadNeosIntoIframe() {
-            const salesChannel = await this.getSalesChannels.then(sc => sc.first());
-            const response = await fetch(this.config.neosLoginRoute, {
-                method: 'POST',
-                credentials: 'include',
-                redirect: 'follow',
-                headers: {
-                    'x-sw-language-id': api.language.id,
-                    'x-sw-sales-channel-id': salesChannel.id,
-                    'x-sw-context-token': salesChannel.accessKey,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    shopwareAccessToken: this.config.token,
-                    apiUrl: this.config.apiUrl,
-                    shopwareVersion: this.config.shopwareVersion,
-                })
-            });
-
-            response.json().then(content => {
-                this.iframeSrc = content.iframeUri;
+            try {
+                this.iframeSrc = await this.singleFlightLogin();
                 this.isLoading = false;
-            }).catch((error) => {
+            } catch (error) {
                 this.createNotificationError({
-                    title: $tc('neos.loadNeosIntoIframe.loginError.title'),
-                    message: $tc('neos.loadNeosIntoIframe.loginError.message', {
+                    title: this.$tc('neos.loadNeosIntoIframe.loginError.title'),
+                    message: this.$tc('neos.loadNeosIntoIframe.loginError.message', {
                         errorMessage: error.message
                     })
                 });
                 this.isLoading = false;
+            }
+        },
+
+        async singleFlightLogin() {
+            const MIN_INTERVAL_MS = 60000;
+            const storageKey = 'nlxNeosLastLogin:' + this.config.neosLoginRoute;
+
+            const doLogin = async () => {
+                const salesChannel = await this.getSalesChannels.then(sc => sc.first());
+
+                const abortController = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+                const timeoutId = abortController ? setTimeout(() => abortController.abort(), DEFAULT_TIMEOUT_MS) : null;
+
+                const fetchOptions = {
+                    method: 'POST',
+                    credentials: 'include',
+                    redirect: 'follow',
+                    headers: {
+                        'x-sw-language-id': api.language.id,
+                        'x-sw-sales-channel-id': salesChannel.id,
+                        'x-sw-context-token': salesChannel.accessKey,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        shopwareAccessToken: this.config.token,
+                        apiUrl: this.config.apiUrl,
+                        shopwareVersion: this.config.shopwareVersion,
+                    })
+                };
+
+                if (abortController) {
+                    fetchOptions.signal = abortController.signal;
+                }
+
+                try {
+                    const response = await fetch(this.config.neosLoginRoute, fetchOptions);
+                    return (await response.json()).iframeUri;
+                } finally {
+                    if (timeoutId) {
+                        clearTimeout(timeoutId);
+                    }
+                }
+            };
+            // doLogin() already bounds the fetch itself via AbortSignal; withTimeout additionally
+            // covers the sales channel lookup ahead of it, which has no abort signal of its own.
+            const doLoginWithRetry = () => this.nlxAsyncService.withRetry(
+                () => this.nlxAsyncService.withTimeout(doLogin(), DEFAULT_TIMEOUT_MS * 2, 'Logging into Neos')
+            );
+
+            if (typeof navigator === 'undefined' || !navigator.locks || typeof navigator.locks.request !== 'function') {
+                return doLoginWithRetry();
+            }
+
+            return navigator.locks.request('nlx-neos-login', async () => {
+                let cached = null;
+                try {
+                    cached = JSON.parse(localStorage.getItem(storageKey) || 'null');
+                } catch (e) {
+                    cached = null;
+                }
+
+                if (cached && Date.now() - cached.timestamp < MIN_INTERVAL_MS) {
+                    return cached.iframeUri;
+                }
+                const iframeUri = await doLoginWithRetry();
+                try {
+                    localStorage.setItem(storageKey, JSON.stringify({timestamp: Date.now(), iframeUri}));
+                } catch (e) {
+                    // ignore cache write errors
+                }
+                return iframeUri;
             });
         },
 
