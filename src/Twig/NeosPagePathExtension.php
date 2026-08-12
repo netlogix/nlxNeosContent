@@ -25,9 +25,6 @@ class NeosPagePathExtension extends AbstractExtension
         ];
     }
 
-    /**
-     * @param array<string, mixed> $twigContext
-     */
     public function getNeosPagePath(array $twigContext, string $nodeIdentifier): string
     {
         $context = TwigContextHelper::getSalesChannelContext($twigContext);
