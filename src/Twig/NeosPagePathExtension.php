@@ -7,6 +7,7 @@ namespace nlxNeosContent\Twig;
 use nlxNeosContent\Service\NeosPageTreeService;
 use Shopware\Core\Framework\Adapter\Twig\TwigContextHelper;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Symfony\Component\DependencyInjection\Attribute\AsTaggedItem;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;
 
