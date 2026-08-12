@@ -6,6 +6,7 @@ namespace nlxNeosContent\Twig;
 
 use nlxNeosContent\Service\NeosPageTreeService;
 use Shopware\Core\PlatformRequest;
+use Symfony\Component\DependencyInjection\Attribute\AsTaggedItem;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Twig\Extension\AbstractExtension;
