@@ -5,10 +5,8 @@ declare(strict_types=1);
 namespace nlxNeosContent\Twig;
 
 use nlxNeosContent\Service\NeosPageTreeService;
-use Shopware\Core\PlatformRequest;
-use Symfony\Component\DependencyInjection\Attribute\AsTaggedItem;
+use Shopware\Core\Framework\Adapter\Twig\TwigContextHelper;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
-use Symfony\Component\HttpFoundation\RequestStack;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;
 
@@ -17,20 +15,22 @@ class NeosPagePathExtension extends AbstractExtension
 {
     public function __construct(
         private readonly NeosPageTreeService $neosPageTreeService,
-        private readonly RequestStack $requestStack,
     ) {
     }
 
     public function getFunctions(): array
     {
         return [
-            new TwigFunction('neos_page_path', [$this, 'getNeosPagePath'])
+            new TwigFunction('neos_page_path', $this->getNeosPagePath(...), ['needs_context' => true]),
         ];
     }
 
-    public function getNeosPagePath(string $nodeIdentifier, ?SalesChannelContext $context = null): string
+    /**
+     * @param array<string, mixed> $twigContext
+     */
+    public function getNeosPagePath(array $twigContext, string $nodeIdentifier): string
     {
-        $context ??= $this->resolveContext();
+        $context = TwigContextHelper::getSalesChannelContext($twigContext);
 
         if (!$context instanceof SalesChannelContext) {
             return '';
@@ -44,14 +44,5 @@ class NeosPagePathExtension extends AbstractExtension
         );
 
         return $pathInfo === '' ? '' : '/' . ltrim($pathInfo, '/');
-    }
-
-    private function resolveContext(): ?SalesChannelContext
-    {
-        $request = $this->requestStack->getCurrentRequest() ?? $this->requestStack->getMainRequest();
-
-        $context = $request?->attributes->get(PlatformRequest::ATTRIBUTE_SALES_CHANNEL_CONTEXT_OBJECT);
-
-        return $context instanceof SalesChannelContext ? $context : null;
     }
 }
