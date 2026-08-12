@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Netlogix\WielandTheme\Twig;
+namespace nlxNeosContent\Twig;
 
 use nlxNeosContent\Service\NeosPageTreeService;
 use Shopware\Core\PlatformRequest;
@@ -11,7 +11,8 @@ use Symfony\Component\HttpFoundation\RequestStack;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;
 
-class NeoPagePathExtension extends AbstractExtension
+#[AsTaggedItem('twig.extension')]
+class NeosPagePathExtension extends AbstractExtension
 {
     public function __construct(
         private readonly NeosPageTreeService $neosPageTreeService,
