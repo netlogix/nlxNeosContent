@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace nlxNeosContent\Twig;
 
 use nlxNeosContent\Service\NeosPageTreeService;
-use Shopware\Core\Framework\Adapter\Twig\TwigContextHelper;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\DependencyInjection\Attribute\AsTaggedItem;
 use Twig\Extension\AbstractExtension;
@@ -28,7 +27,7 @@ class NeosPagePathExtension extends AbstractExtension
 
     public function getNeosPagePath(array $twigContext, string $nodeIdentifier): string
     {
-        $context = TwigContextHelper::getSalesChannelContext($twigContext);
+        $context = $this->getSalesChannelContext($twigContext);
 
         if (!$context instanceof SalesChannelContext) {
             return '';
@@ -42,5 +41,20 @@ class NeosPagePathExtension extends AbstractExtension
         );
 
         return $pathInfo === '' ? '' : '/' . ltrim($pathInfo, '/');
+    }
+
+    private function getSalesChannelContext(array $twigContext): ?SalesChannelContext
+    {
+        $context = $twigContext['context'] ?? null;
+        if ($context instanceof SalesChannelContext) {
+            return $context;
+        }
+
+        $salesChannelContext = $twigContext['salesChannelContext'] ?? null;
+        if ($salesChannelContext instanceof SalesChannelContext) {
+            return $salesChannelContext;
+        }
+
+        return null;
     }
 }
