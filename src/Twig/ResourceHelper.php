@@ -6,13 +6,9 @@ namespace nlxNeosContent\Twig;
 
 use nlxNeosContent\Service\CachingInvalidationService;
 use nlxNeosContent\Service\ConfigService;
-use nlxNeosContent\Service\NeosPageTreeService;
 use Psr\Log\LoggerInterface;
-use Shopware\Core\PlatformRequest;
-use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\DependencyInjection\Attribute\AsTaggedItem;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
-use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -32,8 +28,6 @@ class ResourceHelper extends AbstractExtension
         private readonly ConfigService $configService,
         #[Autowire(service: 'cache.object')]
         private readonly TagAwareCacheInterface $cache,
-        private readonly NeosPageTreeService $neosPageTreeService,
-        private readonly RequestStack $requestStack,
     ) {
     }
 
@@ -42,7 +36,6 @@ class ResourceHelper extends AbstractExtension
         return [
             new TwigFunction('getStyleUrls', [$this, 'getStyleUrls']),
             new TwigFunction('getScriptUrls', [$this, 'getScriptUrls']),
-            new TwigFunction('neos_page_path', [$this, 'getNeosPagePath']),
         ];
     }
 
@@ -94,32 +87,5 @@ class ResourceHelper extends AbstractExtension
         }
 
         return $decodedBody;
-    }
-
-    public function getNeosPagePath(string $nodeIdentifier): string
-    {
-        $context = $this->resolveContext();
-
-        if (!$context instanceof SalesChannelContext) {
-            return '';
-        }
-
-        $normalizedIdentifier = str_replace('-', '', $nodeIdentifier);
-
-        $pathInfo = $this->neosPageTreeService->findPathInfoForIdentifierAndContext(
-            $normalizedIdentifier,
-            $context
-        );
-
-        return $pathInfo === '' ? '' : '/' . ltrim($pathInfo, '/');
-    }
-
-    private function resolveContext(): ?SalesChannelContext
-    {
-        $request = $this->requestStack->getCurrentRequest() ?? $this->requestStack->getMainRequest();
-
-        $context = $request?->attributes->get(PlatformRequest::ATTRIBUTE_SALES_CHANNEL_CONTEXT_OBJECT);
-
-        return $context instanceof SalesChannelContext ? $context : null;
     }
 }
