@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace nlxNeosContent\Twig;
 
-use nlxNeosContent\Error\RequestError\NoSalesChannelContextException;
 use nlxNeosContent\Error\Routing\UnknownNeosPathException;
 use nlxNeosContent\Service\NeosPageTreeService;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Shopware\Storefront\Framework\StorefrontFrameworkException;
 use Symfony\Component\DependencyInjection\Attribute\AsTaggedItem;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;
@@ -32,7 +32,7 @@ class NeosPagePathExtension extends AbstractExtension
         $context = $this->getSalesChannelContext($twigContext);
 
         if (!$context instanceof SalesChannelContext) {
-            throw new NoSalesChannelContextException(code: 1786546309);
+            throw StorefrontFrameworkException::salesChannelContextObjectNotFound();
         }
 
         $normalizedIdentifier = str_replace('-', '', $nodeIdentifier);
