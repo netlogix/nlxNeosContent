@@ -46,14 +46,14 @@ class NeosPageTreeService
         throw new NoTreeItemFoundException($pathInfo);
     }
 
-    public function findPathInfoForIdentifierAndContext($nodeIdentifier, SalesChannelContext $salesChannelContext): string
+    public function findPathInfoForIdentifierAndContext($nodeIdentifier, SalesChannelContext $salesChannelContext): ?string
     {
         $neosPageTree = $this->neosPageTreeLoader->load($salesChannelContext);
 
         return $this->findPathInfoByNodeIdentifier($nodeIdentifier, $neosPageTree);
     }
 
-    public function findPathInfoByNodeIdentifier(string $nodeIdentifier, NeosPageCollection $tree): string
+    public function findPathInfoByNodeIdentifier(string $nodeIdentifier, NeosPageCollection $tree): ?string
     {
         foreach ($tree as $treeItem) {
             if ($nodeIdentifier === str_replace('-', '', $treeItem->identifier)) {
@@ -62,11 +62,11 @@ class NeosPageTreeService
 
             $pathInfo = $this->findPathInfoByNodeIdentifier($nodeIdentifier, $treeItem->children);
 
-            if ($pathInfo !== '') {
+            if ($pathInfo !== null) {
                 return $pathInfo;
             }
         }
 
-        return '';
+        return null;
     }
 }

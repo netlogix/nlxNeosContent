@@ -81,6 +81,9 @@ class ContextControllerDecorator extends ContextController
             $nodeIdentifier = $request->request->all('redirectParameters')['navigationId'];
             $pathInfo = $this->neosPageTreeService->findPathInfoForIdentifierAndContext($nodeIdentifier, $newContext);
 
+            // No equivalent page exists for the target language; land on that language's homepage instead.
+            $targetPathInfo = $pathInfo ?? '';
+
             try {
                 $newTokenResponse = $this->contextSwitchRoute->switchContext(
                     new RequestDataBag([SalesChannelContextService::LANGUAGE_ID => $languageId]),
@@ -92,7 +95,7 @@ class ContextControllerDecorator extends ContextController
 
             if ($newTokenResponse->getRedirectUrl() === null) {
                 $url = $this->getDomainUrlByLanguageId($newContext, $languageId);
-                return new RedirectResponse(rtrim($url, '/') . '/' . ltrim($pathInfo, '/'), Response::HTTP_FOUND);
+                return new RedirectResponse(rtrim($url, '/') . '/' . ltrim($targetPathInfo, '/'), Response::HTTP_FOUND);
             }
 
             $parsedUrl = parse_url($newTokenResponse->getRedirectUrl());
@@ -103,7 +106,7 @@ class ContextControllerDecorator extends ContextController
 
             $redirectRequest = Request::create($newTokenResponse->getRedirectUrl());
 
-            return new RedirectResponse(rtrim($redirectRequest->getUri(), '/') . '/' . ltrim($pathInfo, '/'), Response::HTTP_FOUND);
+            return new RedirectResponse(rtrim($redirectRequest->getUri(), '/') . '/' . ltrim($targetPathInfo, '/'), Response::HTTP_FOUND);
 
         }
         return $this->inner->switchLanguage($request, $context);
