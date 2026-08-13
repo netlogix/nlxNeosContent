@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace nlxNeosContent\Twig;
 
+use nlxNeosContent\Error\Routing\UnknownNeosPathException;
 use nlxNeosContent\Service\NeosPageTreeService;
-use Shopware\Core\PlatformRequest;
-use Symfony\Component\DependencyInjection\Attribute\AsTaggedItem;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
-use Symfony\Component\HttpFoundation\RequestStack;
+use Shopware\Storefront\Framework\StorefrontFrameworkException;
+use Symfony\Component\DependencyInjection\Attribute\AsTaggedItem;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;
 
@@ -17,23 +17,22 @@ class NeosPagePathExtension extends AbstractExtension
 {
     public function __construct(
         private readonly NeosPageTreeService $neosPageTreeService,
-        private readonly RequestStack $requestStack,
     ) {
     }
 
     public function getFunctions(): array
     {
         return [
-            new TwigFunction('neos_page_path', [$this, 'getNeosPagePath'])
+            new TwigFunction('neos_page_path', $this->getNeosPagePath(...), ['needs_context' => true]),
         ];
     }
 
-    public function getNeosPagePath(string $nodeIdentifier, ?SalesChannelContext $context = null): string
+    public function getNeosPagePath(array $twigContext, string $nodeIdentifier): string
     {
-        $context ??= $this->resolveContext();
+        $context = $this->getSalesChannelContext($twigContext);
 
         if (!$context instanceof SalesChannelContext) {
-            return '';
+            throw StorefrontFrameworkException::salesChannelContextObjectNotFound();
         }
 
         $normalizedIdentifier = str_replace('-', '', $nodeIdentifier);
@@ -43,15 +42,25 @@ class NeosPagePathExtension extends AbstractExtension
             $context
         );
 
-        return $pathInfo === '' ? '' : '/' . ltrim($pathInfo, '/');
+        if ($pathInfo === '') {
+            throw new UnknownNeosPathException(code: 1786546010);
+        }
+
+        return '/' . ltrim($pathInfo, '/');
     }
 
-    private function resolveContext(): ?SalesChannelContext
+    private function getSalesChannelContext(array $twigContext): ?SalesChannelContext
     {
-        $request = $this->requestStack->getCurrentRequest() ?? $this->requestStack->getMainRequest();
+        $context = $twigContext['context'] ?? null;
+        if ($context instanceof SalesChannelContext) {
+            return $context;
+        }
 
-        $context = $request?->attributes->get(PlatformRequest::ATTRIBUTE_SALES_CHANNEL_CONTEXT_OBJECT);
+        $salesChannelContext = $twigContext['salesChannelContext'] ?? null;
+        if ($salesChannelContext instanceof SalesChannelContext) {
+            return $salesChannelContext;
+        }
 
-        return $context instanceof SalesChannelContext ? $context : null;
+        return null;
     }
 }
