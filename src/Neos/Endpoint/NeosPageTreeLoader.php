@@ -39,7 +39,7 @@ readonly class NeosPageTreeLoader extends AbstractNeosPageTreeLoader
             ->first();
 
         if (!$domain instanceof SalesChannelDomainEntity) {
-            throw new \InvalidArgumentException("The salesChannelContext dosn't contain the relevant domain.");
+            throw new \InvalidArgumentException("The salesChannelContext doesn't contain the relevant domain.", code: 1786620843);
         }
 
         $response = $this->neosClient->request('GET', 'neos/shopware-api/pagetree', [

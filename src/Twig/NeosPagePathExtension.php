@@ -6,6 +6,7 @@ namespace nlxNeosContent\Twig;
 
 use nlxNeosContent\Error\Routing\UnknownNeosPathException;
 use nlxNeosContent\Service\NeosPageTreeService;
+use Psr\Log\LoggerInterface;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Framework\StorefrontFrameworkException;
 use Symfony\Component\DependencyInjection\Attribute\AsTaggedItem;
@@ -17,6 +18,7 @@ class NeosPagePathExtension extends AbstractExtension
 {
     public function __construct(
         private readonly NeosPageTreeService $neosPageTreeService,
+        private readonly LoggerInterface $logger,
     ) {
     }
 
@@ -35,6 +37,22 @@ class NeosPagePathExtension extends AbstractExtension
             throw StorefrontFrameworkException::salesChannelContextObjectNotFound();
         }
 
+        try {
+            return $this->fetchNeosPage($nodeIdentifier, $context);
+        } catch (\Throwable $e) {
+            $this->logger->error('Error while fetching Neos page path', [
+                'nodeIdentifier' => $nodeIdentifier,
+                'context' => $context,
+                'exception' => $e,
+            ]);
+
+            return "";
+        }
+
+    }
+
+    private function fetchNeosPage(string $nodeIdentifier, SalesChannelContext $context): string
+    {
         $normalizedIdentifier = str_replace('-', '', $nodeIdentifier);
 
         $pathInfo = $this->neosPageTreeService->findPathInfoForIdentifierAndContext(
@@ -42,7 +60,7 @@ class NeosPagePathExtension extends AbstractExtension
             $context
         );
 
-        if ($pathInfo === '') {
+        if ($pathInfo === '' || $pathInfo === null) {
             throw new UnknownNeosPathException(code: 1786546010);
         }
 
