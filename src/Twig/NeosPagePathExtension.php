@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace nlxNeosContent\Twig;
 
+use nlxNeosContent\Error\RequestError\NoSalesChannelContextException;
+use nlxNeosContent\Error\Routing\UnknownNeosPathException;
 use nlxNeosContent\Service\NeosPageTreeService;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\DependencyInjection\Attribute\AsTaggedItem;
@@ -30,7 +32,7 @@ class NeosPagePathExtension extends AbstractExtension
         $context = $this->getSalesChannelContext($twigContext);
 
         if (!$context instanceof SalesChannelContext) {
-            return '';
+            throw new NoSalesChannelContextException(code: 1786546309);
         }
 
         $normalizedIdentifier = str_replace('-', '', $nodeIdentifier);
@@ -40,7 +42,11 @@ class NeosPagePathExtension extends AbstractExtension
             $context
         );
 
-        return $pathInfo === '' ? '' : '/' . ltrim($pathInfo, '/');
+        if ($pathInfo === '') {
+            throw new UnknownNeosPathException(code: 1786546010);
+        }
+
+        return '/' . ltrim($pathInfo, '/');
     }
 
     private function getSalesChannelContext(array $twigContext): ?SalesChannelContext
