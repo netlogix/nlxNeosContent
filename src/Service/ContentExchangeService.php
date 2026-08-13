@@ -170,17 +170,17 @@ class ContentExchangeService
             return $this->requestNeosContentForCmsPage($cmsPage, $salesChannelContext, $languageId);
         } catch (ClientException $e) {
             if ($e->getCode() !== 404 || $languageId === Defaults::LANGUAGE_SYSTEM) {
-                throw $this->newContentFetchException($cmsPage, $salesChannelContext, $languageId, $e);
+                throw NeosContentFetchException::forCmsPage($cmsPage, $salesChannelContext, $languageId, $e, 1786604083);
             }
         } catch (ExceptionInterface $e) {
-            throw $this->newContentFetchException($cmsPage, $salesChannelContext, $languageId, $e);
+            throw NeosContentFetchException::forCmsPage($cmsPage, $salesChannelContext, $languageId, $e, 1786604084);
         }
 
         // No layout exists for the resolved language yet; fall back to the shop's default language.
         try {
             return $this->requestNeosContentForCmsPage($cmsPage, $salesChannelContext, Defaults::LANGUAGE_SYSTEM);
         } catch (ExceptionInterface $e) {
-            throw $this->newContentFetchException($cmsPage, $salesChannelContext, Defaults::LANGUAGE_SYSTEM, $e);
+            throw NeosContentFetchException::forCmsPage($cmsPage, $salesChannelContext, Defaults::LANGUAGE_SYSTEM, $e, 1786604085);
         }
     }
 
@@ -202,25 +202,6 @@ class ContentExchangeService
         ]);
 
         return $response->getContent();
-    }
-
-    private function newContentFetchException(
-        CmsPageEntity $cmsPage,
-        SalesChannelContext $salesChannelContext,
-        string $languageId,
-        \Throwable $e
-    ): NeosContentFetchException {
-        return new NeosContentFetchException(
-            sprintf(
-                'Failed to fetch content from Neos for node CmsPage "%s" for sales channel "%s" and language "%s" with Errormessage: %s',
-                $cmsPage->getName(),
-                $salesChannelContext->getSalesChannelId(),
-                $languageId,
-                $e->getMessage()
-            ),
-            1752652016,
-            $e
-        );
     }
 
     /**
