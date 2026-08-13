@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace nlxNeosContent\Service;
 
-use GuzzleHttp\Exception\RequestException;
 use nlxNeosContent\Core\Content\Cms\Aggregate\CmsSection\NeosCmsSectionCollection;
 use nlxNeosContent\Error\RequestError\NeosContentFetchException;
 use nlxNeosContent\Neos\DTO\NeosResults\NeosContentResult;
@@ -14,14 +13,17 @@ use Shopware\Core\Content\Cms\Aggregate\CmsSection\CmsSectionCollection;
 use Shopware\Core\Content\Cms\CmsPageEntity;
 use Shopware\Core\Content\Cms\DataResolver\CmsSlotsDataResolver;
 use Shopware\Core\Content\Cms\DataResolver\ResolverContext\ResolverContext;
+use Shopware\Core\Defaults;
 use Shopware\Core\System\SalesChannel\Aggregate\SalesChannelDomain\SalesChannelDomainEntity;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\HttpClient\Exception\ClientException;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Mime\Part\DataPart;
 use Symfony\Component\Mime\Part\Multipart\FormDataPart;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
+use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Contracts\HttpClient\ResponseInterface;
 
@@ -163,34 +165,41 @@ class ContentExchangeService
         SalesChannelContext $salesChannelContext
     ): string {
         $languageId = $salesChannelContext->getLanguageId();
-        $salesChannelId = $salesChannelContext->getSalesChannelId();
-        $domain = $salesChannelContext->getSalesChannel()->getDomains()->filter(function ($domain) use ($salesChannelContext) {
-            return $domain->getId() === $salesChannelContext->getDomainId();
-        })->first();
 
         try {
-            $uri = sprintf("/neos/shopware-api/content/%s/", $cmsPage->getId());
-            $response = $this->neosClient->request('GET', $uri, [
-                'headers' => [
-                    'x-sw-language-id' => $languageId,
-                    'x-sw-sales-channel-id' => $salesChannelId,
-                    'x-sw-sales-channel-domain' => $domain->getUrl(),
-                    'x-sw-context-token' => $salesChannelContext->getSalesChannel()->getAccessKey(),
-                ]
-            ]);
-        } catch (RequestException $e) {
-            throw new NeosContentFetchException (
-                sprintf(
-                    'Failed to fetch content from Neos for node CmsPage "%s" for sales channel "%s" and language "%s" with Errormessage: %s',
-                    $cmsPage->getName(),
-                    $salesChannelId,
-                    $languageId,
-                    $e->getMessage()
-                ),
-                1752652016,
-                $e
-            );
+            return $this->requestNeosContentForCmsPage($cmsPage, $salesChannelContext, $languageId);
+        } catch (ClientException $e) {
+            if ($e->getCode() !== 404 || $languageId === Defaults::LANGUAGE_SYSTEM) {
+                throw NeosContentFetchException::forCmsPage($cmsPage, $salesChannelContext, $languageId, $e, 1786604083);
+            }
+        } catch (ExceptionInterface $e) {
+            throw NeosContentFetchException::forCmsPage($cmsPage, $salesChannelContext, $languageId, $e, 1786604084);
         }
+
+        // No layout exists for the resolved language yet; fall back to the shop's default language.
+        try {
+            return $this->requestNeosContentForCmsPage($cmsPage, $salesChannelContext, Defaults::LANGUAGE_SYSTEM);
+        } catch (ExceptionInterface $e) {
+            throw NeosContentFetchException::forCmsPage($cmsPage, $salesChannelContext, Defaults::LANGUAGE_SYSTEM, $e, 1786604085);
+        }
+    }
+
+    private function requestNeosContentForCmsPage(
+        CmsPageEntity $cmsPage,
+        SalesChannelContext $salesChannelContext,
+        string $languageId
+    ): string {
+        $domain = $this->getCurrentDomain($salesChannelContext);
+
+        $uri = sprintf('/neos/shopware-api/content/%s/', $cmsPage->getId());
+        $response = $this->neosClient->request('GET', $uri, [
+            'headers' => [
+                'x-sw-language-id' => $languageId,
+                'x-sw-sales-channel-id' => $salesChannelContext->getSalesChannelId(),
+                'x-sw-sales-channel-domain' => $domain->getUrl(),
+                'x-sw-context-token' => $salesChannelContext->getSalesChannel()->getAccessKey(),
+            ],
+        ]);
 
         return $response->getContent();
     }
