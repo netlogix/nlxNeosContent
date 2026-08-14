@@ -14,5 +14,11 @@
             <factory class="nlxNeosContent\HttpClient\NeosClientFactory" method="create"/>
             <argument type="service" id="nlxNeosContent\Service\ConfigService"/>
         </service>
+
+        <!-- Swap this alias (e.g. to a System-Config-backed implementation) to change
+             the head-tag allow-list source without touching NeosHeadDataFactory or
+             its callers. -->
+        <service id="nlxNeosContent\Neos\HeadTag\HeadTagAllowListProviderInterface"
+                 alias="nlxNeosContent\Neos\HeadTag\HardcodedHeadTagAllowListProvider"/>
     </services>
 </container>
