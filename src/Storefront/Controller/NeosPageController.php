@@ -6,12 +6,15 @@ namespace nlxNeosContent\Storefront\Controller;
 
 use nlxNeosContent\Neos\DTO\NeosResults\NeosContentResult;
 use nlxNeosContent\Neos\DTO\NeosResults\NeosRedirectResult;
+use nlxNeosContent\Neos\HeadTag\HreflangLink;
+use nlxNeosContent\Neos\HeadTag\NeosHeadDataFactory;
 use nlxNeosContent\Service\ContentExchangeService;
 use nlxNeosContent\Service\NeosPageTreeService;
 use nlxNeosContent\Service\ResolverContextService;
 use Shopware\Core\Content\Category\CategoryDefinition;
 use Shopware\Core\Content\Cms\CmsPageEntity;
 use Shopware\Core\Framework\Adapter\Cache\CacheTagCollector;
+use Shopware\Core\Framework\Struct\ArrayStruct;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Controller\StorefrontController;
 use Shopware\Storefront\Page\GenericPageLoader;
@@ -26,6 +29,7 @@ class NeosPageController extends StorefrontController
 {
     public const CACHE_TAG_ALL = 'nlx-cbp-page';
     public const CACHE_TAG_PREFIX = 'nlx-cbp-page-';
+    public const HEAD_TAGS_EXTENSION = 'neosHeadTags';
 
     function __construct(
         private readonly ContentExchangeService $contentExchangeService,
@@ -34,6 +38,7 @@ class NeosPageController extends StorefrontController
         #[Autowire(service: GenericPageLoader::class)]
         private readonly GenericPageLoaderInterface $genericPageLoader,
         private readonly CacheTagCollector $cacheTagCollector,
+        private readonly NeosHeadDataFactory $neosHeadDataFactory,
     ) {
     }
 
@@ -90,8 +95,25 @@ class NeosPageController extends StorefrontController
         ]);
 
         $page = $this->genericPageLoader->load($request, $salesChannelContext);
-        $page->getMetaInformation()->setMetaTitle($treeItem->label);
-        //TODO add missing Metadata
+
+        $headData = $this->neosHeadDataFactory->createHeadData($neosContentResult->getHead());
+        $metaInformation = $page->getMetaInformation();
+        $metaInformation->setMetaTitle($headData->getTitle() ?? $treeItem->label);
+        if ($headData->getDescription() !== null) {
+            $metaInformation->setMetaDescription($headData->getDescription());
+        }
+        if ($headData->getCanonical() !== null) {
+            $domain = $this->contentExchangeService->getCurrentDomain($salesChannelContext);
+            $metaInformation->setCanonical(rtrim($domain->getUrl(), '/') . '/' . trim($request->getPathInfo(), '/'));
+        }
+        if ($headData->getRobots() !== null) {
+            $metaInformation->setRobots($headData->getRobots());
+        }
+        $headTags = [
+            ...$headData->getRemainingHeadData(),
+            ...$this->buildHreflangHeadTags($headData->getHreflangLinks(), $salesChannelContext),
+        ];
+        $page->addExtension(self::HEAD_TAGS_EXTENSION, new ArrayStruct($headTags));
 
         //Adding two cache tags, so we can invalidate a specific cached page or all of them
         $this->cacheTagCollector->addTag(self::getCacheTagFromIdentifier($treeItem->identifier), self::CACHE_TAG_ALL);
@@ -100,6 +122,31 @@ class NeosPageController extends StorefrontController
             'cmsPage' => $cmsPage,
             'landingPage' => []
         ]);
+    }
+
+    /**
+     * @param HreflangLink[] $hreflangLinks
+     * @return array<string>
+     */
+    private function buildHreflangHeadTags(array $hreflangLinks, SalesChannelContext $salesChannelContext): array
+    {
+        $headTags = [];
+
+        foreach ($hreflangLinks as $hreflangLink) {
+            $domain = $this->contentExchangeService->findDomainForHreflangCode($hreflangLink->hreflangCode, $salesChannelContext);
+            if ($domain === null) {
+                continue;
+            }
+
+            $href = rtrim($domain->getUrl(), '/') . '/' . trim($hreflangLink->contentPath, '/');
+            $headTags[] = sprintf(
+                '<link rel="alternate" hreflang="%s" href="%s">',
+                htmlspecialchars($hreflangLink->hreflangCode, ENT_QUOTES, 'UTF-8'),
+                htmlspecialchars($href, ENT_QUOTES, 'UTF-8')
+            );
+        }
+
+        return $headTags;
     }
 
     private function hasFormLikeRequestStructure(Request $request): bool
