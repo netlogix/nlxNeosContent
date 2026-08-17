@@ -13,9 +13,10 @@ namespace nlxNeosContent\Neos\HeadTag;
  * raw tags, since Shopware needs them as plain strings for
  * $page->getMetaInformation(). Alternate-language links (AlternateLanguageLinkRule)
  * are extracted into HreflangLink entries with Neos's own domain and
- * language-prefix segment already stripped from the href - resolving the
- * matching Shopware sales channel domain and combining it with that path
- * happens in the caller, since it needs a SalesChannelContext this factory
+ * language-prefix segment already stripped from the href, and JSON-LD scripts
+ * (JsonLdScriptRule) are extracted as raw payload strings - resolving the
+ * matching Shopware sales channel domain and rewriting URLs happens in the
+ * caller in both cases, since it needs a SalesChannelContext this factory
  * doesn't have. Everything else is matched against the configured allow-list
  * (see HeadTagAllowListProviderInterface) and kept as raw tag strings for
  * verbatim injection into the storefront <head>. Deny-by-default: a tag that
@@ -31,6 +32,7 @@ final readonly class NeosHeadDataFactory
         private CanonicalTagRule $canonicalTagRule,
         private RobotsTagRule $robotsTagRule,
         private AlternateLanguageLinkRule $alternateLanguageLinkRule,
+        private JsonLdScriptRule $jsonLdScriptRule,
     ) {
     }
 
@@ -46,6 +48,7 @@ final readonly class NeosHeadDataFactory
         $canonical = null;
         $robots = null;
         $hreflangLinks = [];
+        $jsonLdScripts = [];
         $remainingHeadData = [];
 
         foreach ($rawHeadTags as $rawHeadTag) {
@@ -83,12 +86,17 @@ final readonly class NeosHeadDataFactory
                 continue;
             }
 
+            if ($this->jsonLdScriptRule->matches($parsedTag)) {
+                $jsonLdScripts[] = trim($parsedTag->textContent);
+                continue;
+            }
+
             if ($this->matchesAnyRule($parsedTag, $rules)) {
                 $remainingHeadData[] = $rawHeadTag;
             }
         }
 
-        return new NeosHeadData($title, $description, $canonical, $robots, $hreflangLinks, $remainingHeadData);
+        return new NeosHeadData($title, $description, $canonical, $robots, $hreflangLinks, $jsonLdScripts, $remainingHeadData);
     }
 
     /**
