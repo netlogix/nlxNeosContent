@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace nlxNeosContent\Service;
 
-use nlxNeosContent\Core\Content\Cms\Aggregate\CmsSection\NeosCmsSectionCollection;
 use nlxNeosContent\Error\RequestError\NeosContentFetchException;
 use nlxNeosContent\Neos\DTO\NeosResults\NeosContentResult;
 use nlxNeosContent\Neos\DTO\NeosResults\NeosRedirectResult;
@@ -51,7 +50,10 @@ class ContentExchangeService
             $salesChannelContext
         );
 
-        return $this->serializer->denormalize($elements, NeosCmsSectionCollection::class,'json');
+        /** @var NeosContentResult $result */
+        $result = $this->serializer->denormalize($elements, NeosContentResult::class, 'json');
+
+        return $result->getSections();
     }
 
     public function fetchCmsSectionsFromNeosByPath(string $pathInfo, SalesChannelContext $salesChannelContext): NeosContentResult|NeosRedirectResult
@@ -117,9 +119,7 @@ class ContentExchangeService
             return new NeosRedirectResult(redirectPathInfo: $this->extractRedirectPathInfo($response));
         }
 
-        $sections = $this->serializer->denormalize($response->getContent(), NeosCmsSectionCollection::class, 'json');
-
-        return new NeosContentResult(sections: $sections);
+        return $this->serializer->denormalize($response->getContent(), NeosContentResult::class, 'json');
     }
 
     private function buildSwHeaders(SalesChannelContext $salesChannelContext): array
@@ -134,11 +134,47 @@ class ContentExchangeService
         ];
     }
 
-    private function getCurrentDomain(SalesChannelContext $salesChannelContext): SalesChannelDomainEntity
+    public function getCurrentDomain(SalesChannelContext $salesChannelContext): SalesChannelDomainEntity
     {
         return $salesChannelContext->getSalesChannel()->getDomains()->filter(function ($domain) use ($salesChannelContext) {
             return $domain->getId() === $salesChannelContext->getDomainId();
         })->first();
+    }
+
+    public function findDomainForHreflangCode(
+        string $hreflangCode,
+        SalesChannelContext $salesChannelContext
+    ): ?SalesChannelDomainEntity {
+        $domains = $salesChannelContext->getSalesChannel()->getDomains();
+        if ($domains === null) {
+            return null;
+        }
+
+        if (strcasecmp($hreflangCode, 'x-default') === 0) {
+            $defaultLanguageId = $salesChannelContext->getSalesChannel()->getLanguageId();
+            foreach ($domains as $domain) {
+                if ($domain->getLanguageId() === $defaultLanguageId) {
+                    return $domain;
+                }
+            }
+
+            return null;
+        }
+
+        foreach ($domains as $domain) {
+            $path = trim((string) parse_url($domain->getUrl(), PHP_URL_PATH), '/');
+            if ($path === '') {
+                continue;
+            }
+
+            $segments = explode('/', $path);
+            $lastSegment = $segments[array_key_last($segments)];
+            if (strcasecmp($lastSegment, $hreflangCode) === 0) {
+                return $domain;
+            }
+        }
+
+        return null;
     }
 
     private function extractRedirectPathInfo(ResponseInterface $response): string
