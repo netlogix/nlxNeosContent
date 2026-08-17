@@ -7,6 +7,7 @@ namespace nlxNeosContent\Storefront\Controller;
 use nlxNeosContent\Neos\DTO\NeosResults\NeosContentResult;
 use nlxNeosContent\Neos\DTO\NeosResults\NeosRedirectResult;
 use nlxNeosContent\Neos\HeadTag\HreflangLink;
+use nlxNeosContent\Neos\HeadTag\JsonLdUrlRewriter;
 use nlxNeosContent\Neos\HeadTag\NeosHeadDataFactory;
 use nlxNeosContent\Service\ContentExchangeService;
 use nlxNeosContent\Service\NeosPageTreeService;
@@ -15,6 +16,7 @@ use Shopware\Core\Content\Category\CategoryDefinition;
 use Shopware\Core\Content\Cms\CmsPageEntity;
 use Shopware\Core\Framework\Adapter\Cache\CacheTagCollector;
 use Shopware\Core\Framework\Struct\ArrayStruct;
+use Shopware\Core\System\SalesChannel\Aggregate\SalesChannelDomain\SalesChannelDomainEntity;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Controller\StorefrontController;
 use Shopware\Storefront\Page\GenericPageLoader;
@@ -39,6 +41,7 @@ class NeosPageController extends StorefrontController
         private readonly GenericPageLoaderInterface $genericPageLoader,
         private readonly CacheTagCollector $cacheTagCollector,
         private readonly NeosHeadDataFactory $neosHeadDataFactory,
+        private readonly JsonLdUrlRewriter $jsonLdUrlRewriter,
     ) {
     }
 
@@ -97,14 +100,14 @@ class NeosPageController extends StorefrontController
         $page = $this->genericPageLoader->load($request, $salesChannelContext);
 
         $headData = $this->neosHeadDataFactory->createHeadData($neosContentResult->getHead());
+        $currentDomain = $this->contentExchangeService->getCurrentDomain($salesChannelContext);
         $metaInformation = $page->getMetaInformation();
         $metaInformation->setMetaTitle($headData->getTitle() ?? $treeItem->label);
         if ($headData->getDescription() !== null) {
             $metaInformation->setMetaDescription($headData->getDescription());
         }
         if ($headData->getCanonical() !== null) {
-            $domain = $this->contentExchangeService->getCurrentDomain($salesChannelContext);
-            $metaInformation->setCanonical(rtrim($domain->getUrl(), '/') . '/' . trim($request->getPathInfo(), '/'));
+            $metaInformation->setCanonical(rtrim($currentDomain->getUrl(), '/') . '/' . trim($request->getPathInfo(), '/'));
         }
         if ($headData->getRobots() !== null) {
             $metaInformation->setRobots($headData->getRobots());
@@ -112,6 +115,7 @@ class NeosPageController extends StorefrontController
         $headTags = [
             ...$headData->getRemainingHeadData(),
             ...$this->buildHreflangHeadTags($headData->getHreflangLinks(), $salesChannelContext),
+            ...$this->buildJsonLdHeadTags($headData->getJsonLdScripts(), $currentDomain, $salesChannelContext),
         ];
         $page->addExtension(self::HEAD_TAGS_EXTENSION, new ArrayStruct($headTags));
 
@@ -144,6 +148,33 @@ class NeosPageController extends StorefrontController
                 htmlspecialchars($hreflangLink->hreflangCode, ENT_QUOTES, 'UTF-8'),
                 htmlspecialchars($href, ENT_QUOTES, 'UTF-8')
             );
+        }
+
+        return $headTags;
+    }
+
+    /**
+     * @param array<string> $jsonLdScripts
+     * @return array<string>
+     */
+    private function buildJsonLdHeadTags(
+        array $jsonLdScripts,
+        SalesChannelDomainEntity $currentDomain,
+        SalesChannelContext $salesChannelContext
+    ): array {
+        $headTags = [];
+
+        foreach ($jsonLdScripts as $jsonLdScript) {
+            $rewritten = $this->jsonLdUrlRewriter->rewrite(
+                $jsonLdScript,
+                $currentDomain,
+                $salesChannelContext->getSalesChannelId()
+            );
+            if ($rewritten === null) {
+                continue;
+            }
+
+            $headTags[] = '<script type="application/ld+json">' . $rewritten . '</script>';
         }
 
         return $headTags;

@@ -10,11 +10,14 @@ namespace nlxNeosContent\Neos\HeadTag;
  * The page title, meta description, canonical link and robots directive never
  * reach this allow-list at all - NeosHeadDataFactory extracts them from their
  * respective tags before filtering runs, and they're set on
- * $page->getMetaInformation() instead. Deliberately excludes everything else
- * Shopware's own storefront/layout/meta.html.twig already renders from that
- * same MetaInformation object - meta keywords, OpenGraph and Twitter Card
- * tags, hreflang links - since allowing those through as well would duplicate
- * them in the rendered <head>. og:locale and msapplication-* are exceptions:
+ * $page->getMetaInformation() instead. JSON-LD scripts are extracted the same
+ * way (JsonLdScriptRule) so their URLs can be rewritten to Shopware's domain
+ * before being re-emitted - they never reach this allow-list either.
+ * Deliberately excludes everything else Shopware's own
+ * storefront/layout/meta.html.twig already renders from that same
+ * MetaInformation object - meta keywords, OpenGraph and Twitter Card tags,
+ * hreflang links - since allowing those through as well would duplicate them
+ * in the rendered <head>. og:locale and msapplication-* are exceptions:
  * Shopware's core template has no fields for them at all, so they're
  * allow-listed to pass through raw. Only tags Shopware has no story for today
  * are allowed through by default.
@@ -32,7 +35,6 @@ final class HardcodedHeadTagAllowListProvider implements HeadTagAllowListProvide
             new HeadTagRule('meta', 'name', 'google-site-verification'),
             new HeadTagRule('meta', 'property', 'og:locale'),
             new HeadTagRule('meta', 'name', 'msapplication-', attributeValueIsPrefix: true),
-            new HeadTagRule('script', 'type', 'application/ld+json'),
         ];
     }
 }
