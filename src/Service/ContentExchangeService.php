@@ -151,9 +151,13 @@ class ContentExchangeService
         }
 
         if (strcasecmp($hreflangCode, 'x-default') === 0) {
-            $defaultLanguageId = $salesChannelContext->getSalesChannel()->getLanguageId();
+            $defaultDomainId = $salesChannelContext->getSalesChannel()->getHreflangDefaultDomainId();
+            if ($defaultDomainId === null) {
+                return null;
+            }
+
             foreach ($domains as $domain) {
-                if ($domain->getLanguageId() === $defaultLanguageId) {
+                if ($domain->getId() === $defaultDomainId) {
                     return $domain;
                 }
             }

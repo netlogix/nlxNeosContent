@@ -8,17 +8,19 @@ namespace nlxNeosContent\Neos\HeadTag;
  * Structured result of parsing Neos's raw `head` tag array (built by
  * NeosHeadDataFactory): fields Shopware has a dedicated place for - the page
  * title, meta description, canonical link and robots directive - are
- * extracted into their own getters. Alternate-language links are extracted
- * too, but only partially resolved (see HreflangLink) since turning them into
- * proper Shopware URLs needs a SalesChannelContext, which isn't available
- * here - that final step happens in the caller. Everything else that passed
- * the allow-list stays available raw via getRemainingHeadData() for verbatim
- * injection into the storefront <head>.
+ * extracted into their own getters. Alternate-language links and JSON-LD
+ * scripts are extracted too, but only partially resolved (see HreflangLink,
+ * getJsonLdScripts()) since turning them into proper Shopware URLs needs a
+ * SalesChannelContext, which isn't available here - that final step happens
+ * in the caller. Everything else that passed the allow-list stays available
+ * raw via getRemainingHeadData() for verbatim injection into the storefront
+ * <head>.
  */
 readonly final class NeosHeadData
 {
     /**
      * @param HreflangLink[] $hreflangLinks
+     * @param array<string> $jsonLdScripts Raw JSON-LD payload strings (script tag content, not yet URL-rewritten).
      * @param array<string> $remainingHeadData Raw HTML tag strings, already allow-list filtered.
      */
     public function __construct(
@@ -27,6 +29,7 @@ readonly final class NeosHeadData
         private ?string $canonical,
         private ?string $robots,
         private array $hreflangLinks,
+        private array $jsonLdScripts,
         private array $remainingHeadData,
     ) {
     }
@@ -57,6 +60,14 @@ readonly final class NeosHeadData
     public function getHreflangLinks(): array
     {
         return $this->hreflangLinks;
+    }
+
+    /**
+     * @return array<string>
+     */
+    public function getJsonLdScripts(): array
+    {
+        return $this->jsonLdScripts;
     }
 
     /**
