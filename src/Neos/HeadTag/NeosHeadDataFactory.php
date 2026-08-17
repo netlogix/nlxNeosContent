@@ -49,10 +49,6 @@ final readonly class NeosHeadDataFactory
         $remainingHeadData = [];
 
         foreach ($rawHeadTags as $rawHeadTag) {
-            if (!is_string($rawHeadTag)) {
-                continue;
-            }
-
             $parsedTag = $this->parser->parse($rawHeadTag);
             if ($parsedTag === null) {
                 continue;
