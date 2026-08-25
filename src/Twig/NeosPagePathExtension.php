@@ -8,8 +8,10 @@ use nlxNeosContent\Error\Routing\UnknownNeosPathException;
 use nlxNeosContent\Service\NeosPageTreeService;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Shopware\Storefront\Framework\Routing\RequestTransformer;
 use Shopware\Storefront\Framework\StorefrontFrameworkException;
 use Symfony\Component\DependencyInjection\Attribute\AsTaggedItem;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;
 
@@ -19,6 +21,7 @@ class NeosPagePathExtension extends AbstractExtension
     public function __construct(
         private readonly NeosPageTreeService $neosPageTreeService,
         private readonly LoggerInterface $logger,
+        private readonly RequestStack $requestStack,
     ) {
     }
 
@@ -64,7 +67,20 @@ class NeosPagePathExtension extends AbstractExtension
             throw new UnknownNeosPathException(code: 1786546010);
         }
 
-        return '/' . ltrim($pathInfo, '/');
+        return $this->getSalesChannelBaseUrl() . '/' . ltrim($pathInfo, '/');
+    }
+
+    private function getSalesChannelBaseUrl(): string
+    {
+        $request = $this->requestStack->getCurrentRequest();
+
+        if (!$request) {
+            return '';
+        }
+
+        $salesChannelBasePath = trim((string) $request->attributes->get(RequestTransformer::SALES_CHANNEL_BASE_URL), '/');
+
+        return $salesChannelBasePath === '' ? '' : '/' . $salesChannelBasePath;
     }
 
     private function getSalesChannelContext(array $twigContext): ?SalesChannelContext

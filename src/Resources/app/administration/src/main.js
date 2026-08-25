@@ -9,6 +9,7 @@ import './view/nlx-sw-category-detail-neos';
 import './component/nlx-url-test-button';
 import './component/nlx-update-neos-templates-button';
 import './component/nlx-invalidate-cms-page-caches-button';
+import './component/nlx-neos-page-select';
 
 import RouteService from "./services/route.service";
 import NlxUrlTestService from './services/urlTest.service';
