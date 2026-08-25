@@ -1,0 +1,59 @@
+{% block nlx_neos_page_select %}
+<sw-select-base
+    ref="selectBase"
+    class="nlx-neos-page-select"
+    :is-loading="isLoading"
+    :disabled="disabled"
+    :label="label"
+    @clear="clearInput"
+    @select-expanded="onSelectExpanded"
+    @select-collapsed="onSelectCollapsed"
+>
+    <template #sw-select-selection>
+        <div class="nlx-neos-page-select__selection">
+            <div
+                v-show="!isExpanded"
+                class="nlx-neos-page-select__selection-text"
+            >
+                <template v-if="singleSelection">
+                    {{ displayLabelProperty(singleSelection) }}
+                </template>
+                <template v-else>
+                    {{ placeholder }}
+                </template>
+            </div>
+
+            <!-- eslint-disable-next-line vuejs-accessibility/form-control-has-label -->
+            <input
+                v-show="isExpanded"
+                ref="swSelectInput"
+                class="nlx-neos-page-select__selection-input"
+                type="text"
+                :placeholder="placeholder"
+                @input="onInputSearchTerm"
+            >
+        </div>
+    </template>
+
+    <template #results-list>
+        <sw-select-result-list
+            ref="resultsList"
+            :options="results"
+            :is-loading="isLoading"
+            :empty-message="$t('global.sw-single-select.messageNoResults', { term: searchTerm })"
+            :focus-el="$refs.swSelectInput"
+            @item-select="setValue"
+        >
+            <template #result-item="{ item, index }">
+                <sw-select-result
+                    :selected="isSelected(item)"
+                    v-bind="{ item, index }"
+                    @item-select="setValue"
+                >
+                    {{ item.label }}
+                </sw-select-result>
+            </template>
+        </sw-select-result-list>
+    </template>
+</sw-select-base>
+{% endblock %}
