@@ -1,0 +1,12 @@
+.nlx-neos-page-select.sw-select {
+    .nlx-neos-page-select__selection-input {
+        padding: var(--scale-size-12) var(--scale-size-8);
+        min-height: var(--scale-size-48);
+        width: 100%;
+    }
+
+    .nlx-neos-page-select__selection-text {
+        padding: var(--scale-size-12) var(--scale-size-8);
+        min-height: var(--scale-size-48);
+    }
+}
