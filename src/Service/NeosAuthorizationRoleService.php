@@ -33,6 +33,7 @@ class NeosAuthorizationRoleService
         'language:read',
         'locale:read',
         'media:read',
+//        'media_thumbnail:read',
         'product:read',
         'product_manufacturer:read',
         'product_media:read',
