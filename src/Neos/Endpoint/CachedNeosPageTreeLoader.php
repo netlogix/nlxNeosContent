@@ -33,7 +33,7 @@ readonly class CachedNeosPageTreeLoader extends AbstractNeosPageTreeLoader
     {
         try {
             return $this->cache->get(
-                self::CACHE_KEY . $salesChannelContext->getLanguageId(),
+                self::CACHE_KEY . $salesChannelContext->getSalesChannelId() . $salesChannelContext->getLanguageId(),
                 function (ItemInterface $item) use ($salesChannelContext) {
                     $item->tag(self::CACHE_KEY);
 
