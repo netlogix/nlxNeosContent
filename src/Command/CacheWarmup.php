@@ -12,7 +12,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\NotFilter;
 use Shopware\Core\Framework\Uuid\Uuid;
-use Shopware\Core\System\SalesChannel\Aggregate\SalesChannelDomain\SalesChannelDomainEntity;
+use Shopware\Core\System\SalesChannel\Aggregate\SalesChannelDomain\SalesChannelDomainCollection;
 use Shopware\Core\System\SalesChannel\Context\AbstractSalesChannelContextFactory;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextFactory;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
@@ -48,11 +48,19 @@ class CacheWarmup extends Command
             InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
             'One or more sales channel UUIDs to warm up, e.g. --sales-channel-id=<UUID> --sales-channel-id=<UUID>. If omitted, all storefront sales channels are warmed up.'
         );
+
+        $this->addOption(
+            'async',
+            null,
+            InputOption::VALUE_NONE,
+            'Schedule the warmup work for the message queue workers instead of running it synchronously in this process.'
+        );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $salesChannelIds = $input->getOption('sales-channel-id');
+        $async = (bool) $input->getOption('async');
 
         foreach ($salesChannelIds as $salesChannelId) {
             if (!Uuid::isValid($salesChannelId)) {
@@ -83,35 +91,41 @@ class CacheWarmup extends Command
         $hasFailures = false;
 
         foreach ($salesChannels as $salesChannel) {
-            $languageIds = $salesChannel->getDomains()?->map(
-                static fn (SalesChannelDomainEntity $domain) => $domain->getLanguageId()
-            ) ?? [];
-            $languageIds = array_unique($languageIds);
+            $domains = $salesChannel->getDomains() ?? new SalesChannelDomainCollection();
 
-            foreach ($languageIds as $languageId) {
+            foreach ($domains as $domain) {
                 $salesChannelContext = $this->salesChannelContextFactory->create(
                     '',
                     $salesChannel->getId(),
-                    [SalesChannelContextService::LANGUAGE_ID => $languageId]
+                    [
+                        SalesChannelContextService::LANGUAGE_ID => $domain->getLanguageId(),
+                        SalesChannelContextService::DOMAIN_ID => $domain->getId(),
+                    ]
                 );
 
                 $output->writeln(sprintf(
-                    'Warming up caches for sales channel %s (%s) and language %s...',
+                    '%s caches for sales channel %s (%s), domain %s and language %s...',
+                    $async ? 'Scheduling warmup of' : 'Warming up',
                     $salesChannel->getId(),
                     $salesChannel->getName() ?? '',
-                    $languageId
+                    $domain->getUrl(),
+                    $domain->getLanguageId()
                 ));
 
                 foreach ($this->cacheWarmers as $cacheWarmer) {
                     try {
-                        $cacheWarmer->warmUp($salesChannelContext);
+                        if ($async) {
+                            $cacheWarmer->scheduleWarmUp($salesChannelContext);
+                        } else {
+                            $cacheWarmer->warmUp($salesChannelContext);
+                        }
                     } catch (\Throwable $e) {
                         $hasFailures = true;
                         $output->writeln(sprintf(
-                            '<error>Failed to warm up %s for sales channel %s / language %s: %s</error>',
+                            '<error>Failed to warm up %s for sales channel %s / domain %s: %s</error>',
                             $cacheWarmer::class,
                             $salesChannel->getId(),
-                            $languageId,
+                            $domain->getUrl(),
                             $e->getMessage()
                         ));
                     }
