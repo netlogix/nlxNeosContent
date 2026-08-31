@@ -16,6 +16,7 @@ use Shopware\Core\System\SalesChannel\Aggregate\SalesChannelDomain\SalesChannelD
 use Shopware\Core\System\SalesChannel\Context\AbstractSalesChannelContextFactory;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextFactory;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
+use Shopware\Core\System\SalesChannel\SalesChannelCollection;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -28,6 +29,7 @@ use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 class CacheWarmup extends Command
 {
     /**
+     * @param EntityRepository<SalesChannelCollection> $salesChannelRepository
      * @param iterable<CacheWarmerInterface> $cacheWarmers
      */
     public function __construct(
