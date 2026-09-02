@@ -18,7 +18,7 @@ final readonly class ScheduleCacheWarmupMessage implements LowPriorityMessageInt
         public string $salesChannelId,
         public string $languageId,
         public string $domainId,
-        public ?AdditionalDataInterface $additionalData = null,
+        public ?array $additionalData = null,
     ) {
     }
 }

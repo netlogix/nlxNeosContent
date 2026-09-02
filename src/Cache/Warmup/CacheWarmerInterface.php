@@ -9,7 +9,7 @@ use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 interface CacheWarmerInterface
 {
-    public function warmUp(SalesChannelContext $salesChannelContext, ?AdditionalDataInterface $additionalData = null): void;
+    public function warmUp(SalesChannelContext $salesChannelContext, ?array $additionalData = null): void;
 
     /**
      * Schedules this warmer's work for asynchronous processing by the message queue workers,

@@ -22,7 +22,7 @@ class ResourceCacheWarmer implements CacheWarmerInterface
     ) {
     }
 
-    public function warmUp(SalesChannelContext $salesChannelContext, ?AdditionalDataInterface $additionalData = null): void
+    public function warmUp(SalesChannelContext $salesChannelContext, ?array $additionalData = null): void
     {
         // The underlying cache is a single global entry, independent of sales channel,
         // language or domain, so it only ever needs to be warmed once per run.
