@@ -31,7 +31,6 @@ readonly class NeosContentCacheWarmer implements CacheWarmerInterface
             return;
         }
 
-        /** @var NeosNodeEntity $neosNode */
         foreach ($this->getNeosConnectedNodes() as $neosNode) {
             try {
                 $this->contentExchangeService->getAlternativeCmsSectionsFromNeos(
@@ -55,7 +54,6 @@ readonly class NeosContentCacheWarmer implements CacheWarmerInterface
             return;
         }
 
-        /** @var NeosNodeEntity $neosNode */
         foreach ($this->getNeosConnectedNodes() as $neosNode) {
             try {
                 $this->messageBus->dispatch(new WarmCmsPageContentMessage(
@@ -74,6 +72,9 @@ readonly class NeosContentCacheWarmer implements CacheWarmerInterface
         }
     }
 
+    /**
+     * @return NeosNodeEntity[]
+     */
     private function getNeosConnectedNodes(): iterable
     {
         return $this->neosLayoutPageService->getNeosNodeEntitiesWithConnectedCmsPage(Context::createCLIContext());
