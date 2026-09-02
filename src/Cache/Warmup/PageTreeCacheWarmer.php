@@ -25,7 +25,7 @@ class PageTreeCacheWarmer implements CacheWarmerInterface
     ) {
     }
 
-    public function warmUp(SalesChannelContext $salesChannelContext, ?AdditionalDataInterface $additionalData = null): void
+    public function warmUp(SalesChannelContext $salesChannelContext, ?array $additionalData = null): void
     {
         // The underlying cache doesn't vary by domain, only by sales channel and language,
         // so there's no need to redo this work for every domain sharing the same language.

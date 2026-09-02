@@ -31,14 +31,14 @@ readonly class NeosContentCacheWarmer implements CacheWarmerInterface
     ) {
     }
 
-    public function warmUp(SalesChannelContext $salesChannelContext, ?AdditionalDataInterface $additionalData = null): void
+    public function warmUp(SalesChannelContext $salesChannelContext, ?array $additionalData = null): void
     {
         if ($salesChannelContext->getDomainId() === null) {
             return;
         }
 
-        if ($additionalData instanceof AdditionalDataPageDTO) {
-            $this->warmUpSinglePage($salesChannelContext, $additionalData);
+        if (isset($additionalData['pageId']) && is_string($additionalData['pageId'])) {
+            $this->warmUpSinglePage($salesChannelContext, $additionalData['pageId']);
 
             return;
         }
@@ -73,7 +73,7 @@ readonly class NeosContentCacheWarmer implements CacheWarmerInterface
                     $salesChannelContext->getSalesChannelId(),
                     $salesChannelContext->getLanguageId(),
                     $domainId,
-                    new AdditionalDataPageDTO($neosNode->getCmsPageId())
+                    ['pageId' => $neosNode->getCmsPageId()]
                 ));
             } catch (\Throwable $e) {
                 $this->logger->warning(sprintf(
@@ -93,10 +93,10 @@ readonly class NeosContentCacheWarmer implements CacheWarmerInterface
         return $this->neosLayoutPageService->getNeosNodeEntitiesWithConnectedCmsPage(Context::createCLIContext());
     }
 
-    private function warmUpSinglePage(SalesChannelContext $salesChannelContext, AdditionalDataPageDTO $additionalData): void
+    private function warmUpSinglePage(SalesChannelContext $salesChannelContext, string $pageId): void
     {
         $cmsPage = $this->cmsPageRepository->search(
-            new Criteria([$additionalData->pageId]),
+            new Criteria([$pageId]),
             Context::createCLIContext()
         )->getEntities()->first();
 
