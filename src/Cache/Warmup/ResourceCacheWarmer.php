@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace nlxNeosContent\Cache\Warmup;
 
+use nlxNeosContent\Cache\Warmup\DTO\AdditionalDataInterface;
 use nlxNeosContent\Message\ScheduleCacheWarmupMessage;
 use nlxNeosContent\Twig\ResourceHelper;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -21,7 +22,7 @@ class ResourceCacheWarmer implements CacheWarmerInterface
     ) {
     }
 
-    public function warmUp(SalesChannelContext $salesChannelContext): void
+    public function warmUp(SalesChannelContext $salesChannelContext, ?AdditionalDataInterface $additionalData = null): void
     {
         // The underlying cache is a single global entry, independent of sales channel,
         // language or domain, so it only ever needs to be warmed once per run.

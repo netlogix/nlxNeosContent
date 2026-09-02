@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace nlxNeosContent\Cache\Warmup;
 
+use nlxNeosContent\Cache\Warmup\DTO\AdditionalDataInterface;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 interface CacheWarmerInterface
 {
-    public function warmUp(SalesChannelContext $salesChannelContext): void;
+    public function warmUp(SalesChannelContext $salesChannelContext, ?AdditionalDataInterface $additionalData = null): void;
 
     /**
      * Schedules this warmer's work for asynchronous processing by the message queue workers,
