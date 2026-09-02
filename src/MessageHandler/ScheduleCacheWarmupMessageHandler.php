@@ -45,7 +45,7 @@ final class ScheduleCacheWarmupMessageHandler
                 ]
             );
 
-            $cacheWarmer->warmUp($salesChannelContext);
+            $cacheWarmer->warmUp($salesChannelContext, $message->additionalData);
 
             return;
         }
