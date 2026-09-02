@@ -53,11 +53,12 @@ class ContentExchangeService
         CmsPageEntity $cmsPage,
         SalesChannelContext $salesChannelContext
     ): CmsSectionCollection {
-        $cacheKey = self::CMS_SECTIONS_CACHE_KEY_PREFIX
-            . $cmsPage->getId()
-            . $salesChannelContext->getSalesChannelId()
-            . $salesChannelContext->getLanguageId()
-            . ($salesChannelContext->getDomainId() ?? '');
+        $cacheKey = self::CMS_SECTIONS_CACHE_KEY_PREFIX . implode('-', [
+            $cmsPage->getId(),
+            $salesChannelContext->getSalesChannelId(),
+            $salesChannelContext->getLanguageId(),
+            $salesChannelContext->getDomainId() ?? '',
+        ]);
 
         return $this->cache->get(
             $cacheKey,

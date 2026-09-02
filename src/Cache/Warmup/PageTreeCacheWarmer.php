@@ -56,7 +56,7 @@ class PageTreeCacheWarmer implements CacheWarmerInterface
 
     private function markAsWarmed(SalesChannelContext $salesChannelContext): bool
     {
-        $key = $salesChannelContext->getSalesChannelId() . $salesChannelContext->getLanguageId();
+        $key = $salesChannelContext->getSalesChannelId() . '-' . $salesChannelContext->getLanguageId();
         if (isset($this->warmedSalesChannelLanguages[$key])) {
             return false;
         }
