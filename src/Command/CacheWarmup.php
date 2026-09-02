@@ -12,7 +12,6 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\NotFilter;
 use Shopware\Core\Framework\Uuid\Uuid;
-use Shopware\Core\System\SalesChannel\Aggregate\SalesChannelDomain\SalesChannelDomainCollection;
 use Shopware\Core\System\SalesChannel\Context\AbstractSalesChannelContextFactory;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextFactory;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
@@ -91,7 +90,7 @@ class CacheWarmup extends Command
         $hasFailures = false;
 
         foreach ($salesChannels as $salesChannel) {
-            $domains = $salesChannel->getDomains() ?? new SalesChannelDomainCollection();
+            $domains = $salesChannel->getDomains() ?? [];
 
             foreach ($domains as $domain) {
                 $salesChannelContext = $this->salesChannelContextFactory->create(
@@ -134,12 +133,16 @@ class CacheWarmup extends Command
         }
 
         if ($hasFailures) {
-            $output->writeln('<error>Cache warmup finished with errors.</error>');
+            $output->writeln($async
+                ? '<error>Cache warmup scheduling finished with errors.</error>'
+                : '<error>Cache warmup finished with errors.</error>');
 
             return Command::FAILURE;
         }
 
-        $output->writeln('<info>Cache warmup finished.</info>');
+        $output->writeln($async
+            ? '<info>Cache warmup scheduled.</info>'
+            : '<info>Cache warmup finished.</info>');
 
         return Command::SUCCESS;
     }
