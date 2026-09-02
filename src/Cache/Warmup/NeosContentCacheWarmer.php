@@ -4,12 +4,17 @@ declare(strict_types=1);
 
 namespace nlxNeosContent\Cache\Warmup;
 
+use nlxNeosContent\Cache\Warmup\DTO\AdditionalDataInterface;
+use nlxNeosContent\Cache\Warmup\DTO\AdditionalDataPageDTO;
 use nlxNeosContent\Core\Content\NeosNode\NeosNodeEntity;
-use nlxNeosContent\Message\WarmCmsPageContentMessage;
+use nlxNeosContent\Message\ScheduleCacheWarmupMessage;
 use nlxNeosContent\Service\ContentExchangeService;
 use nlxNeosContent\Service\NeosLayoutPageService;
 use Psr\Log\LoggerInterface;
+use Shopware\Core\Content\Cms\CmsPageEntity;
 use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -21,13 +26,20 @@ readonly class NeosContentCacheWarmer implements CacheWarmerInterface
         private NeosLayoutPageService $neosLayoutPageService,
         private ContentExchangeService $contentExchangeService,
         private MessageBusInterface $messageBus,
+        private EntityRepository $cmsPageRepository,
         private LoggerInterface $logger,
     ) {
     }
 
-    public function warmUp(SalesChannelContext $salesChannelContext): void
+    public function warmUp(SalesChannelContext $salesChannelContext, ?AdditionalDataInterface $additionalData = null): void
     {
         if ($salesChannelContext->getDomainId() === null) {
+            return;
+        }
+
+        if ($additionalData instanceof AdditionalDataPageDTO) {
+            $this->warmUpSinglePage($salesChannelContext, $additionalData);
+
             return;
         }
 
@@ -56,11 +68,12 @@ readonly class NeosContentCacheWarmer implements CacheWarmerInterface
 
         foreach ($this->getNeosConnectedNodes() as $neosNode) {
             try {
-                $this->messageBus->dispatch(new WarmCmsPageContentMessage(
-                    $neosNode->getCmsPageId(),
+                $this->messageBus->dispatch(new ScheduleCacheWarmupMessage(
+                    self::class,
                     $salesChannelContext->getSalesChannelId(),
                     $salesChannelContext->getLanguageId(),
                     $domainId,
+                    new AdditionalDataPageDTO($neosNode->getCmsPageId())
                 ));
             } catch (\Throwable $e) {
                 $this->logger->warning(sprintf(
@@ -78,5 +91,27 @@ readonly class NeosContentCacheWarmer implements CacheWarmerInterface
     private function getNeosConnectedNodes(): iterable
     {
         return $this->neosLayoutPageService->getNeosNodeEntitiesWithConnectedCmsPage(Context::createCLIContext());
+    }
+
+    private function warmUpSinglePage(SalesChannelContext $salesChannelContext, AdditionalDataPageDTO $additionalData): void
+    {
+        $cmsPage = $this->cmsPageRepository->search(
+            new Criteria([$additionalData->pageId]),
+            Context::createCLIContext()
+        )->getEntities()->first();
+
+        if (!$cmsPage instanceof CmsPageEntity) {
+            $this->logger->warning(sprintf(
+                'Could not warm up CMS page content cache: CMS page %s no longer exists.',
+                $additionalData->pageId
+            ));
+
+            return;
+        }
+
+        $this->contentExchangeService->getAlternativeCmsSectionsFromNeos(
+            $cmsPage,
+            $salesChannelContext
+        );
     }
 }

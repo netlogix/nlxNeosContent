@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace nlxNeosContent\Cache\Warmup;
 
+use nlxNeosContent\Cache\Warmup\DTO\AdditionalDataInterface;
 use nlxNeosContent\Message\ScheduleCacheWarmupMessage;
 use nlxNeosContent\Neos\Endpoint\AbstractNeosPageTreeLoader;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -24,7 +25,7 @@ class PageTreeCacheWarmer implements CacheWarmerInterface
     ) {
     }
 
-    public function warmUp(SalesChannelContext $salesChannelContext): void
+    public function warmUp(SalesChannelContext $salesChannelContext, ?AdditionalDataInterface $additionalData = null): void
     {
         // The underlying cache doesn't vary by domain, only by sales channel and language,
         // so there's no need to redo this work for every domain sharing the same language.

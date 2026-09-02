@@ -32,16 +32,16 @@ final class ScheduleCacheWarmupMessageHandler
     public function __invoke(ScheduleCacheWarmupMessage $message): void
     {
         foreach ($this->cacheWarmers as $cacheWarmer) {
-            if ($cacheWarmer::class !== $message->getCacheWarmerClass()) {
+            if ($cacheWarmer::class !== $message->cacheWarmerClass) {
                 continue;
             }
 
             $salesChannelContext = $this->salesChannelContextFactory->create(
                 '',
-                $message->getSalesChannelId(),
+                $message->salesChannelId,
                 [
-                    SalesChannelContextService::LANGUAGE_ID => $message->getLanguageId(),
-                    SalesChannelContextService::DOMAIN_ID => $message->getDomainId(),
+                    SalesChannelContextService::LANGUAGE_ID => $message->languageId,
+                    SalesChannelContextService::DOMAIN_ID => $message->domainId,
                 ]
             );
 
@@ -52,7 +52,7 @@ final class ScheduleCacheWarmupMessageHandler
 
         $this->logger->warning(sprintf(
             'Could not schedule cache warmup: no cache warmer of class %s is registered.',
-            $message->getCacheWarmerClass()
+            $message->cacheWarmerClass
         ));
     }
 }
