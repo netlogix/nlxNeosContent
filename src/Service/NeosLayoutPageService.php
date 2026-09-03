@@ -96,6 +96,9 @@ class NeosLayoutPageService
         );
     }
 
+    /**
+     * @return EntityCollection<NeosNodeEntity>
+     */
     public function getNeosNodeEntitiesWithConnectedCmsPage(Context $context): EntityCollection
     {
         return $this->nlxNeosNodeRepository->search(

@@ -22,6 +22,8 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Mime\Part\DataPart;
 use Symfony\Component\Mime\Part\Multipart\FormDataPart;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
+use Symfony\Contracts\Cache\ItemInterface;
+use Symfony\Contracts\Cache\TagAwareCacheInterface;
 use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Contracts\HttpClient\ResponseInterface;
@@ -30,11 +32,17 @@ class ContentExchangeService
 {
     private const CONTENT_BY_PATH_URI_PREFIX = '/neos/shopware-api/content-by-path/';
 
+    private const CMS_SECTIONS_CACHE_KEY_PREFIX = 'netlogix_neos_content_cms_page_sections_';
+
+    private const CMS_SECTIONS_CACHE_TTL = 86400;
+
     public function __construct(
         #[Autowire(service: 'serializer')]
         private readonly DenormalizerInterface $serializer,
         private readonly CmsSlotsDataResolver $cmsSlotsDataResolver,
         private readonly HttpClientInterface $neosClient,
+        #[Autowire(service: 'cache.object')]
+        private readonly TagAwareCacheInterface $cache,
     ) {
     }
 
@@ -45,15 +53,33 @@ class ContentExchangeService
         CmsPageEntity $cmsPage,
         SalesChannelContext $salesChannelContext
     ): CmsSectionCollection {
-        $elements = $this->fetchNeosContentForCmsPage(
-            $cmsPage,
-            $salesChannelContext
+        $cacheKey = self::CMS_SECTIONS_CACHE_KEY_PREFIX . implode('-', [
+            $cmsPage->getId(),
+            $salesChannelContext->getSalesChannelId(),
+            $salesChannelContext->getLanguageId(),
+            $salesChannelContext->getDomainId() ?? '',
+        ]);
+
+        return $this->cache->get(
+            $cacheKey,
+            function (ItemInterface $item) use ($cmsPage, $salesChannelContext) {
+                $item->tag([
+                    CachingInvalidationService::CMS_PAGE_CACHE_TAG_PREFIX . $cmsPage->getId(),
+                    CachingInvalidationService::CACHE_TAG,
+                ]);
+
+                $elements = $this->fetchNeosContentForCmsPage(
+                    $cmsPage,
+                    $salesChannelContext
+                );
+
+                /** @var NeosContentResult $result */
+                $result = $this->serializer->denormalize($elements, NeosContentResult::class, 'json');
+
+                return $result->getSections();
+            },
+            self::CMS_SECTIONS_CACHE_TTL
         );
-
-        /** @var NeosContentResult $result */
-        $result = $this->serializer->denormalize($elements, NeosContentResult::class, 'json');
-
-        return $result->getSections();
     }
 
     public function fetchCmsSectionsFromNeosByPath(string $pathInfo, SalesChannelContext $salesChannelContext): NeosContentResult|NeosRedirectResult
@@ -136,9 +162,19 @@ class ContentExchangeService
 
     public function getCurrentDomain(SalesChannelContext $salesChannelContext): SalesChannelDomainEntity
     {
-        return $salesChannelContext->getSalesChannel()->getDomains()->filter(function ($domain) use ($salesChannelContext) {
+        $domain = $salesChannelContext->getSalesChannel()->getDomains()?->filter(function ($domain) use ($salesChannelContext) {
             return $domain->getId() === $salesChannelContext->getDomainId();
         })->first();
+
+        if (!$domain instanceof SalesChannelDomainEntity) {
+            throw new NeosContentFetchException(sprintf(
+                'No domain with id "%s" found for sales channel "%s".',
+                $salesChannelContext->getDomainId() ?? '',
+                $salesChannelContext->getSalesChannelId()
+            ));
+        }
+
+        return $domain;
     }
 
     public function findDomainForHreflangCode(

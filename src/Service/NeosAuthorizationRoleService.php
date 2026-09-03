@@ -55,6 +55,7 @@ class NeosAuthorizationRoleService
         NEOS_EDITOR_PRIVILEGES = [
         'cms_page:create',
         'cms_page:update',
+        'category:update',
         'neos.editor',
         'neos.viewer',
         'neos:edit',
