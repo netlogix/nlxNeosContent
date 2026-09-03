@@ -103,7 +103,7 @@ readonly class NeosContentCacheWarmer implements CacheWarmerInterface
         if (!$cmsPage instanceof CmsPageEntity) {
             $this->logger->warning(sprintf(
                 'Could not warm up CMS page content cache: CMS page %s no longer exists.',
-                $additionalData->pageId
+                $pageId
             ));
 
             return;
