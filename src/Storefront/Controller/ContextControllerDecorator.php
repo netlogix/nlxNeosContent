@@ -52,9 +52,12 @@ class ContextControllerDecorator extends ContextController
 
         if(array_key_exists('neos', $request->request->all('redirectParameters')) && $request->request->all('redirectParameters')['neos'] === "1")
         {
-            if (!array_key_exists('navigationId', $request->request->all('redirectParameters'))) {
-                throw new \InvalidArgumentException('navigationId is required for neos redirects');
-            }
+            // Absent when the current page's route was only ever matched by Router::matchNeosPath()
+            // (e.g. a 404 rendered for a broken/dead Neos link, see NeosPageController::index()'s
+            // createNotFoundException() before navigationId is set) - there is no node to look up a
+            // target-language equivalent for, so fall back to that language's homepage below instead
+            // of failing the whole redirect.
+            $nodeIdentifier = $request->request->all('redirectParameters')['navigationId'] ?? null;
 
             $languageId = $request->request->get('languageId');
             if (!$languageId) {
@@ -78,10 +81,12 @@ class ContextControllerDecorator extends ContextController
                 )
             );
 
-            $nodeIdentifier = $request->request->all('redirectParameters')['navigationId'];
-            $pathInfo = $this->neosPageTreeService->findPathInfoForIdentifierAndContext($nodeIdentifier, $newContext);
+            $pathInfo = $nodeIdentifier !== null
+                ? $this->neosPageTreeService->findPathInfoForIdentifierAndContext($nodeIdentifier, $newContext)
+                : null;
 
-            // No equivalent page exists for the target language; land on that language's homepage instead.
+            // No node to resolve, or no equivalent page exists for the target language;
+            // land on that language's homepage instead.
             $targetPathInfo = $pathInfo ?? '';
 
             try {
