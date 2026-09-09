@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace nlxNeosContent\Storefront\Controller;
 
+use nlxNeosContent\Error\PageTree\NoTreeItemFoundException;
+use nlxNeosContent\Service\ConfigService;
 use Shopware\Core\Content\Cms\CmsPageEntity;
 use Shopware\Core\Content\Cms\Events\CmsPageLoaderCriteriaEvent;
 use Shopware\Core\Content\Cms\SalesChannel\AbstractCmsRoute;
@@ -49,8 +51,39 @@ class PreviewController extends StorefrontController
         private readonly NavigationPageLoader $navigationPageLoader,
         private readonly ProductPageLoader $productPageLoader,
         private readonly EntityRepository $cmsPageRepository,
-        private readonly EventDispatcherInterface $eventDispatcher
+        private readonly EventDispatcherInterface $eventDispatcher,
+        private readonly ConfigService $configService,
+        private readonly NeosPageController $neosPageController,
     ) {
+    }
+
+    /**
+     * Renders a preview of a Neos page that has no Shopware cms_page of its own and is instead
+     * served through the navigation extension pipeline on a live storefront. Always renders, even if
+     * the navigation extension is currently disabled for this sales channel, so editors can still
+     * preview these pages while wiring things up; the template shows a warning banner in that case.
+     */
+    #[Route(
+        path: '/preview/page',
+        name: 'nlx.preview.page',
+        methods: ['GET']
+    )]
+    public function loadPagePreview(
+        #[MapQueryParameter('path')]
+        string $path,
+        Request $request,
+        SalesChannelContext $salesChannelContext
+    ): Response {
+        try {
+            return $this->neosPageController->renderPath(
+                $path,
+                $request,
+                $salesChannelContext,
+                navigationExtensionDisabled: !$this->configService->isNavigationExtensionEnabled($salesChannelContext->getSalesChannelId())
+            );
+        } catch (NoTreeItemFoundException $e) {
+            throw $this->createNotFoundException(previous: $e);
+        }
     }
 
     #[Route(
@@ -95,7 +128,10 @@ class PreviewController extends StorefrontController
                     $salesChannelContext
                 );
             case 'product_list':
-                $request->attributes->set('navigationId', $entityId);
+                $request->attributes->set(
+                    'navigationId',
+                    $entityId !== '' ? $entityId : $salesChannelContext->getSalesChannel()->getNavigationCategoryId()
+                );
                 return $this->loadCategoryPage(
                     $request,
                     $salesChannelContext

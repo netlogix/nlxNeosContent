@@ -3,6 +3,16 @@
 {# @var page \Shopware\Storefront\Page\LandingPage\LandingPage|\Shopware\Storefront\Page\CategoryPage\CategoryPage #}
 
 {% block cms_content %}
+    {% if navigationExtensionDisabled %}
+        <div class="container">
+            <div class="row">
+                {% sw_include '@Storefront/storefront/utilities/alert.html.twig' with {
+                    type: 'warning',
+                    content: 'nlxNeosContent.preview.navigationExtensionDisabled'|trans|sw_sanitize
+                } %}
+            </div>
+        </div>
+    {% endif %}
     {% set cmsPageClasses = ('cms-page ' ~ cmsPage.cssClass|striptags)|trim %}
     {% set landingPage = {} %}
     <div class="{{ cmsPageClasses }}">
