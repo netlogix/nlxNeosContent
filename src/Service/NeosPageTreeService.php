@@ -50,6 +50,37 @@ class NeosPageTreeService
         throw new NoTreeItemFoundException($pathInfo);
     }
 
+    public function findAncestorChainForPathAndContext(string $pathInfo, SalesChannelContext $salesChannelContext): NeosPageCollection
+    {
+        $neosPageTree = $this->neosPageTreeLoader->load($salesChannelContext);
+        $chain = $this->findAncestorChainInTree($pathInfo, $neosPageTree);
+
+        if ($chain === null) {
+            throw new NoTreeItemFoundException($pathInfo);
+        }
+
+        return new NeosPageCollection(...$chain);
+    }
+
+    /**
+     * @return NeosPageDTO[]|null
+     */
+    private function findAncestorChainInTree(string $pathInfo, NeosPageCollection $tree): ?array
+    {
+        foreach ($tree as $treeItem) {
+            if (trim($pathInfo, '/') === trim($treeItem->path, '/')) {
+                return [$treeItem];
+            }
+
+            $childChain = $this->findAncestorChainInTree($pathInfo, $treeItem->children);
+            if ($childChain !== null) {
+                return [$treeItem, ...$childChain];
+            }
+        }
+
+        return null;
+    }
+
     public function findPathInfoForIdentifierAndContext($nodeIdentifier, SalesChannelContext $salesChannelContext): ?string
     {
         $neosPageTree = $this->neosPageTreeLoader->load($salesChannelContext);

@@ -2,6 +2,14 @@
 
 {# @var page \Shopware\Storefront\Page\LandingPage\LandingPage|\Shopware\Storefront\Page\CategoryPage\CategoryPage #}
 
+{% block cms_breadcrumb %}
+    <div class="cms-breadcrumb">
+        {% sw_include '@Storefront/storefront/layout/neos-breadcrumb.html.twig' with {
+            breadcrumb: breadcrumb,
+        } only %}
+    </div>
+{% endblock %}
+
 {% block cms_content %}
     {% if navigationExtensionDisabled %}
         <div class="container">

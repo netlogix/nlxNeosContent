@@ -1,0 +1,23 @@
+{% block neos_breadcrumb_inner %}
+    {% if breadcrumb is not empty %}
+        <div class="breadcrumb-container">
+            <div class="container">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        {% for item in breadcrumb %}
+                            {% block neos_breadcrumb_list_item %}
+                                {% if loop.last %}
+                                    <li class="breadcrumb-item active" aria-current="page">{{ item.label }}</li>
+                                {% else %}
+                                    <li class="breadcrumb-item">
+                                        <a href="{{ neos_page_path(item.identifier) }}">{{ item.label }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endblock %}
+                        {% endfor %}
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}

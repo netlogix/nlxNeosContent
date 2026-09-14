@@ -101,7 +101,8 @@ class NeosPageController extends StorefrontController
         $cmsPage = new CmsPageEntity();
         $cmsPage->setSections($sections);
 
-        $treeItem = $this->neosPageTreeService->findNodeIdentifierForPathAndContext($pathInfo, $salesChannelContext);
+        $breadcrumb = $this->neosPageTreeService->findAncestorChainForPathAndContext($pathInfo, $salesChannelContext);
+        $treeItem = $breadcrumb[count($breadcrumb) - 1];
         //Setting NavigationId so the navigation js can display the active page
         $identifier = self::sanitizeNodeIdentifier($treeItem->identifier);
         $request = $this->container->get('request_stack')->getCurrentRequest();
@@ -141,6 +142,7 @@ class NeosPageController extends StorefrontController
             'cmsPage' => $cmsPage,
             'landingPage' => [],
             'navigationExtensionDisabled' => $navigationExtensionDisabled,
+            'breadcrumb' => $breadcrumb,
         ]);
     }
 
