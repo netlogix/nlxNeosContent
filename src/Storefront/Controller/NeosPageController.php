@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace nlxNeosContent\Storefront\Controller;
 
+use nlxNeosContent\Neos\DTO\NeosPageDTO;
 use nlxNeosContent\Neos\DTO\NeosResults\NeosContentResult;
 use nlxNeosContent\Neos\DTO\NeosResults\NeosRedirectResult;
 use nlxNeosContent\Neos\HeadTag\HreflangLink;
@@ -135,8 +136,14 @@ class NeosPageController extends StorefrontController
         ];
         $page->addExtension(self::HEAD_TAGS_EXTENSION, new ArrayStruct($headTags));
 
-        //Adding two cache tags, so we can invalidate a specific cached page or all of them
-        $this->cacheTagCollector->addTag(self::getCacheTagFromIdentifier($treeItem->identifier), self::CACHE_TAG_ALL);
+        // Tagging with every ancestor's identifier (not just the current page's) so that
+        // changing an ancestor invalidates this cached page too, since its breadcrumb depends on them.
+        $breadcrumbTags = array_map(
+            static fn (NeosPageDTO $ancestor): string => self::getCacheTagFromIdentifier($ancestor->identifier),
+            iterator_to_array($breadcrumb)
+        );
+        $breadcrumbTags[] = self::CACHE_TAG_ALL;
+        $this->cacheTagCollector->addTag(...$breadcrumbTags);
         return $this->renderStorefront('@Storefront/storefront/page/neosPage.html.twig', [
             'page' => $page,
             'cmsPage' => $cmsPage,
