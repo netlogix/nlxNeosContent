@@ -23,8 +23,12 @@ class NeosPageTreeService
 
     public function findNodeIdentifierForRequestAndContext(Request $request, SalesChannelContext $salesChannelContext): NeosPageDTO
     {
+        return $this->findNodeIdentifierForPathAndContext($request->getPathInfo(), $salesChannelContext);
+    }
+
+    public function findNodeIdentifierForPathAndContext(string $pathInfo, SalesChannelContext $salesChannelContext): NeosPageDTO
+    {
         $neosPageTree = $this->neosPageTreeLoader->load($salesChannelContext);
-        $pathInfo = $request->getPathInfo();
 
         return $this->findByPathInfoInTree($pathInfo, $neosPageTree);
     }

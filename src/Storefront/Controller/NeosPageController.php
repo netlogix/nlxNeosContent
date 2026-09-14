@@ -51,15 +51,30 @@ class NeosPageController extends StorefrontController
             return new Response(status: Response::HTTP_BAD_REQUEST);
         }
 
+        return $this->renderPath($request->getPathInfo(), $request, $salesChannelContext);
+    }
+
+    /**
+     * Renders a Neos-authored page (fetched from Neos by its bare content path) as a Shopware
+     * storefront page. Shared by the navigation-extension fallback route (index(), path taken
+     * from the current request) and PreviewController::loadPagePreview() (path taken from a
+     * query parameter, so it can preview a path the request itself isn't for).
+     */
+    public function renderPath(
+        string $pathInfo,
+        Request $request,
+        SalesChannelContext $salesChannelContext,
+        bool $navigationExtensionDisabled = false
+    ): Response {
         try {
            $neosContentResult = match($request->getMethod()){
                'POST' => $this->contentExchangeService->submitFormToNeosByPath(
-                        $request->getPathInfo(),
+                        $pathInfo,
                         $request,
                         $salesChannelContext
                     ),
            default =>  $this->contentExchangeService->fetchCmsSectionsFromNeosByPath(
-                        $request->getPathInfo(),
+                        $pathInfo,
                         $salesChannelContext
                     )
                 };
@@ -86,7 +101,7 @@ class NeosPageController extends StorefrontController
         $cmsPage = new CmsPageEntity();
         $cmsPage->setSections($sections);
 
-        $treeItem = $this->neosPageTreeService->findNodeIdentifierForRequestAndContext($request, $salesChannelContext);
+        $treeItem = $this->neosPageTreeService->findNodeIdentifierForPathAndContext($pathInfo, $salesChannelContext);
         //Setting NavigationId so the navigation js can display the active page
         $identifier = self::sanitizeNodeIdentifier($treeItem->identifier);
         $request = $this->container->get('request_stack')->getCurrentRequest();
@@ -107,7 +122,7 @@ class NeosPageController extends StorefrontController
             $metaInformation->setMetaDescription($headData->getDescription());
         }
         if ($headData->getCanonical() !== null) {
-            $metaInformation->setCanonical(rtrim($currentDomain->getUrl(), '/') . '/' . trim($request->getPathInfo(), '/'));
+            $metaInformation->setCanonical(rtrim($currentDomain->getUrl(), '/') . '/' . trim($pathInfo, '/'));
         }
         if ($headData->getRobots() !== null) {
             $metaInformation->setRobots($headData->getRobots());
@@ -124,7 +139,8 @@ class NeosPageController extends StorefrontController
         return $this->renderStorefront('@Storefront/storefront/page/neosPage.html.twig', [
             'page' => $page,
             'cmsPage' => $cmsPage,
-            'landingPage' => []
+            'landingPage' => [],
+            'navigationExtensionDisabled' => $navigationExtensionDisabled,
         ]);
     }
 
