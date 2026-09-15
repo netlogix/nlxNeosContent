@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace nlxNeosContent\Storefront\Controller;
 
-use nlxNeosContent\Neos\DTO\BreadcrumbItem;
 use nlxNeosContent\Neos\DTO\NeosPageCollection;
 use nlxNeosContent\Neos\DTO\NeosPageDTO;
 use nlxNeosContent\Neos\DTO\NeosResults\NeosContentResult;
@@ -156,10 +155,16 @@ class NeosPageController extends StorefrontController
         $this->cacheTagCollector->addTag(...$breadcrumbTags);
 
         $breadcrumb = $this->prependHomeCategoryBreadcrumbItem($breadcrumb, $salesChannelContext);
+        // Resolving the url only for the (few) items actually rendered here, not eagerly
+        // for the whole tree - the tree-sourced NeosPageDTOs otherwise leave it null.
         $breadcrumbItems = array_map(
-            fn (NeosPageDTO $item): BreadcrumbItem => new BreadcrumbItem(
-                $item->label,
-                $this->neosPagePathExtension->getNeosPageUrl($item->path)
+            fn (NeosPageDTO $item): NeosPageDTO => new NeosPageDTO(
+                identifier: $item->identifier,
+                label: $item->label,
+                path: $item->path,
+                children: $item->children,
+                hiddenInIndex: $item->hiddenInIndex,
+                url: $this->neosPagePathExtension->getNeosPageUrl($item->path),
             ),
             iterator_to_array($breadcrumb)
         );
