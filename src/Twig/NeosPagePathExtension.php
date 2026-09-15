@@ -54,6 +54,17 @@ class NeosPagePathExtension extends AbstractExtension
 
     }
 
+    /**
+     * Builds the URL for an already-known Neos content path, without resolving it
+     * through the page tree first. Not exposed to Twig - callers that already have
+     * the path (e.g. from a NeosPageDTO) should call this directly instead of
+     * {@see getNeosPagePath()}, to avoid a redundant tree lookup per call.
+     */
+    public function getNeosPageUrl(string $path): string
+    {
+        return $this->getSalesChannelBaseUrl() . '/' . ltrim($path, '/');
+    }
+
     private function fetchNeosPage(string $nodeIdentifier, SalesChannelContext $context): string
     {
         $normalizedIdentifier = str_replace('-', '', $nodeIdentifier);
@@ -67,7 +78,7 @@ class NeosPagePathExtension extends AbstractExtension
             throw new UnknownNeosPathException(code: 1786546010);
         }
 
-        return $this->getSalesChannelBaseUrl() . '/' . ltrim($pathInfo, '/');
+        return $this->getNeosPageUrl($pathInfo);
     }
 
     private function getSalesChannelBaseUrl(): string

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace nlxNeosContent\Storefront\Controller;
 
+use nlxNeosContent\Neos\DTO\NeosPageCollection;
+use nlxNeosContent\Neos\DTO\NeosPageDTO;
 use nlxNeosContent\Neos\DTO\NeosResults\NeosContentResult;
 use nlxNeosContent\Neos\DTO\NeosResults\NeosRedirectResult;
 use nlxNeosContent\Neos\HeadTag\HreflangLink;
@@ -12,11 +14,16 @@ use nlxNeosContent\Neos\HeadTag\NeosHeadDataFactory;
 use nlxNeosContent\Service\ContentExchangeService;
 use nlxNeosContent\Service\NeosPageTreeService;
 use nlxNeosContent\Service\ResolverContextService;
+use nlxNeosContent\Twig\NeosPagePathExtension;
 use Shopware\Core\Content\Category\CategoryDefinition;
+use Shopware\Core\Content\Category\CategoryEntity;
+use Shopware\Core\Content\Category\SalesChannel\NavigationRoute;
 use Shopware\Core\Content\Cms\CmsPageEntity;
 use Shopware\Core\Framework\Adapter\Cache\CacheTagCollector;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\Struct\ArrayStruct;
 use Shopware\Core\System\SalesChannel\Aggregate\SalesChannelDomain\SalesChannelDomainEntity;
+use Shopware\Core\System\SalesChannel\Entity\SalesChannelRepository;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Controller\StorefrontController;
 use Shopware\Storefront\Page\GenericPageLoader;
@@ -42,6 +49,9 @@ class NeosPageController extends StorefrontController
         private readonly CacheTagCollector $cacheTagCollector,
         private readonly NeosHeadDataFactory $neosHeadDataFactory,
         private readonly JsonLdUrlRewriter $jsonLdUrlRewriter,
+        #[Autowire(service: 'sales_channel.category.repository')]
+        private readonly SalesChannelRepository $categoryRepository,
+        private readonly NeosPagePathExtension $neosPagePathExtension,
     ) {
     }
 
@@ -101,7 +111,8 @@ class NeosPageController extends StorefrontController
         $cmsPage = new CmsPageEntity();
         $cmsPage->setSections($sections);
 
-        $treeItem = $this->neosPageTreeService->findNodeIdentifierForPathAndContext($pathInfo, $salesChannelContext);
+        $breadcrumb = $this->neosPageTreeService->findAncestorChainForPathAndContext($pathInfo, $salesChannelContext);
+        $treeItem = $breadcrumb[count($breadcrumb) - 1];
         //Setting NavigationId so the navigation js can display the active page
         $identifier = self::sanitizeNodeIdentifier($treeItem->identifier);
         $request = $this->container->get('request_stack')->getCurrentRequest();
@@ -134,14 +145,67 @@ class NeosPageController extends StorefrontController
         ];
         $page->addExtension(self::HEAD_TAGS_EXTENSION, new ArrayStruct($headTags));
 
-        //Adding two cache tags, so we can invalidate a specific cached page or all of them
-        $this->cacheTagCollector->addTag(self::getCacheTagFromIdentifier($treeItem->identifier), self::CACHE_TAG_ALL);
+        // Tagging with every ancestor's identifier (not just the current page's) so that
+        // changing an ancestor invalidates this cached page too, since its breadcrumb depends on them.
+        $breadcrumbTags = array_map(
+            static fn (NeosPageDTO $ancestor): string => self::getCacheTagFromIdentifier($ancestor->identifier),
+            iterator_to_array($breadcrumb)
+        );
+        $breadcrumbTags[] = self::CACHE_TAG_ALL;
+        $this->cacheTagCollector->addTag(...$breadcrumbTags);
+
+        $breadcrumb = $this->prependHomeCategoryBreadcrumbItem($breadcrumb, $salesChannelContext);
+        // Resolving the url only for the (few) items actually rendered here, not eagerly
+        // for the whole tree - the tree-sourced NeosPageDTOs otherwise leave it null.
+        $breadcrumbItems = array_map(
+            fn (NeosPageDTO $item): NeosPageDTO => new NeosPageDTO(
+                identifier: $item->identifier,
+                label: $item->label,
+                path: $item->path,
+                children: $item->children,
+                hiddenInIndex: $item->hiddenInIndex,
+                url: $this->neosPagePathExtension->getNeosPageUrl($item->path),
+            ),
+            iterator_to_array($breadcrumb)
+        );
+
         return $this->renderStorefront('@Storefront/storefront/page/neosPage.html.twig', [
             'page' => $page,
             'cmsPage' => $cmsPage,
             'landingPage' => [],
             'navigationExtensionDisabled' => $navigationExtensionDisabled,
+            'breadcrumb' => $breadcrumbItems,
         ]);
+    }
+
+    /**
+     * Prepends the sales channel's Home category (its navigation root) as the first
+     * breadcrumb item, named after however it's set up in the Administration - mirroring
+     * how Neos itself always shows the site name as the first breadcrumb item.
+     */
+    private function prependHomeCategoryBreadcrumbItem(
+        NeosPageCollection $breadcrumb,
+        SalesChannelContext $salesChannelContext
+    ): NeosPageCollection {
+        $homeCategoryId = $salesChannelContext->getSalesChannel()->getNavigationCategoryId();
+        $homeCategory = $this->categoryRepository
+            ->search(new Criteria([$homeCategoryId]), $salesChannelContext)
+            ->getEntities()
+            ->first();
+
+        $homeLabel = $homeCategory instanceof CategoryEntity ? $homeCategory->getTranslated()['name'] ?? null : null;
+        if (empty($homeLabel)) {
+            return $breadcrumb;
+        }
+
+        // The category is read outside the sales channel's own cache-tagged read trace,
+        // so tag explicitly: a renamed/moved Home category should invalidate this page too.
+        $this->cacheTagCollector->addTag(NavigationRoute::ALL_TAG);
+
+        return new NeosPageCollection(
+            new NeosPageDTO($homeCategoryId, $homeLabel, '', new NeosPageCollection()),
+            ...iterator_to_array($breadcrumb)
+        );
     }
 
     /**
