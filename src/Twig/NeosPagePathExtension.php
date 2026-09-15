@@ -29,7 +29,6 @@ class NeosPagePathExtension extends AbstractExtension
     {
         return [
             new TwigFunction('neos_page_path', $this->getNeosPagePath(...), ['needs_context' => true]),
-            new TwigFunction('neos_page_url', $this->getNeosPageUrl(...)),
         ];
     }
 
@@ -57,9 +56,9 @@ class NeosPagePathExtension extends AbstractExtension
 
     /**
      * Builds the URL for an already-known Neos content path, without resolving it
-     * through the page tree first. Use this over {@see getNeosPagePath()} whenever
-     * the path is already at hand (e.g. from a NeosPageDTO), to avoid a redundant
-     * tree lookup per call.
+     * through the page tree first. Not exposed to Twig - callers that already have
+     * the path (e.g. from a NeosPageDTO) should call this directly instead of
+     * {@see getNeosPagePath()}, to avoid a redundant tree lookup per call.
      */
     public function getNeosPageUrl(string $path): string
     {

@@ -10,7 +10,7 @@
                                     <li class="breadcrumb-item active" aria-current="page">{{ item.label }}</li>
                                 {% else %}
                                     <li class="breadcrumb-item">
-                                        <a href="{{ neos_page_url(item.path) }}">{{ item.label }}</a>
+                                        <a href="{{ item.url }}">{{ item.label }}</a>
                                     </li>
                                 {% endif %}
                             {% endblock %}

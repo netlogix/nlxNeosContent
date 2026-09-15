@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace nlxNeosContent\Storefront\Controller;
 
+use nlxNeosContent\Neos\DTO\BreadcrumbItem;
 use nlxNeosContent\Neos\DTO\NeosPageCollection;
 use nlxNeosContent\Neos\DTO\NeosPageDTO;
 use nlxNeosContent\Neos\DTO\NeosResults\NeosContentResult;
@@ -14,6 +15,7 @@ use nlxNeosContent\Neos\HeadTag\NeosHeadDataFactory;
 use nlxNeosContent\Service\ContentExchangeService;
 use nlxNeosContent\Service\NeosPageTreeService;
 use nlxNeosContent\Service\ResolverContextService;
+use nlxNeosContent\Twig\NeosPagePathExtension;
 use Shopware\Core\Content\Category\CategoryDefinition;
 use Shopware\Core\Content\Category\CategoryEntity;
 use Shopware\Core\Content\Category\SalesChannel\NavigationRoute;
@@ -50,6 +52,7 @@ class NeosPageController extends StorefrontController
         private readonly JsonLdUrlRewriter $jsonLdUrlRewriter,
         #[Autowire(service: 'sales_channel.category.repository')]
         private readonly SalesChannelRepository $categoryRepository,
+        private readonly NeosPagePathExtension $neosPagePathExtension,
     ) {
     }
 
@@ -153,13 +156,20 @@ class NeosPageController extends StorefrontController
         $this->cacheTagCollector->addTag(...$breadcrumbTags);
 
         $breadcrumb = $this->prependHomeCategoryBreadcrumbItem($breadcrumb, $salesChannelContext);
+        $breadcrumbItems = array_map(
+            fn (NeosPageDTO $item): BreadcrumbItem => new BreadcrumbItem(
+                $item->label,
+                $this->neosPagePathExtension->getNeosPageUrl($item->path)
+            ),
+            iterator_to_array($breadcrumb)
+        );
 
         return $this->renderStorefront('@Storefront/storefront/page/neosPage.html.twig', [
             'page' => $page,
             'cmsPage' => $cmsPage,
             'landingPage' => [],
             'navigationExtensionDisabled' => $navigationExtensionDisabled,
-            'breadcrumb' => $breadcrumb,
+            'breadcrumb' => $breadcrumbItems,
         ]);
     }
 
