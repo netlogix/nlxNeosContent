@@ -97,7 +97,11 @@ class NeosPageController extends StorefrontController
         }
 
         if ($neosContentResult instanceof NeosRedirectResult) {
-            return new RedirectResponse($neosContentResult->getRedirectPathInfo(), Response::HTTP_SEE_OTHER);
+            // Force 303 after a POST regardless of what Neos answered, so the browser GETs the
+            // target instead of re-submitting the form body to it (standard post-redirect-get).
+            $statusCode = $request->isMethod('POST') ? Response::HTTP_SEE_OTHER : $neosContentResult->getStatusCode();
+
+            return new RedirectResponse($neosContentResult->getRedirectPathInfo(), $statusCode);
         }
 
         $sections = $neosContentResult->getSections();

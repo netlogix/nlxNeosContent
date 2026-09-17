@@ -142,7 +142,10 @@ class ContentExchangeService
     {
         $statusCode = $response->getStatusCode();
         if ($statusCode >= 300 && $statusCode < 400) {
-            return new NeosRedirectResult(redirectPathInfo: $this->extractRedirectPathInfo($response));
+            return new NeosRedirectResult(
+                redirectPathInfo: $this->extractRedirectPathInfo($response),
+                statusCode: $statusCode,
+            );
         }
 
         return $this->serializer->denormalize($response->getContent(), NeosContentResult::class, 'json');
@@ -226,11 +229,14 @@ class ContentExchangeService
 
         $path = (string) parse_url($location, PHP_URL_PATH);
         $prefixPosition = strpos($path, self::CONTENT_BY_PATH_URI_PREFIX);
-        if ($prefixPosition === false) {
-            throw new NeosContentFetchException(sprintf('Neos redirected to an unexpected location "%s".', $location));
+        if ($prefixPosition !== false) {
+            $path = substr($path, $prefixPosition + strlen(self::CONTENT_BY_PATH_URI_PREFIX));
         }
 
-        return '/' . substr($path, $prefixPosition + strlen(self::CONTENT_BY_PATH_URI_PREFIX));
+        //Not every redirect Neos issues preserves the content-by-path prefix (e.g. core
+        //Neos.Neos controller code that isn't aware of ApiVariantNodeUriService) - a plain
+        //frontend path is just as valid a redirect target, so accept it as-is.
+        return '/' . ltrim($path, '/');
     }
 
     /**
