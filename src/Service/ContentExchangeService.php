@@ -142,7 +142,10 @@ class ContentExchangeService
     {
         $statusCode = $response->getStatusCode();
         if ($statusCode >= 300 && $statusCode < 400) {
-            return new NeosRedirectResult(redirectPathInfo: $this->extractRedirectPathInfo($response));
+            return new NeosRedirectResult(
+                redirectPathInfo: $this->extractRedirectPathInfo($response),
+                statusCode: $statusCode,
+            );
         }
 
         return $this->serializer->denormalize($response->getContent(), NeosContentResult::class, 'json');
