@@ -22,6 +22,7 @@ use Shopware\Core\Content\Cms\CmsPageEntity;
 use Shopware\Core\Framework\Adapter\Cache\CacheTagCollector;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\Struct\ArrayStruct;
+use Shopware\Core\PlatformRequest;
 use Shopware\Core\System\SalesChannel\Aggregate\SalesChannelDomain\SalesChannelDomainEntity;
 use Shopware\Core\System\SalesChannel\Entity\SalesChannelRepository;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -33,12 +34,14 @@ use Symfony\Component\HttpClient\Exception\ClientException;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Annotation\Route;
 
 class NeosPageController extends StorefrontController
 {
     public const CACHE_TAG_ALL = 'nlx-cbp-page';
     public const CACHE_TAG_PREFIX = 'nlx-cbp-page-';
     public const HEAD_TAGS_EXTENSION = 'neosHeadTags';
+    public const CONTENT_BY_PATH_ROUTE_PREFIX = '/neos-cms/';
 
     function __construct(
         private readonly ContentExchangeService $contentExchangeService,
@@ -55,13 +58,23 @@ class NeosPageController extends StorefrontController
     ) {
     }
 
-    function index(Request $request, SalesChannelContext $salesChannelContext): Response
+    #[Route(
+        path: self::CONTENT_BY_PATH_ROUTE_PREFIX . '{path}',
+        name: 'frontend.neos.content-by-path',
+        requirements: ['path' => '.+'],
+        defaults: [
+            '_routeScope' => ['storefront'],
+            PlatformRequest::ATTRIBUTE_HTTP_CACHE => true,
+        ],
+        methods: ['GET', 'POST'],
+    )]
+    function index(Request $request, SalesChannelContext $salesChannelContext, string $path): Response
     {
         if ($request->isMethod('POST') && !$this->hasFormLikeRequestStructure($request)) {
             return new Response(status: Response::HTTP_BAD_REQUEST);
         }
 
-        return $this->renderPath($request->getPathInfo(), $request, $salesChannelContext);
+        return $this->renderPath('/' . $path, $request, $salesChannelContext);
     }
 
     /**
