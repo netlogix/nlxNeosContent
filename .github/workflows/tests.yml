@@ -23,9 +23,6 @@ jobs:
 
       - uses: ./.github/action/shopware-version-matrix
         id: shopware-version-matrix
-        with:
-          minimum-version: 'v6.6.10.14'
-          minimum-minor: '6.6'
 
       - name: 'Show generated matrix'
         run: echo '${{ steps.shopware-version-matrix.outputs.matrix }}'

@@ -23,8 +23,6 @@ jobs:
       matrix:
         phpVersion: ['8.2', '8.3', '8.4']
         shopware:
-          - version: '6.6.10.14'
-            phpstanConfig: 'phpstan.shopware-6.6.neon.dist'
           - version: '^6.7'
             phpstanConfig: 'phpstan.neon.dist'
 
