@@ -29,15 +29,15 @@ readonly class CachedNeosPageTreeLoader extends AbstractNeosPageTreeLoader
 
     }
 
-    function load(string $salesChannelId, string $languageId, string $domainUrl): NeosPageCollection
+    function load(string $salesChannelId, string $languageId): NeosPageCollection
     {
         try {
             return $this->cache->get(
                 $this->cacheKey($salesChannelId, $languageId),
-                function (ItemInterface $item) use ($salesChannelId, $languageId, $domainUrl) {
+                function (ItemInterface $item) use ($salesChannelId, $languageId) {
                     $item->tag(self::CACHE_KEY);
 
-                    return $this->decorated->load($salesChannelId, $languageId, $domainUrl);
+                    return $this->decorated->load($salesChannelId, $languageId);
                 },
                 self::CACHE_TTL
             );
@@ -53,10 +53,10 @@ readonly class CachedNeosPageTreeLoader extends AbstractNeosPageTreeLoader
         $misses = [];
 
         foreach ($requests as $request) {
-            [$salesChannelId, $languageId, $domainUrl] = $request;
+            [$salesChannelId, $languageId] = $request;
             $item = $this->cache->getItem($this->cacheKey($salesChannelId, $languageId));
             if ($item->isHit()) {
-                $results[] = new NeosPageTreeLoadResult($salesChannelId, $languageId, $domainUrl, $item->get());
+                $results[] = new NeosPageTreeLoadResult($salesChannelId, $languageId, $item->get());
             } else {
                 $misses[] = $request;
             }
@@ -72,9 +72,9 @@ readonly class CachedNeosPageTreeLoader extends AbstractNeosPageTreeLoader
             $this->logger->error($e);
             $fetched = array_map(
                 static function (array $request): NeosPageTreeLoadResult {
-                    [$salesChannelId, $languageId, $domainUrl] = $request;
+                    [$salesChannelId, $languageId] = $request;
 
-                    return new NeosPageTreeLoadResult($salesChannelId, $languageId, $domainUrl, new NeosPageCollection(), failed: true);
+                    return new NeosPageTreeLoadResult($salesChannelId, $languageId, new NeosPageCollection(), failed: true);
                 },
                 $misses
             );

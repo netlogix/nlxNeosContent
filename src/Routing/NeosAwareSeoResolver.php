@@ -71,7 +71,7 @@ class NeosAwareSeoResolver extends AbstractSeoResolver
         }
 
         try {
-            $tree = $this->neosPageTreeLoader->load($context->salesChannelId, $context->languageId, '');
+            $tree = $this->neosPageTreeLoader->load($context->salesChannelId, $context->languageId);
             $this->neosPageTreeService->findByPathInfoInTree($context->pathInfo, $tree);
         } catch (NoTreeItemFoundException) {
             return $resolved;

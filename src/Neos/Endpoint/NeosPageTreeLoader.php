@@ -37,13 +37,12 @@ readonly class NeosPageTreeLoader extends AbstractNeosPageTreeLoader
         throw new DecorationPatternException(self::class);
     }
 
-    public function load(string $salesChannelId, string $languageId, string $domainUrl): NeosPageCollection
+    public function load(string $salesChannelId, string $languageId): NeosPageCollection
     {
         $response = $this->neosClient->request('GET', 'neos/shopware-api/pagetree', [
             'headers' => [
                 'x-sw-sales-channel-id' => $salesChannelId,
                 'x-sw-language-id' => $languageId,
-                'x-sw-sales-channel-domain' => $domainUrl,
             ]
         ]);
 
@@ -58,12 +57,11 @@ readonly class NeosPageTreeLoader extends AbstractNeosPageTreeLoader
 
         $pending = [];
         foreach ($requests as $request) {
-            [$salesChannelId, $languageId, $domainUrl] = $request;
+            [$salesChannelId, $languageId] = $request;
             $response = $this->neosClient->request('GET', 'neos/shopware-api/pagetree', [
                 'headers' => [
                     'x-sw-sales-channel-id' => $salesChannelId,
                     'x-sw-language-id' => $languageId,
-                    'x-sw-sales-channel-domain' => $domainUrl,
                 ],
                 ...$requestOptions,
             ]);
@@ -74,17 +72,17 @@ readonly class NeosPageTreeLoader extends AbstractNeosPageTreeLoader
         // concurrently under the hood, so this loop's total wait is ~one round trip, not N.
         $results = [];
         foreach ($pending as [$request, $response]) {
-            [$salesChannelId, $languageId, $domainUrl] = $request;
+            [$salesChannelId, $languageId] = $request;
 
             try {
                 $tree = $this->serializer->deserialize($response->getContent(), NeosPageCollection::class, 'json', [
                     UnwrappingDenormalizer::UNWRAP_PATH => '[pages]'
                 ]);
-                $results[] = new NeosPageTreeLoadResult($salesChannelId, $languageId, $domainUrl, $tree);
+                $results[] = new NeosPageTreeLoadResult($salesChannelId, $languageId, $tree);
             } catch (\Throwable) {
                 // Signals a failed fetch, not a genuinely empty tree - CachedNeosPageTreeLoader
                 // must not cache this as if Neos really had no pages here.
-                $results[] = new NeosPageTreeLoadResult($salesChannelId, $languageId, $domainUrl, new NeosPageCollection(), failed: true);
+                $results[] = new NeosPageTreeLoadResult($salesChannelId, $languageId, new NeosPageCollection(), failed: true);
             }
         }
 

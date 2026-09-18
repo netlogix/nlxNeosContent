@@ -9,7 +9,6 @@ use nlxNeosContent\Error\PageTree\NoTreeItemFoundException;
 use nlxNeosContent\Neos\DTO\NeosPageCollection;
 use nlxNeosContent\Neos\DTO\NeosPageDTO;
 use nlxNeosContent\Neos\Endpoint\AbstractNeosPageTreeLoader;
-use Shopware\Core\System\SalesChannel\Aggregate\SalesChannelDomain\SalesChannelDomainEntity;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Symfony\Component\HttpFoundation\Request;
@@ -36,29 +35,9 @@ class NeosPageTreeService
 
     public function loadTreeForContext(SalesChannelContext $salesChannelContext): NeosPageCollection
     {
-        $domains = $salesChannelContext->getSalesChannel()->getDomains();
-
-        // Prefer the exact domain the context actually points at; only fall back to
-        // matching by language (ambiguous when a sales channel has several domains
-        // sharing one language) when there's no domain id to go on at all.
-        $domain = null;
-        if ($salesChannelContext->getDomainId() !== null) {
-            $domain = $domains
-                ->filter(fn (SalesChannelDomainEntity $domain) => $domain->getId() === $salesChannelContext->getDomainId())
-                ->first();
-        }
-        $domain ??= $domains
-            ->filter(fn (SalesChannelDomainEntity $domain) => $domain->getLanguageId() === $salesChannelContext->getLanguageId())
-            ->first();
-
-        if (!$domain instanceof SalesChannelDomainEntity) {
-            throw new \InvalidArgumentException("The salesChannelContext doesn't contain the relevant domain.", code: 1789645629);
-        }
-
         return $this->neosPageTreeLoader->load(
             $salesChannelContext->getSalesChannelId(),
             $salesChannelContext->getLanguageId(),
-            $domain->getUrl()
         );
     }
 
@@ -80,7 +59,7 @@ class NeosPageTreeService
     }
 
     /**
-     * @param iterable<array{string, string, string}> $candidates salesChannelId, languageId, domainUrl triples
+     * @param iterable<array{string, string}> $candidates salesChannelId, languageId tuples
      * @throws NoTreeItemFoundException if no candidate's tree contains the path
      */
     public function searchForPathInPageTrees(string $pathInfo, iterable $candidates): NeosPageDTO

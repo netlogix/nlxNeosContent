@@ -11,10 +11,10 @@ readonly abstract class AbstractNeosPageTreeLoader
     public function getDecorated(): AbstractNeosPageTreeLoader {
         return $this;
     }
-    abstract function load(string $salesChannelId, string $languageId, string $domainUrl): NeosPageCollection;
+    abstract function load(string $salesChannelId, string $languageId): NeosPageCollection;
 
     /**
-     * @param list<array{string, string, string}> $requests salesChannelId, languageId, domainUrl triples
+     * @param list<array{string, string}> $requests salesChannelId, languageId tuples
      * @return list<NeosPageTreeLoadResult> one result per request, order not guaranteed, never throws per-request
      */
     abstract function loadMany(array $requests): array;

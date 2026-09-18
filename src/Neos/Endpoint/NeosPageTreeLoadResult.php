@@ -20,7 +20,6 @@ final readonly class NeosPageTreeLoadResult
     public function __construct(
         public string $salesChannelId,
         public string $languageId,
-        public string $domainUrl,
         public NeosPageCollection $tree,
         public bool $failed = false,
     ) {

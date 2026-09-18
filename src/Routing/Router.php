@@ -16,7 +16,6 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\NotFilter;
 use Shopware\Core\PlatformRequest;
 use Shopware\Core\System\SalesChannel\SalesChannelCollection;
 use Shopware\Core\System\SalesChannel\SalesChannelEntity;
-use Shopware\Storefront\Framework\Routing\RequestTransformer;
 use Symfony\Component\DependencyInjection\Attribute\AsDecorator;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\DependencyInjection\Attribute\AutowireDecorated;
@@ -99,7 +98,7 @@ readonly class Router implements RouterInterface, WarmableInterface
     }
 
     /**
-     * @return iterable<array{string, string, string}> tuples of [salesChannelId, languageId, domainUrl]
+     * @return iterable<array{string, string}> tuples of [salesChannelId, languageId]
      */
     private function resolveCandidateTreeArgs(): iterable
     {
@@ -107,22 +106,21 @@ readonly class Router implements RouterInterface, WarmableInterface
 
         $salesChannelId = $request?->attributes->get(PlatformRequest::ATTRIBUTE_SALES_CHANNEL_ID);
         $languageId = $request?->headers->get(PlatformRequest::HEADER_LANGUAGE_ID);
-        $domainUrl = $request?->attributes->get(RequestTransformer::STOREFRONT_URL);
 
-        if ($salesChannelId !== null && $languageId !== null && $domainUrl !== null) {
+        if ($salesChannelId !== null && $languageId !== null) {
             // match()'s own gate only checks the global default, so a sales channel that
             // overrides extendNavigation to disabled must still be excluded here - same
             // per-channel check the enumeration fallback below already applies.
             if ($this->configService->isNavigationExtensionEnabled($salesChannelId)) {
-                yield [$salesChannelId, $languageId, $domainUrl];
+                yield [$salesChannelId, $languageId];
             }
 
             return;
         }
 
-        //No storefront request to read the sales channel/language/domain from - e.g. when called
+        //No storefront request to read the sales channel/language from - e.g. when called
         //via RouteBlocklistService while validating a seo url from the Admin API. Check every
-        //Neos-connected sales channel's domains instead of assuming a single one.
+        //Neos-connected sales channel's languages instead of assuming a single one.
         $criteria = new Criteria();
         $criteria->addAssociation('domains');
         $criteria->addAssociation('type');
@@ -144,7 +142,7 @@ readonly class Router implements RouterInterface, WarmableInterface
                 }
                 $seen[$key] = true;
 
-                yield [$salesChannel->getId(), $domain->getLanguageId(), $domain->getUrl()];
+                yield [$salesChannel->getId(), $domain->getLanguageId()];
             }
         }
     }
