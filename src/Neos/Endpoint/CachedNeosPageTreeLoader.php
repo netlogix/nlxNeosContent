@@ -89,6 +89,7 @@ readonly class CachedNeosPageTreeLoader extends AbstractNeosPageTreeLoader
                 continue;
             }
 
+            /** @var ItemInterface $item TagAwareCacheInterface::getItem() is typed via the plain PSR-6 interface */
             $item = $this->cache->getItem($this->cacheKey($result->salesChannelId, $result->languageId));
             $item->set($result->tree);
             $item->tag(self::CACHE_KEY);

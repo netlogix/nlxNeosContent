@@ -135,8 +135,26 @@ readonly class Router implements RouterInterface, WarmableInterface
 
         $seen = [];
 
+        // RouteBlocklistService's own call to $router->match() carries no Context, but it runs
+        // synchronously inside the same Admin API request that's validating the seo url - which
+        // Shopware's own ApiRequestContextResolver already attached a real Context to before the
+        // controller ran. Reuse that instead of manufacturing a fresh one.
+        $context = $request?->attributes->get(PlatformRequest::ATTRIBUTE_CONTEXT_OBJECT);
+        if (!$context instanceof Context) {
+            if ($request === null) {
+                // No request in scope at all - the CLI-equivalent case createCLIContext() exists for.
+                $context = Context::createCLIContext();
+            } else {
+                // A request exists but isn't Admin/Store-API-scoped, so Shopware never attached one -
+                // there's no controller here to pass a context down from either.
+                // @phpstan-ignore shopware.disallow.default.context.creation
+                $context = Context::createDefaultContext();
+            }
+        }
+        $salesChannels = $this->salesChannelRepository->search($criteria, $context)->getEntities();
+
         /** @var SalesChannelEntity $salesChannel */
-        foreach ($this->salesChannelRepository->search($criteria, Context::createDefaultContext())->getEntities() as $salesChannel) {
+        foreach ($salesChannels as $salesChannel) {
             if (!$this->configService->isNavigationExtensionEnabled($salesChannel->getId())) {
                 continue;
             }
