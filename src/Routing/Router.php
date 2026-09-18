@@ -94,7 +94,13 @@ readonly class Router implements RouterInterface, WarmableInterface
         // Delegate to the real, registered route (the same one NeosAwareSeoResolver rewrites a
         // stale alias to) instead of hand-building a route array that would otherwise have to
         // be kept in sync with whatever that route actually declares.
-        return $this->inner->match(NeosPageController::CONTENT_BY_PATH_ROUTE_PREFIX . ltrim($pathinfo, '/'));
+        $match = $this->inner->match(NeosPageController::CONTENT_BY_PATH_ROUTE_PREFIX . ltrim($pathinfo, '/'));
+        // Symfony merges every key of a match() result into the request's attributes, so this
+        // marks the request as having gone through the tree check above - NeosPageController
+        // refuses to render without it, since a direct hit would otherwise skip that check entirely.
+        $match[NeosPageController::INTERNAL_DISPATCH_ATTRIBUTE] = true;
+
+        return $match;
     }
 
     /**

@@ -15,6 +15,7 @@ use Shopware\Core\Content\Seo\SeoResolver;
 use Shopware\Core\Content\Seo\SeoUrlRequestContext;
 use Symfony\Component\DependencyInjection\Attribute\AsDecorator;
 use Symfony\Component\DependencyInjection\Attribute\AutowireDecorated;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
  * A category/product rename leaves its old seo_url row in place as a non-canonical
@@ -40,6 +41,7 @@ class NeosAwareSeoResolver extends AbstractSeoResolver
         private readonly ConfigService $configService,
         private readonly AbstractNeosPageTreeLoader $neosPageTreeLoader,
         private readonly NeosPageTreeService $neosPageTreeService,
+        private readonly RequestStack $requestStack,
     ) {
     }
 
@@ -76,6 +78,12 @@ class NeosAwareSeoResolver extends AbstractSeoResolver
         } catch (NoTreeItemFoundException) {
             return $resolved;
         }
+
+        // RequestTransformer rewrites the request's pathInfo to our return value and lets normal
+        // routing match it fresh - indistinguishable, from Router::match()'s point of view, from a
+        // client requesting that path directly. Marking the request here is the only way to carry
+        // "the tree check above already ran" through to NeosPageController.
+        $this->requestStack->getCurrentRequest()?->attributes->set(NeosPageController::INTERNAL_DISPATCH_ATTRIBUTE, true);
 
         return new ResolvedSeoUrl(
             pathInfo: NeosPageController::CONTENT_BY_PATH_ROUTE_PREFIX . ltrim($context->pathInfo, '/'),

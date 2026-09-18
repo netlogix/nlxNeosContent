@@ -11,7 +11,6 @@ use nlxNeosContent\Neos\DTO\NeosResults\NeosRedirectResult;
 use nlxNeosContent\Neos\HeadTag\HreflangLink;
 use nlxNeosContent\Neos\HeadTag\JsonLdUrlRewriter;
 use nlxNeosContent\Neos\HeadTag\NeosHeadDataFactory;
-use nlxNeosContent\Service\ConfigService;
 use nlxNeosContent\Service\ContentExchangeService;
 use nlxNeosContent\Service\NeosPageTreeService;
 use nlxNeosContent\Service\ResolverContextService;
@@ -44,6 +43,15 @@ class NeosPageController extends StorefrontController
     public const HEAD_TAGS_EXTENSION = 'neosHeadTags';
     public const CONTENT_BY_PATH_ROUTE_PREFIX = '/neos-cms/';
 
+    /**
+     * Request attribute only Router::matchNeosPath() and NeosAwareSeoResolver ever set - both
+     * confirm the path actually exists in the current tree before routing here. Its absence
+     * means this route was matched directly from a raw request path, which skips that check
+     * entirely and would otherwise turn this internal route into a second, public URL for
+     * whatever content Neos happens to have at that path.
+     */
+    public const INTERNAL_DISPATCH_ATTRIBUTE = '_nlxNeosContentInternalDispatch';
+
     function __construct(
         private readonly ContentExchangeService $contentExchangeService,
         private readonly ResolverContextService $resolverContextService,
@@ -56,7 +64,6 @@ class NeosPageController extends StorefrontController
         #[Autowire(service: 'sales_channel.category.repository')]
         private readonly SalesChannelRepository $categoryRepository,
         private readonly NeosPagePathExtension $neosPagePathExtension,
-        private readonly ConfigService $configService,
     ) {
     }
 
@@ -72,11 +79,11 @@ class NeosPageController extends StorefrontController
     )]
     function index(Request $request, SalesChannelContext $salesChannelContext, string $path): Response
     {
-        // This route is only ever meant to be reached via Router::matchNeosPath()'s fallback or
-        // NeosAwareSeoResolver's rewrite - both already gate on these same checks before getting
-        // here. A direct hit bypasses that gating entirely, so it's repeated here as well.
-        $salesChannelId = $salesChannelContext->getSalesChannelId();
-        if (!$this->configService->isEnabled() || !$this->configService->isNavigationExtensionEnabled($salesChannelId)) {
+        // A raw request to this path never carries INTERNAL_DISPATCH_ATTRIBUTE - only our own
+        // fallback/rewrite logic sets it, after having already confirmed the path belongs to
+        // the current tree. Without it, this would otherwise double as a public, un-vetted URL
+        // for the same content the tree-based resolution already serves through its real path.
+        if ($request->attributes->get(self::INTERNAL_DISPATCH_ATTRIBUTE) !== true) {
             throw $this->createNotFoundException();
         }
 
