@@ -11,6 +11,7 @@ use nlxNeosContent\Neos\DTO\NeosResults\NeosRedirectResult;
 use nlxNeosContent\Neos\HeadTag\HreflangLink;
 use nlxNeosContent\Neos\HeadTag\JsonLdUrlRewriter;
 use nlxNeosContent\Neos\HeadTag\NeosHeadDataFactory;
+use nlxNeosContent\Service\ConfigService;
 use nlxNeosContent\Service\ContentExchangeService;
 use nlxNeosContent\Service\NeosPageTreeService;
 use nlxNeosContent\Service\ResolverContextService;
@@ -55,6 +56,7 @@ class NeosPageController extends StorefrontController
         #[Autowire(service: 'sales_channel.category.repository')]
         private readonly SalesChannelRepository $categoryRepository,
         private readonly NeosPagePathExtension $neosPagePathExtension,
+        private readonly ConfigService $configService,
     ) {
     }
 
@@ -70,6 +72,14 @@ class NeosPageController extends StorefrontController
     )]
     function index(Request $request, SalesChannelContext $salesChannelContext, string $path): Response
     {
+        // This route is only ever meant to be reached via Router::matchNeosPath()'s fallback or
+        // NeosAwareSeoResolver's rewrite - both already gate on these same checks before getting
+        // here. A direct hit bypasses that gating entirely, so it's repeated here as well.
+        $salesChannelId = $salesChannelContext->getSalesChannelId();
+        if (!$this->configService->isEnabled() || !$this->configService->isNavigationExtensionEnabled($salesChannelId)) {
+            throw $this->createNotFoundException();
+        }
+
         if ($request->isMethod('POST') && !$this->hasFormLikeRequestStructure($request)) {
             return new Response(status: Response::HTTP_BAD_REQUEST);
         }
