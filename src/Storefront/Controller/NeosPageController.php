@@ -6,7 +6,6 @@ namespace nlxNeosContent\Storefront\Controller;
 
 use nlxNeosContent\Neos\DTO\NeosPageCollection;
 use nlxNeosContent\Neos\DTO\NeosPageDTO;
-use nlxNeosContent\Neos\DTO\NeosResults\NeosContentResult;
 use nlxNeosContent\Neos\DTO\NeosResults\NeosRedirectResult;
 use nlxNeosContent\Neos\HeadTag\HreflangLink;
 use nlxNeosContent\Neos\HeadTag\JsonLdUrlRewriter;
@@ -40,6 +39,18 @@ class NeosPageController extends StorefrontController
     public const CACHE_TAG_PREFIX = 'nlx-cbp-page-';
     public const HEAD_TAGS_EXTENSION = 'neosHeadTags';
 
+    /**
+     * Sec-Fetch-Dest values (https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Sec-Fetch-Dest)
+     * a browser never sends for an actual page navigation - only for a sub-resource fetch
+     * (favicon/apple-touch-icon probes, stray <img> tags to stale media links, etc.) that
+     * has no business being proxied to Neos as a content path.
+     */
+    private const NON_NAVIGATIONAL_FETCH_DESTINATIONS = [
+        'audio', 'audioworklet', 'embed', 'font', 'image', 'manifest', 'object',
+        'paintworklet', 'script', 'serviceworker', 'sharedworker', 'style',
+        'track', 'video', 'worker', 'xslt',
+    ];
+
     function __construct(
         private readonly ContentExchangeService $contentExchangeService,
         private readonly ResolverContextService $resolverContextService,
@@ -59,6 +70,10 @@ class NeosPageController extends StorefrontController
     {
         if ($request->isMethod('POST') && !$this->hasFormLikeRequestStructure($request)) {
             return new Response(status: Response::HTTP_BAD_REQUEST);
+        }
+
+        if (in_array($request->headers->get('Sec-Fetch-Dest'), self::NON_NAVIGATIONAL_FETCH_DESTINATIONS, true)) {
+            throw $this->createNotFoundException();
         }
 
         return $this->renderPath($request->getPathInfo(), $request, $salesChannelContext);
