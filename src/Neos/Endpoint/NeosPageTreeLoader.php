@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace nlxNeosContent\Neos\Endpoint;
 
 use nlxNeosContent\Neos\DTO\NeosPageCollection;
+use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Symfony\Component\DependencyInjection\Attribute\AsAlias;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -29,6 +30,7 @@ readonly class NeosPageTreeLoader extends AbstractNeosPageTreeLoader
         private HttpClientInterface $neosClient,
         #[Autowire(service: 'serializer')]
         private SerializerInterface $serializer,
+        private LoggerInterface $logger,
     ) {
     }
 
@@ -79,9 +81,12 @@ readonly class NeosPageTreeLoader extends AbstractNeosPageTreeLoader
                     UnwrappingDenormalizer::UNWRAP_PATH => '[pages]'
                 ]);
                 $results[] = new NeosPageTreeLoadResult($salesChannelId, $languageId, $tree);
-            } catch (\Throwable) {
+            } catch (\Throwable $e) {
                 // Signals a failed fetch, not a genuinely empty tree - CachedNeosPageTreeLoader
-                // must not cache this as if Neos really had no pages here.
+                // must not cache this as if Neos really had no pages here. Logged here, same as
+                // load()'s single-tree failures are by CachedNeosPageTreeLoader's own catch -
+                // loadMany()'s per-candidate failures never reach that one.
+                $this->logger->error($e, ['salesChannelId' => $salesChannelId, 'languageId' => $languageId]);
                 $results[] = new NeosPageTreeLoadResult($salesChannelId, $languageId, new NeosPageCollection(), failed: true);
             }
         }
