@@ -236,7 +236,15 @@ class ContentExchangeService
         //Not every redirect Neos issues preserves the content-by-path prefix (e.g. core
         //Neos.Neos controller code that isn't aware of ApiVariantNodeUriService) - a plain
         //frontend path is just as valid a redirect target, so accept it as-is.
-        return '/' . ltrim($path, '/');
+        $path = ltrim($path, '/');
+        if ($path === '') {
+            // parse_url() returns null/false for a malformed or path-less Location (e.g. just
+            // a host) - that's not a valid content-by-path target, so surface it as an error
+            // instead of silently redirecting to the site root.
+            throw new NeosContentFetchException(sprintf('Neos redirected to a location with no usable path: "%s".', $location));
+        }
+
+        return '/' . $path;
     }
 
     /**
