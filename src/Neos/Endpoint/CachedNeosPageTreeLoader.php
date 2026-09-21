@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace nlxNeosContent\Neos\Endpoint;
 
 use nlxNeosContent\Neos\DTO\NeosPageCollection;
+use Psr\Cache\CacheItemPoolInterface;
 use Psr\Log\LoggerInterface;
-use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\DependencyInjection\Attribute\AsDecorator;
 use Symfony\Component\DependencyInjection\Attribute\AutowireDecorated;
@@ -23,21 +23,21 @@ readonly class CachedNeosPageTreeLoader extends AbstractNeosPageTreeLoader
         #[AutowireDecorated]
         private AbstractNeosPageTreeLoader $decorated,
         #[Autowire(service: 'cache.object')]
-        private TagAwareCacheInterface $cache,
+        private TagAwareCacheInterface&CacheItemPoolInterface $cache,
         private LoggerInterface $logger,
     ) {
 
     }
 
-    function load(SalesChannelContext $salesChannelContext): NeosPageCollection
+    function load(string $salesChannelId, string $languageId): NeosPageCollection
     {
         try {
             return $this->cache->get(
-                self::CACHE_KEY . '-' . $salesChannelContext->getSalesChannelId() . '-' . $salesChannelContext->getLanguageId(),
-                function (ItemInterface $item) use ($salesChannelContext) {
+                $this->cacheKey($salesChannelId, $languageId),
+                function (ItemInterface $item) use ($salesChannelId, $languageId) {
                     $item->tag(self::CACHE_KEY);
 
-                    return $this->decorated->load($salesChannelContext);
+                    return $this->decorated->load($salesChannelId, $languageId);
                 },
                 self::CACHE_TTL
             );
@@ -45,5 +45,63 @@ readonly class CachedNeosPageTreeLoader extends AbstractNeosPageTreeLoader
             $this->logger->error($e);
             return new NeosPageCollection();
         }
+    }
+
+    public function loadMany(array $requests): array
+    {
+        $results = [];
+        $misses = [];
+
+        foreach ($requests as $request) {
+            [$salesChannelId, $languageId] = $request;
+            $item = $this->cache->getItem($this->cacheKey($salesChannelId, $languageId));
+            if ($item->isHit()) {
+                $results[] = new NeosPageTreeLoadResult($salesChannelId, $languageId, $item->get());
+            } else {
+                $misses[] = $request;
+            }
+        }
+
+        if ($misses === []) {
+            return $results;
+        }
+
+        try {
+            $fetched = $this->decorated->loadMany($misses);
+        } catch (\Throwable $e) {
+            $this->logger->error($e);
+            $fetched = array_map(
+                static function (array $request): NeosPageTreeLoadResult {
+                    [$salesChannelId, $languageId] = $request;
+
+                    return new NeosPageTreeLoadResult($salesChannelId, $languageId, new NeosPageCollection(), failed: true);
+                },
+                $misses
+            );
+        }
+
+        foreach ($fetched as $result) {
+            $results[] = $result;
+
+            // A failed fetch's empty tree is only a stand-in for this one response - caching
+            // it would make a transient Neos hiccup look like "no pages here" for a full TTL.
+            if ($result->failed) {
+                continue;
+            }
+
+            /** @var ItemInterface $item TagAwareCacheInterface::getItem() is typed via the plain PSR-6 interface */
+            $item = $this->cache->getItem($this->cacheKey($result->salesChannelId, $result->languageId));
+            $item->set($result->tree);
+            $item->tag(self::CACHE_KEY);
+            $item->expiresAfter(self::CACHE_TTL);
+            $this->cache->save($item);
+        }
+
+        return $results;
+    }
+
+    private function cacheKey(string $salesChannelId, string $languageId): string
+    {
+        return self::CACHE_KEY . '-' . $salesChannelId . '-' . $languageId;
     }
 }
