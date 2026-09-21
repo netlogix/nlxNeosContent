@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace nlxNeosContent\Cache\Warmup;
 
-use nlxNeosContent\Cache\Warmup\DTO\AdditionalDataInterface;
 use nlxNeosContent\Message\ScheduleCacheWarmupMessage;
-use nlxNeosContent\Neos\Endpoint\AbstractNeosPageTreeLoader;
+use nlxNeosContent\Service\NeosPageTreeService;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -20,7 +19,7 @@ class PageTreeCacheWarmer implements CacheWarmerInterface
     private array $warmedSalesChannelLanguages = [];
 
     public function __construct(
-        private readonly AbstractNeosPageTreeLoader $neosPageTreeLoader,
+        private readonly NeosPageTreeService $neosPageTreeService,
         private readonly MessageBusInterface $messageBus,
     ) {
     }
@@ -33,7 +32,7 @@ class PageTreeCacheWarmer implements CacheWarmerInterface
             return;
         }
 
-        $this->neosPageTreeLoader->load($salesChannelContext);
+        $this->neosPageTreeService->loadTreeForContext($salesChannelContext);
     }
 
     public function scheduleWarmUp(SalesChannelContext $salesChannelContext): void
