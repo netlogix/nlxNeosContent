@@ -49,8 +49,6 @@ class NeosPageController extends StorefrontController
         private readonly CacheTagCollector $cacheTagCollector,
         private readonly NeosHeadDataFactory $neosHeadDataFactory,
         private readonly JsonLdUrlRewriter $jsonLdUrlRewriter,
-        #[Autowire(service: 'sales_channel.category.repository')]
-        private readonly SalesChannelRepository $categoryRepository,
         private readonly NeosPagePathExtension $neosPagePathExtension,
     ) {
     }
@@ -154,7 +152,7 @@ class NeosPageController extends StorefrontController
         $breadcrumbTags[] = self::CACHE_TAG_ALL;
         $this->cacheTagCollector->addTag(...$breadcrumbTags);
 
-        $breadcrumb = $this->prependHomeCategoryBreadcrumbItem($breadcrumb, $salesChannelContext);
+        $breadcrumb = $this->prependHomeNameBreadcrumbItem($breadcrumb, $salesChannelContext);
         // Resolving the url only for the (few) items actually rendered here, not eagerly
         // for the whole tree - the tree-sourced NeosPageDTOs otherwise leave it null.
         $breadcrumbItems = array_map(
@@ -178,32 +176,15 @@ class NeosPageController extends StorefrontController
         ]);
     }
 
-    /**
-     * Prepends the sales channel's Home category (its navigation root) as the first
-     * breadcrumb item, named after however it's set up in the Administration - mirroring
-     * how Neos itself always shows the site name as the first breadcrumb item.
-     */
-    private function prependHomeCategoryBreadcrumbItem(
+    private function prependHomeNameBreadcrumbItem(
         NeosPageCollection $breadcrumb,
         SalesChannelContext $salesChannelContext
     ): NeosPageCollection {
-        $homeCategoryId = $salesChannelContext->getSalesChannel()->getNavigationCategoryId();
-        $homeCategory = $this->categoryRepository
-            ->search(new Criteria([$homeCategoryId]), $salesChannelContext)
-            ->getEntities()
-            ->first();
-
-        $homeLabel = $homeCategory instanceof CategoryEntity ? $homeCategory->getTranslated()['name'] ?? null : null;
-        if (empty($homeLabel)) {
-            return $breadcrumb;
-        }
-
-        // The category is read outside the sales channel's own cache-tagged read trace,
-        // so tag explicitly: a renamed/moved Home category should invalidate this page too.
-        $this->cacheTagCollector->addTag(NavigationRoute::ALL_TAG);
-
         return new NeosPageCollection(
-            new NeosPageDTO($homeCategoryId, $homeLabel, '', new NeosPageCollection()),
+            new NeosPageDTO(
+                $salesChannelContext->getSalesChannel()->getNavigationCategoryId(),
+                $salesChannelContext->getSalesChannel()->getHomeName(), '',
+                new NeosPageCollection()),
             ...iterator_to_array($breadcrumb)
         );
     }
