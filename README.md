@@ -16,6 +16,34 @@ It allows you to:
 - Render Neos-driven CMS content in the Shopware storefront.
 - Provide storefront preview URLs for different sales channels and languages.
 
+## Navigation extension
+
+When a storefront request doesn't match anything in Shopware itself (no category, product, or CMS
+route), the plugin checks whether Neos has something for that path before giving up:
+
+1. It first checks a cached snapshot of Neos's page tree (refreshed at most once a day, per sales
+   channel and language). An exact match there renders the page through Neos.
+2. If the path isn't in that snapshot either, the plugin asks Neos directly instead of returning
+   Shopware's own 404 straight away - Neos may still know a redirect (e.g. from its Redirect
+   module) or serve an asset at a path that never made it into the page tree. Whatever Neos
+   answers with (a redirect, content, or a genuine 404) becomes the final response.
+
+This live fallback only applies to real storefront requests. Requests that merely check whether a
+path is already taken (e.g. Shopware's Admin API validating a new SEO URL) only ever consult the
+cached page tree, never Neos directly - so creating a Shopware SEO URL stays fast and Shopware's
+own routing stays authoritative there.
+
+Enable or disable this behavior per sales channel via the plugin's `extendNavigation` setting.
+
+## SEO redirects
+
+Renaming or moving a Shopware category/product leaves its old SEO URL in place as a redirect to
+the new one. Only Shopware's *canonical* (currently active) SEO URLs are followed as-is - a
+canonical match always wins. For a stale, non-canonical one, the plugin checks the Neos page tree
+first: if a Neos page has since taken over that same path, it's rendered instead of following
+Shopware's redirect. If no Neos page exists there, Shopware's own redirect proceeds exactly as
+before.
+
 ## Requirements
 
 - Shopware `>= 6.6.10.4`
