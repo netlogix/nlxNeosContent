@@ -44,6 +44,7 @@ class ContentExchangeService
         private readonly HttpClientInterface $neosClient,
         #[Autowire(service: 'cache.object')]
         private readonly TagAwareCacheInterface $cache,
+        private readonly ConfigService $configService,
     ) {
     }
 
@@ -237,6 +238,16 @@ class ContentExchangeService
         $location = $response->getHeaders(false)['location'][0] ?? null;
         if ($location === null) {
             throw new NeosContentFetchException('Neos responded with a redirect but did not provide a Location header.');
+        }
+
+        $locationHost = parse_url($location, PHP_URL_HOST);
+        if ($locationHost !== null && $locationHost !== parse_url($this->configService->getBaseUrl(), PHP_URL_HOST)) {
+            // Genuinely external - Neos itself didn't rewrite this into the content-by-path
+            // scheme (see ShopwareApiRedirectMiddleware's own host check), so it isn't a path on
+            // this site at all. Hand it back exactly as given rather than stripping it down to a
+            // bare path and re-rooting it under Shopware's own domain, which would turn a real
+            // external target (a different site or service entirely) into a broken, made-up URL.
+            return $location;
         }
 
         $path = (string) parse_url($location, PHP_URL_PATH);

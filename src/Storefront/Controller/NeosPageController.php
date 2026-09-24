@@ -133,12 +133,21 @@ class NeosPageController extends StorefrontController
             // target instead of re-submitting the form body to it (standard post-redirect-get).
             $statusCode = $request->isMethod('POST') ? Response::HTTP_SEE_OTHER : $neosContentResult->getStatusCode();
 
-            // getRedirectPathInfo() is the bare, locale-agnostic path Neos deals in - Shopware's
-            // own routing here determines locale from the domain's own path prefix (e.g. "/de"),
-            // so that prefix has to be restored or the browser lands on whatever locale Shopware
-            // falls back to for a prefix-less path instead of the one it was already on.
+            $redirectPathInfo = $neosContentResult->getRedirectPathInfo();
+            if (parse_url($redirectPathInfo, PHP_URL_SCHEME) !== null) {
+                // Already a full, external URL (ContentExchangeService::extractRedirectPathInfo()
+                // only hands back an absolute URL for a target outside this Neos - re-rooting it
+                // under Shopware's own domain below would turn a real external target into a
+                // broken, made-up one).
+                return new RedirectResponse($redirectPathInfo, $statusCode);
+            }
+
+            // A bare, locale-agnostic path Neos deals in internally - Shopware's own routing here
+            // determines locale from the domain's own path prefix (e.g. "/de"), so that prefix
+            // has to be restored or the browser lands on whatever locale Shopware falls back to
+            // for a prefix-less path instead of the one it was already on.
             $currentDomain = $this->contentExchangeService->getCurrentDomain($salesChannelContext);
-            $redirectTarget = rtrim($currentDomain->getUrl(), '/') . '/' . ltrim($neosContentResult->getRedirectPathInfo(), '/');
+            $redirectTarget = rtrim($currentDomain->getUrl(), '/') . '/' . ltrim($redirectPathInfo, '/');
 
             return new RedirectResponse($redirectTarget, $statusCode);
         }
