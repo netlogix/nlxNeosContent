@@ -80,6 +80,17 @@ readonly class Router implements RouterInterface, WarmableInterface
             } catch (\Exception) {
             }
 
+            if ($this->currentStorefrontSalesChannelId() !== null) {
+                // Neither Shopware nor the cached tree has anything for this path. Don't give up
+                // yet - Neos may still know a redirect or asset for it that never made it into
+                // the (page-only) tree. Let NeosPageController ask Neos live and decide from its
+                // actual response (redirect/asset/content/404) instead of assuming a miss here.
+                // Only for real storefront requests: the Admin API's seo-url-availability check
+                // (RouteBlocklistService, no sales channel in scope) must stay tree-only so a slow
+                // live request never blocks Shopware's own SEO url creation from succeeding.
+                return $this->dispatchToNeosPageController($pathinfo);
+            }
+
             throw $e;
         }
     }
@@ -91,16 +102,38 @@ readonly class Router implements RouterInterface, WarmableInterface
         // routing exception.
         $this->neosPageTreeService->searchForPathInPageTrees($pathinfo, $this->resolveCandidateTreeArgs());
 
+        return $this->dispatchToNeosPageController($pathinfo);
+    }
+
+    private function dispatchToNeosPageController(string $pathinfo): array
+    {
         // Delegate to the real, registered route (the same one NeosAwareSeoResolver rewrites a
         // stale alias to) instead of hand-building a route array that would otherwise have to
         // be kept in sync with whatever that route actually declares.
         $match = $this->inner->match(NeosPageController::CONTENT_BY_PATH_ROUTE_PREFIX . ltrim($pathinfo, '/'));
         // Symfony merges every key of a match() result into the request's attributes, so this
-        // marks the request as having gone through the tree check above - NeosPageController
-        // refuses to render without it, since a direct hit would otherwise skip that check entirely.
+        // marks the request as having gone through this routing decision - NeosPageController
+        // refuses to render without it, since a direct hit would otherwise skip it entirely.
         $match[NeosPageController::INTERNAL_DISPATCH_ATTRIBUTE] = true;
 
         return $match;
+    }
+
+    /**
+     * The current request's sales channel id, but only if it's a real storefront request (as
+     * opposed to e.g. an Admin API request with no sales channel in scope) with the navigation
+     * extension enabled for that specific channel.
+     */
+    private function currentStorefrontSalesChannelId(): ?string
+    {
+        $salesChannelId = $this->requestStack->getCurrentRequest()
+            ?->attributes->get(PlatformRequest::ATTRIBUTE_SALES_CHANNEL_ID);
+
+        if ($salesChannelId === null || !$this->configService->isNavigationExtensionEnabled($salesChannelId)) {
+            return null;
+        }
+
+        return $salesChannelId;
     }
 
     /**

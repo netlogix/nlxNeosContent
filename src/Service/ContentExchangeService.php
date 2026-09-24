@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace nlxNeosContent\Service;
 
 use nlxNeosContent\Error\RequestError\NeosContentFetchException;
+use nlxNeosContent\Neos\DTO\NeosResults\NeosAssetResult;
 use nlxNeosContent\Neos\DTO\NeosResults\NeosContentResult;
 use nlxNeosContent\Neos\DTO\NeosResults\NeosRedirectResult;
 use Shopware\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockCollection;
@@ -82,7 +83,7 @@ class ContentExchangeService
         );
     }
 
-    public function fetchCmsSectionsFromNeosByPath(string $pathInfo, SalesChannelContext $salesChannelContext): NeosContentResult|NeosRedirectResult
+    public function fetchCmsSectionsFromNeosByPath(string $pathInfo, SalesChannelContext $salesChannelContext): NeosContentResult|NeosRedirectResult|NeosAssetResult
     {
         $uri = self::CONTENT_BY_PATH_URI_PREFIX . trim($pathInfo, '/');
         $response = $this->neosClient->request('GET', $uri, [
@@ -93,7 +94,7 @@ class ContentExchangeService
         return $this->handleContentByPathResponse($response);
     }
 
-    public function submitFormToNeosByPath(string $pathInfo, Request $request, SalesChannelContext $salesChannelContext): NeosContentResult|NeosRedirectResult
+    public function submitFormToNeosByPath(string $pathInfo, Request $request, SalesChannelContext $salesChannelContext): NeosContentResult|NeosRedirectResult|NeosAssetResult
     {
         $contentType = $request->headers->get('Content-Type', '');
 
@@ -138,7 +139,7 @@ class ContentExchangeService
         return $mapped;
     }
 
-    private function handleContentByPathResponse(ResponseInterface $response): NeosContentResult|NeosRedirectResult
+    private function handleContentByPathResponse(ResponseInterface $response): NeosContentResult|NeosRedirectResult|NeosAssetResult
     {
         $statusCode = $response->getStatusCode();
         if ($statusCode >= 300 && $statusCode < 400) {
@@ -148,7 +149,18 @@ class ContentExchangeService
             );
         }
 
-        return $this->serializer->denormalize($response->getContent(), NeosContentResult::class, 'json');
+        // Throws for a 4xx/5xx status, same as before this method gained an asset branch.
+        $content = $response->getContent();
+
+        $contentType = $response->getHeaders(false)['content-type'][0] ?? '';
+        if (!str_starts_with($contentType, 'application/json')) {
+            // Not the CMS-page JSON envelope - e.g. a Neos asset served directly at this path.
+            // NeosContentResultDenormalizer treats invalid JSON as an empty page instead of
+            // throwing, so that can't be relied on to tell the two apart.
+            return new NeosAssetResult(content: $content, statusCode: $statusCode, contentType: $contentType);
+        }
+
+        return $this->serializer->denormalize($content, NeosContentResult::class, 'json');
     }
 
     private function buildSwHeaders(SalesChannelContext $salesChannelContext): array

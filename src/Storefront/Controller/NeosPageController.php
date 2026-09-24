@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace nlxNeosContent\Storefront\Controller;
 
+use nlxNeosContent\Error\PageTree\NoTreeItemFoundException;
 use nlxNeosContent\Neos\DTO\NeosPageCollection;
 use nlxNeosContent\Neos\DTO\NeosPageDTO;
+use nlxNeosContent\Neos\DTO\NeosResults\NeosAssetResult;
 use nlxNeosContent\Neos\DTO\NeosResults\NeosContentResult;
 use nlxNeosContent\Neos\DTO\NeosResults\NeosRedirectResult;
 use nlxNeosContent\Neos\HeadTag\HreflangLink;
@@ -131,7 +133,22 @@ class NeosPageController extends StorefrontController
             // target instead of re-submitting the form body to it (standard post-redirect-get).
             $statusCode = $request->isMethod('POST') ? Response::HTTP_SEE_OTHER : $neosContentResult->getStatusCode();
 
-            return new RedirectResponse($neosContentResult->getRedirectPathInfo(), $statusCode);
+            // getRedirectPathInfo() is the bare, locale-agnostic path Neos deals in - Shopware's
+            // own routing here determines locale from the domain's own path prefix (e.g. "/de"),
+            // so that prefix has to be restored or the browser lands on whatever locale Shopware
+            // falls back to for a prefix-less path instead of the one it was already on.
+            $currentDomain = $this->contentExchangeService->getCurrentDomain($salesChannelContext);
+            $redirectTarget = rtrim($currentDomain->getUrl(), '/') . '/' . ltrim($neosContentResult->getRedirectPathInfo(), '/');
+
+            return new RedirectResponse($redirectTarget, $statusCode);
+        }
+
+        if ($neosContentResult instanceof NeosAssetResult) {
+            return new Response(
+                $neosContentResult->getContent(),
+                $neosContentResult->getStatusCode(),
+                ['Content-Type' => $neosContentResult->getContentType()],
+            );
         }
 
         $sections = $neosContentResult->getSections();
@@ -145,7 +162,14 @@ class NeosPageController extends StorefrontController
         $cmsPage = new CmsPageEntity();
         $cmsPage->setSections($sections);
 
-        $breadcrumb = $this->neosPageTreeService->findAncestorChainForPathAndContext($pathInfo, $salesChannelContext);
+        try {
+            $breadcrumb = $this->neosPageTreeService->findAncestorChainForPathAndContext($pathInfo, $salesChannelContext);
+        } catch (NoTreeItemFoundException) {
+            // Neos returned real content for a path our cached tree (up to 24h stale) doesn't
+            // have yet - rare, but rendering it without a breadcrumb isn't worth it; treat it
+            // like the miss it still is from the tree's point of view.
+            throw $this->createNotFoundException();
+        }
         $treeItem = $breadcrumb[count($breadcrumb) - 1];
         //Setting NavigationId so the navigation js can display the active page
         $identifier = self::sanitizeNodeIdentifier($treeItem->identifier);
