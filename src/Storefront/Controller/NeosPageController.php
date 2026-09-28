@@ -97,6 +97,62 @@ class NeosPageController extends StorefrontController
     }
 
     /**
+     * Renders a Neos-authored page's content as a bare, chrome-less fragment - the same
+     * "widget" shape Shopware's own CmsController::page() renders CMS pages as for
+     * data-ajax-modal use (fetch by XHR, drop the response into a modal). Unlike index(), this
+     * is a directly routable, always-public endpoint - no page tree lookup by path is needed,
+     * since the identifier itself is the input (as stored by, say, a footer link or the basic
+     * information "shop page or Neos page" override), and there's no bare-path/full-page
+     * ambiguity to gate against.
+     */
+    #[Route(
+        path: '/widgets/neos-cms/{identifier}',
+        name: 'frontend.neos.content-widget',
+        defaults: [
+            '_routeScope' => ['storefront'],
+            'XmlHttpRequest' => true,
+            PlatformRequest::ATTRIBUTE_HTTP_CACHE => true,
+        ],
+        methods: ['GET'],
+    )]
+    public function widget(string $identifier, Request $request, SalesChannelContext $salesChannelContext): Response
+    {
+        $normalizedIdentifier = self::sanitizeNodeIdentifier($identifier);
+
+        $pathInfo = $this->neosPageTreeService->findPathInfoForIdentifierAndContext($normalizedIdentifier, $salesChannelContext);
+        if ($pathInfo === null || $pathInfo === '') {
+            throw $this->createNotFoundException();
+        }
+
+        try {
+            $neosContentResult = $this->contentExchangeService->fetchCmsSectionsFromNeosByPath($pathInfo, $salesChannelContext);
+        } catch (ClientException $e) {
+            if ($e->getCode() === 404) {
+                throw $this->createNotFoundException(previous: $e);
+            }
+
+            throw $e;
+        }
+
+        if (!$neosContentResult instanceof NeosContentResult) {
+            // A widget embed only ever wants page content - a redirect or a raw asset at this
+            // path isn't something that makes sense to show inline.
+            throw $this->createNotFoundException();
+        }
+
+        $cmsPage = $this->buildCmsPageFromContentResult($neosContentResult, $request, $salesChannelContext);
+
+        $this->cacheTagCollector->addTag(
+            self::getCacheTagFromIdentifier($normalizedIdentifier),
+            self::CACHE_TAG_ALL,
+        );
+
+        return $this->renderStorefront('@Storefront/storefront/page/content/detail.html.twig', [
+            'cmsPage' => $cmsPage,
+        ]);
+    }
+
+    /**
      * Renders a Neos-authored page (fetched from Neos by its bare content path) as a Shopware
      * storefront page. Shared by the navigation-extension fallback route (index(), path taken
      * from the current request) and PreviewController::loadPagePreview() (path taken from a
@@ -160,16 +216,7 @@ class NeosPageController extends StorefrontController
             );
         }
 
-        $sections = $neosContentResult->getSections();
-        $resolverContext = $this->resolverContextService->getResolverContextForEntityNameAndId(
-            entityName: CategoryDefinition::ENTITY_NAME,
-            entityId: $salesChannelContext->getSalesChannel()->getNavigationCategoryId(),
-            context: $salesChannelContext,
-            request: $request,
-        );
-        $this->contentExchangeService->loadSlotData($sections->getBlocks(), $resolverContext);
-        $cmsPage = new CmsPageEntity();
-        $cmsPage->setSections($sections);
+        $cmsPage = $this->buildCmsPageFromContentResult($neosContentResult, $request, $salesChannelContext);
 
         try {
             $breadcrumb = $this->neosPageTreeService->findAncestorChainForPathAndContext($pathInfo, $salesChannelContext);
@@ -243,6 +290,26 @@ class NeosPageController extends StorefrontController
             'navigationExtensionDisabled' => $navigationExtensionDisabled,
             'breadcrumb' => $breadcrumbItems,
         ]);
+    }
+
+    private function buildCmsPageFromContentResult(
+        NeosContentResult $neosContentResult,
+        Request $request,
+        SalesChannelContext $salesChannelContext
+    ): CmsPageEntity {
+        $sections = $neosContentResult->getSections();
+        $resolverContext = $this->resolverContextService->getResolverContextForEntityNameAndId(
+            entityName: CategoryDefinition::ENTITY_NAME,
+            entityId: $salesChannelContext->getSalesChannel()->getNavigationCategoryId(),
+            context: $salesChannelContext,
+            request: $request,
+        );
+        $this->contentExchangeService->loadSlotData($sections->getBlocks(), $resolverContext);
+
+        $cmsPage = new CmsPageEntity();
+        $cmsPage->setSections($sections);
+
+        return $cmsPage;
     }
 
     /**
