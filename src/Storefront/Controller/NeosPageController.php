@@ -16,6 +16,7 @@ use nlxNeosContent\Neos\HeadTag\NeosHeadDataFactory;
 use nlxNeosContent\Service\ContentExchangeService;
 use nlxNeosContent\Service\NeosPageTreeService;
 use nlxNeosContent\Service\ResolverContextService;
+use nlxNeosContent\Service\ShopwareLinkRedirectResolver;
 use nlxNeosContent\Twig\NeosPagePathExtension;
 use Shopware\Core\Content\Category\CategoryDefinition;
 use Shopware\Core\Content\Category\CategoryEntity;
@@ -66,6 +67,7 @@ class NeosPageController extends StorefrontController
         #[Autowire(service: 'sales_channel.category.repository')]
         private readonly SalesChannelRepository $categoryRepository,
         private readonly NeosPagePathExtension $neosPagePathExtension,
+        private readonly ShopwareLinkRedirectResolver $shopwareLinkRedirectResolver,
     ) {
     }
 
@@ -190,6 +192,17 @@ class NeosPageController extends StorefrontController
             $statusCode = $request->isMethod('POST') ? Response::HTTP_SEE_OTHER : $neosContentResult->getStatusCode();
 
             $redirectPathInfo = $neosContentResult->getRedirectPathInfo();
+            $currentDomain = $this->contentExchangeService->getCurrentDomain($salesChannelContext);
+
+            $shopwareLinkTarget = $this->shopwareLinkRedirectResolver->resolve(
+                $redirectPathInfo,
+                $currentDomain->getUrl(),
+                $salesChannelContext
+            );
+            if ($shopwareLinkTarget !== null) {
+                return new RedirectResponse($shopwareLinkTarget, $statusCode);
+            }
+
             if (parse_url($redirectPathInfo, PHP_URL_SCHEME) !== null) {
                 // Already a full, external URL (ContentExchangeService::extractRedirectPathInfo()
                 // only hands back an absolute URL for a target outside this Neos - re-rooting it
@@ -202,7 +215,6 @@ class NeosPageController extends StorefrontController
             // determines locale from the domain's own path prefix (e.g. "/de"), so that prefix
             // has to be restored or the browser lands on whatever locale Shopware falls back to
             // for a prefix-less path instead of the one it was already on.
-            $currentDomain = $this->contentExchangeService->getCurrentDomain($salesChannelContext);
             $redirectTarget = rtrim($currentDomain->getUrl(), '/') . '/' . ltrim($redirectPathInfo, '/');
 
             return new RedirectResponse($redirectTarget, $statusCode);
