@@ -78,6 +78,10 @@ class NeosPageController extends StorefrontController
         defaults: [
             '_routeScope' => ['storefront'],
             PlatformRequest::ATTRIBUTE_HTTP_CACHE => true,
+            // Neos pages are content/CMS, not checkout - same reasoning Shopware's own
+            // frontend.maintenance.singlepage applies to keep CMS pages (imprint, privacy, ...)
+            // reachable while maintenance mode blocks the shop itself.
+            PlatformRequest::ATTRIBUTE_IS_ALLOWED_IN_MAINTENANCE => true,
         ],
         methods: ['GET', 'POST'],
     )]
