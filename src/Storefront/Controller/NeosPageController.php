@@ -414,10 +414,12 @@ class NeosPageController extends StorefrontController
     private function prependDomainPathUnlessPresent(string $domainUrl, string $path): string
     {
         $path = ltrim($path, '/');
-        $domainPath = trim((string) parse_url($domainUrl, PHP_URL_PATH), '/');
+        $domainUrlParts = parse_url($domainUrl);
+        $domainPath = trim($domainUrlParts['path'] ?? '', '/');
 
         if ($domainPath !== '' && preg_match('#^' . preg_quote($domainPath, '#') . '(?:[/?\#]|$)#i', $path) === 1) {
-            $origin = (string) preg_replace('#^([a-z][a-z0-9+.-]*://[^/]+).*$#i', '$1', $domainUrl);
+            $origin = $domainUrlParts['scheme'] . '://' . $domainUrlParts['host']
+                . (isset($domainUrlParts['port']) ? ':' . $domainUrlParts['port'] : '');
 
             return $origin . '/' . $path;
         }
