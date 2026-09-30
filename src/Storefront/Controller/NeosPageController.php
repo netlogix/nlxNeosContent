@@ -215,13 +215,10 @@ class NeosPageController extends StorefrontController
                 return new RedirectResponse($redirectPathInfo, $statusCode);
             }
 
-            // A bare, locale-agnostic path Neos deals in internally - Shopware's own routing here
-            // determines locale from the domain's own path prefix (e.g. "/de"), so that prefix
-            // has to be restored or the browser lands on whatever locale Shopware falls back to
-            // for a prefix-less path instead of the one it was already on.
-            $redirectTarget = rtrim($currentDomain->getUrl(), '/') . '/' . ltrim($redirectPathInfo, '/');
-
-            return new RedirectResponse($redirectTarget, $statusCode);
+            return new RedirectResponse(
+                $this->prependDomainPathUnlessPresent($currentDomain->getUrl(), $redirectPathInfo),
+                $statusCode
+            );
         }
 
         if ($neosContentResult instanceof NeosAssetResult) {
@@ -408,6 +405,26 @@ class NeosPageController extends StorefrontController
         }
 
         return $headTags;
+    }
+
+    /**
+     * Shopware's routing determines the locale from the domain's own path prefix (e.g. "/de"), so
+     * a bare Neos path needs that prefix restored. Neos may already have put it there though.
+     */
+    private function prependDomainPathUnlessPresent(string $domainUrl, string $path): string
+    {
+        $path = ltrim($path, '/');
+        $domainUrlParts = parse_url($domainUrl);
+        $domainPath = trim($domainUrlParts['path'] ?? '', '/');
+
+        if ($domainPath !== '' && preg_match('#^' . preg_quote($domainPath, '#') . '(?:[/?\#]|$)#i', $path) === 1) {
+            $origin = $domainUrlParts['scheme'] . '://' . $domainUrlParts['host']
+                . (isset($domainUrlParts['port']) ? ':' . $domainUrlParts['port'] : '');
+
+            return $origin . '/' . $path;
+        }
+
+        return rtrim($domainUrl, '/') . '/' . $path;
     }
 
     private function hasFormLikeRequestStructure(Request $request): bool
