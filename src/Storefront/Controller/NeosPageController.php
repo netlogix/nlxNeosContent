@@ -17,7 +17,6 @@ use nlxNeosContent\Service\ContentExchangeService;
 use nlxNeosContent\Service\NeosPageTreeService;
 use nlxNeosContent\Service\ResolverContextService;
 use nlxNeosContent\Service\ShopwareLinkRedirectResolver;
-use nlxNeosContent\Twig\NeosPagePathExtension;
 use Shopware\Core\Content\Category\CategoryDefinition;
 use Shopware\Core\Content\Category\CategoryEntity;
 use Shopware\Core\Content\Category\SalesChannel\NavigationRoute;
@@ -66,7 +65,6 @@ class NeosPageController extends StorefrontController
         private readonly JsonLdUrlRewriter $jsonLdUrlRewriter,
         #[Autowire(service: 'sales_channel.category.repository')]
         private readonly SalesChannelRepository $categoryRepository,
-        private readonly NeosPagePathExtension $neosPagePathExtension,
         private readonly ShopwareLinkRedirectResolver $shopwareLinkRedirectResolver,
     ) {
     }
@@ -282,26 +280,13 @@ class NeosPageController extends StorefrontController
         $this->cacheTagCollector->addTag(...$breadcrumbTags);
 
         $breadcrumb = $this->prependHomeCategoryBreadcrumbItem($breadcrumb, $salesChannelContext);
-        // Resolving the url only for the (few) items actually rendered here, not eagerly
-        // for the whole tree - the tree-sourced NeosPageDTOs otherwise leave it null.
-        $breadcrumbItems = array_map(
-            fn (NeosPageDTO $item): NeosPageDTO => new NeosPageDTO(
-                identifier: $item->identifier,
-                label: $item->label,
-                path: $item->path,
-                children: $item->children,
-                hiddenInIndex: $item->hiddenInIndex,
-                url: $this->neosPagePathExtension->getNeosPageUrl($item->path),
-            ),
-            iterator_to_array($breadcrumb)
-        );
 
         return $this->renderStorefront('@Storefront/storefront/page/neosPage.html.twig', [
             'page' => $page,
             'cmsPage' => $cmsPage,
             'landingPage' => [],
             'navigationExtensionDisabled' => $navigationExtensionDisabled,
-            'breadcrumb' => $breadcrumbItems,
+            'breadcrumb' => iterator_to_array($breadcrumb),
         ]);
     }
 

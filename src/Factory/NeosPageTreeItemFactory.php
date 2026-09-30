@@ -11,7 +11,6 @@ use Psr\Log\LoggerInterface;
 use Shopware\Core\Content\Category\CategoryEntity;
 use Shopware\Core\Content\Category\SalesChannel\SalesChannelCategoryEntity;
 use Shopware\Core\Content\Category\Tree\TreeItem;
-use Shopware\Core\Content\Seo\SeoUrlPlaceholderHandler;
 
 class NeosPageTreeItemFactory
 {
@@ -57,13 +56,7 @@ class NeosPageTreeItemFactory
         $category->setId(str_replace('-', '', $page->identifier));
         $category->setName($page->label);
         $category->setType('neos-entrypoint');
-        $category->setSeoUrl(
-            sprintf(
-                '%s/%s#',
-                SeoUrlPlaceholderHandler::DOMAIN_PLACEHOLDER,
-                trim($page->path, '/')
-            )
-        );
+        $category->setSeoUrl($page->getUrl());
         $category->setTranslated([
                 "breadcrumb" => [],
                 "name" => $category->getName(),
