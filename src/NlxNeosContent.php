@@ -8,9 +8,11 @@ use Doctrine\DBAL\Connection;
 use nlxNeosContent\Core\Notification\NotificationService;
 use nlxNeosContent\Core\Notification\NotificationService66;
 use nlxNeosContent\Core\Notification\NotificationServiceInterface;
+use nlxNeosContent\Neos\Endpoint\CachedNeosPageTreeLoader;
 use nlxNeosContent\Service\NeosAuthorizationRoleService;
 use nlxNeosContent\Service\NeosCmsPageLifecycleService;
 use RuntimeException;
+use Shopware\Core\Framework\Adapter\Cache\CacheInvalidator;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\Feature;
 use Shopware\Core\Framework\Plugin;
@@ -52,6 +54,9 @@ class NlxNeosContent extends Plugin implements CompilerPassInterface
                 $neosAuthorizationRoleService->refreshNeosViewerRole($context);
                 $neosAuthorizationRoleService->refreshNeosEditorRole($context);
             });
+
+        // Cached page trees hold serialized NeosPageDTOs, which may not match the updated class.
+        $this->getCacheInvalidator()->invalidate([CachedNeosPageTreeLoader::CACHE_KEY], true);
     }
 
     function build(ContainerBuilder $container): void
@@ -118,6 +123,19 @@ class NlxNeosContent extends Plugin implements CompilerPassInterface
             $container->get('acl_role.repository'),
             $container->get('acl_user_role.repository')
         );
+    }
+
+    private function getCacheInvalidator(): CacheInvalidator
+    {
+        $container = $this->container;
+        if (!$container instanceof ContainerInterface) {
+            throw new RuntimeException('Container is not an instance of ContainerInterface');
+        }
+
+        $cacheInvalidator = $container->get(CacheInvalidator::class);
+        assert($cacheInvalidator instanceof CacheInvalidator);
+
+        return $cacheInvalidator;
     }
 
     private function getNeosCmsPageLifecycleService(): NeosCmsPageLifecycleService

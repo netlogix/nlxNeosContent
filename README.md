@@ -35,6 +35,24 @@ own routing stays authoritative there.
 
 Enable or disable this behavior per sales channel via the plugin's `extendNavigation` setting.
 
+### Custom fields of Neos pages
+
+Neos pages can carry installation specific data for the navigation, e.g. a teaser text and image
+for a flyout menu. The plugin copies the `customFields` of every page in Neos's page tree into the
+custom fields of the navigation category built from it, so a theme can use them like the custom
+fields of any other category:
+
+```twig
+{% set teaserText = treeItem.category.translated.customFields.teaserText ?? null %}
+{% if teaserText %}
+    <p>{{ teaserText }}</p>
+{% endif %}
+```
+
+The fields are added on the Neos side, see "Adding custom fields to pages of the page tree" in the
+README of `netlogix/neos-shopware`. Their values are passed through unchanged, so escape them in the
+template as usual.
+
 ## SEO redirects
 
 Renaming or moving a Shopware category/product leaves its old SEO URL in place as a redirect to

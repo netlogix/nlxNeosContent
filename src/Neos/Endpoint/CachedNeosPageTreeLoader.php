@@ -18,12 +18,6 @@ readonly class CachedNeosPageTreeLoader extends AbstractNeosPageTreeLoader
 {
     public const CACHE_KEY = 'netlogix_neos_content_neos_page_tree';
     private const CACHE_TTL = 86400;
-    /**
-     * Part of the cache key only, so trees cached with an older shape of NeosPageDTO are
-     * not unserialized into objects with uninitialized properties. Raise it whenever
-     * NeosPageDTO changes.
-     */
-    private const CACHE_VERSION = 2;
 
     public function __construct(
         #[AutowireDecorated]
@@ -108,6 +102,6 @@ readonly class CachedNeosPageTreeLoader extends AbstractNeosPageTreeLoader
 
     private function cacheKey(string $salesChannelId, string $languageId): string
     {
-        return self::CACHE_KEY . '-v' . self::CACHE_VERSION . '-' . $salesChannelId . '-' . $languageId;
+        return self::CACHE_KEY . '-' . $salesChannelId . '-' . $languageId;
     }
 }
