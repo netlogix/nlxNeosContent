@@ -14,6 +14,8 @@ use Shopware\Core\Content\Category\Tree\TreeItem;
 
 class NeosPageTreeItemFactory
 {
+    public const FLYOUT_IMAGE_CUSTOM_FIELD = 'nlxNeosFlyoutImage';
+
     public function __construct(
         private readonly LoggerInterface $logger
     )
@@ -57,16 +59,18 @@ class NeosPageTreeItemFactory
         $category->setName($page->label);
         $category->setType('neos-entrypoint');
         $category->setSeoUrl($page->getUrl());
+        $customFields = $page->flyoutImage === null ? [] : [self::FLYOUT_IMAGE_CUSTOM_FIELD => $page->flyoutImage];
+        $category->setCustomFields($customFields);
         $category->setTranslated([
                 "breadcrumb" => [],
                 "name" => $category->getName(),
-                "customFields" => [],
+                "customFields" => $customFields,
                 "slotConfig" => [],
                 "linkType" => 'link',
                 "internalLink" => null,
                 "externalLink" => null,
                 "linkNewTab" => true,
-                "description" => null,
+                "description" => $page->flyoutText === null ? null : "<p>" . nl2br(htmlspecialchars($page->flyoutText), false) . "</p>",
                 "metaTitle" => null,
                 "metaDescription" => null,
                 "keywords" => null,

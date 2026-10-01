@@ -10,6 +10,8 @@ readonly class NeosPageDTO
 {
     /**
      * @param string $path Content path of the page, or an absolute URL for shortcuts to external targets
+     * @param ?string $flyoutText Plain text shown in the navigation flyout of this page
+     * @param ?string $flyoutImage Absolute URL of the image shown in the navigation flyout of this page
      */
     function __construct(
         public string $identifier,
@@ -17,6 +19,8 @@ readonly class NeosPageDTO
         public string $path,
         public NeosPageCollection $children,
         public bool $hiddenInIndex = false,
+        public ?string $flyoutText = null,
+        public ?string $flyoutImage = null,
     ) {
     }
 
