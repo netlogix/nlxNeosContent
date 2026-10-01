@@ -80,6 +80,12 @@ Shopware.Component.register('neos-index', {
         Shopware.Store.get('adminMenu').collapseSidebar();
         this._isUnmounted = false;
         this._onWindowMessage = (event) => {
+            if (!this.$refs.iframe || event.source !== this.$refs.iframe.contentWindow) {
+                return;
+            }
+            if (event.data && event.data.type === 'nlxUserActivity') {
+                Shopware.Service('userActivityService').updateLastUserActivity();
+            }
             if (event.data && event.data.type === 'nlxOpenCmsPage') {
                 this.$router.push({
                     name: 'sw.cms.detail',
