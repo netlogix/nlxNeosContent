@@ -10,6 +10,7 @@ readonly class NeosPageDTO
 {
     /**
      * @param string $path Content path of the page, or an absolute URL for shortcuts to external targets
+     * @param array<string, mixed> $customFields Installation specific data of the page, added on the Neos side
      */
     function __construct(
         public string $identifier,
@@ -17,6 +18,7 @@ readonly class NeosPageDTO
         public string $path,
         public NeosPageCollection $children,
         public bool $hiddenInIndex = false,
+        public array $customFields = [],
     ) {
     }
 

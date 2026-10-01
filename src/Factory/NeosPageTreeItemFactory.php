@@ -57,10 +57,11 @@ class NeosPageTreeItemFactory
         $category->setName($page->label);
         $category->setType('neos-entrypoint');
         $category->setSeoUrl($page->getUrl());
+        $category->setCustomFields($page->customFields);
         $category->setTranslated([
                 "breadcrumb" => [],
                 "name" => $category->getName(),
-                "customFields" => [],
+                "customFields" => $page->customFields,
                 "slotConfig" => [],
                 "linkType" => 'link',
                 "internalLink" => null,
