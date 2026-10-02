@@ -24,10 +24,17 @@ readonly class NeosPageDTO
 
     public function getUrl(): string
     {
-        if (parse_url($this->path, PHP_URL_SCHEME) !== null) {
+        if (self::isExternalUrl($this->path)) {
             return $this->path;
         }
 
         return sprintf('%s/%s#', SeoUrlPlaceholderHandler::DOMAIN_PLACEHOLDER, trim($this->path, '/'));
+    }
+
+    public static function isExternalUrl(string $path): bool
+    {
+        $scheme = parse_url($path, PHP_URL_SCHEME);
+
+        return \is_string($scheme) && !\in_array(strtolower($scheme), ['javascript', 'vbscript', 'data'], true);
     }
 }
