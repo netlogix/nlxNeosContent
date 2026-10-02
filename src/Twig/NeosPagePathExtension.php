@@ -62,6 +62,10 @@ class NeosPagePathExtension extends AbstractExtension
      */
     public function getNeosPageUrl(string $path): string
     {
+        if (parse_url($path, PHP_URL_SCHEME) !== null) {
+            return $path;
+        }
+
         return $this->getSalesChannelBaseUrl() . '/' . ltrim($path, '/');
     }
 
