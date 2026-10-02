@@ -3,11 +3,13 @@ import './nlx-neos-page-select.scss';
 
 const { debounce } = Shopware.Utils;
 
-let pageTreeRequest = null;
+const pageTreeRequests = {};
 
 function loadPageTree(nlxNeosContentApiService) {
-    if (!pageTreeRequest) {
-        pageTreeRequest = nlxNeosContentApiService.getNeosPageTree().then((response) => {
+    const languageId = Shopware.Context.api.languageId;
+
+    if (!pageTreeRequests[languageId]) {
+        pageTreeRequests[languageId] = nlxNeosContentApiService.getNeosPageTree().then((response) => {
             if (!response.success) {
                 return [];
             }
@@ -17,7 +19,7 @@ function loadPageTree(nlxNeosContentApiService) {
         });
     }
 
-    return pageTreeRequest;
+    return pageTreeRequests[languageId];
 }
 
 function flattenPages(pages, result = []) {
