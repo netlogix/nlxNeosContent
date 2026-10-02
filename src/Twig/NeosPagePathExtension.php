@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace nlxNeosContent\Twig;
 
 use nlxNeosContent\Error\Routing\UnknownNeosPathException;
+use nlxNeosContent\Neos\DTO\NeosPageDTO;
 use nlxNeosContent\Service\NeosPageTreeService;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -62,7 +63,7 @@ class NeosPagePathExtension extends AbstractExtension
      */
     public function getNeosPageUrl(string $path): string
     {
-        if (parse_url($path, PHP_URL_SCHEME) !== null) {
+        if (NeosPageDTO::isExternalUrl($path)) {
             return $path;
         }
 
