@@ -33,6 +33,8 @@ readonly class NeosPageDTO
 
     public static function isExternalUrl(string $path): bool
     {
-        return \in_array(strtolower((string) parse_url($path, PHP_URL_SCHEME)), ['http', 'https', 'mailto', 'tel'], true);
+        $scheme = parse_url($path, PHP_URL_SCHEME);
+
+        return \is_string($scheme) && !\in_array(strtolower($scheme), ['javascript', 'vbscript', 'data'], true);
     }
 }
