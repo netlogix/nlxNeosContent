@@ -308,11 +308,15 @@ class NeosPageController extends StorefrontController
         NeosPageCollection $breadcrumb,
         SalesChannelContext $salesChannelContext
     ): NeosPageCollection {
+        $salesChannel = $salesChannelContext->getSalesChannel();
+
         return new NeosPageCollection(
             new NeosPageDTO(
-                $salesChannelContext->getSalesChannel()->getNavigationCategoryId(),
-                $salesChannelContext->getSalesChannel()->getHomeName(), '',
-                new NeosPageCollection()),
+                identifier: $salesChannel->getNavigationCategoryId(),
+                label: $salesChannel->getTranslation('homeName') ?: $this->trans('general.homeLink'),
+                path: '',
+                children: new NeosPageCollection(),
+            ),
             ...iterator_to_array($breadcrumb)
         );
     }
