@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace nlxNeosContent\Service;
 
 use nlxNeosContent\Error\RequestError\NeosContentFetchException;
+use nlxNeosContent\Neos\DTO\NeosResults\NeosAssetResult;
 use nlxNeosContent\Neos\DTO\NeosResults\NeosContentResult;
 use nlxNeosContent\Neos\DTO\NeosResults\NeosRedirectResult;
 use Shopware\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockCollection;
@@ -43,6 +44,7 @@ class ContentExchangeService
         private readonly HttpClientInterface $neosClient,
         #[Autowire(service: 'cache.object')]
         private readonly TagAwareCacheInterface $cache,
+        private readonly ConfigService $configService,
     ) {
     }
 
@@ -82,7 +84,7 @@ class ContentExchangeService
         );
     }
 
-    public function fetchCmsSectionsFromNeosByPath(string $pathInfo, SalesChannelContext $salesChannelContext): NeosContentResult|NeosRedirectResult
+    public function fetchCmsSectionsFromNeosByPath(string $pathInfo, SalesChannelContext $salesChannelContext): NeosContentResult|NeosRedirectResult|NeosAssetResult
     {
         $uri = self::CONTENT_BY_PATH_URI_PREFIX . trim($pathInfo, '/');
         $response = $this->neosClient->request('GET', $uri, [
@@ -93,7 +95,7 @@ class ContentExchangeService
         return $this->handleContentByPathResponse($response);
     }
 
-    public function submitFormToNeosByPath(string $pathInfo, Request $request, SalesChannelContext $salesChannelContext): NeosContentResult|NeosRedirectResult
+    public function submitFormToNeosByPath(string $pathInfo, Request $request, SalesChannelContext $salesChannelContext): NeosContentResult|NeosRedirectResult|NeosAssetResult
     {
         $contentType = $request->headers->get('Content-Type', '');
 
@@ -138,14 +140,28 @@ class ContentExchangeService
         return $mapped;
     }
 
-    private function handleContentByPathResponse(ResponseInterface $response): NeosContentResult|NeosRedirectResult
+    private function handleContentByPathResponse(ResponseInterface $response): NeosContentResult|NeosRedirectResult|NeosAssetResult
     {
         $statusCode = $response->getStatusCode();
         if ($statusCode >= 300 && $statusCode < 400) {
-            return new NeosRedirectResult(redirectPathInfo: $this->extractRedirectPathInfo($response));
+            return new NeosRedirectResult(
+                redirectPathInfo: $this->extractRedirectPathInfo($response),
+                statusCode: $statusCode,
+            );
         }
 
-        return $this->serializer->denormalize($response->getContent(), NeosContentResult::class, 'json');
+        // Throws for a 4xx/5xx status, same as before this method gained an asset branch.
+        $content = $response->getContent();
+
+        $contentType = $response->getHeaders(false)['content-type'][0] ?? '';
+        if (!str_starts_with($contentType, 'application/json')) {
+            // Not the CMS-page JSON envelope - e.g. a Neos asset served directly at this path.
+            // NeosContentResultDenormalizer treats invalid JSON as an empty page instead of
+            // throwing, so that can't be relied on to tell the two apart.
+            return new NeosAssetResult(content: $content, statusCode: $statusCode, contentType: $contentType);
+        }
+
+        return $this->serializer->denormalize($content, NeosContentResult::class, 'json');
     }
 
     private function buildSwHeaders(SalesChannelContext $salesChannelContext): array
@@ -224,13 +240,34 @@ class ContentExchangeService
             throw new NeosContentFetchException('Neos responded with a redirect but did not provide a Location header.');
         }
 
-        $path = (string) parse_url($location, PHP_URL_PATH);
-        $prefixPosition = strpos($path, self::CONTENT_BY_PATH_URI_PREFIX);
-        if ($prefixPosition === false) {
-            throw new NeosContentFetchException(sprintf('Neos redirected to an unexpected location "%s".', $location));
+        $locationHost = parse_url($location, PHP_URL_HOST);
+        if ($locationHost !== null && $locationHost !== parse_url($this->configService->getBaseUrl(), PHP_URL_HOST)) {
+            // Genuinely external - Neos itself didn't rewrite this into the content-by-path
+            // scheme (see ShopwareApiRedirectMiddleware's own host check), so it isn't a path on
+            // this site at all. Hand it back exactly as given rather than stripping it down to a
+            // bare path and re-rooting it under Shopware's own domain, which would turn a real
+            // external target (a different site or service entirely) into a broken, made-up URL.
+            return $location;
         }
 
-        return '/' . substr($path, $prefixPosition + strlen(self::CONTENT_BY_PATH_URI_PREFIX));
+        $path = (string) parse_url($location, PHP_URL_PATH);
+        $prefixPosition = strpos($path, self::CONTENT_BY_PATH_URI_PREFIX);
+        if ($prefixPosition !== false) {
+            $path = substr($path, $prefixPosition + strlen(self::CONTENT_BY_PATH_URI_PREFIX));
+        }
+
+        //Not every redirect Neos issues preserves the content-by-path prefix (e.g. core
+        //Neos.Neos controller code that isn't aware of ApiVariantNodeUriService) - a plain
+        //frontend path is just as valid a redirect target, so accept it as-is.
+        $path = ltrim($path, '/');
+        if ($path === '') {
+            // parse_url() returns null/false for a malformed or path-less Location (e.g. just
+            // a host) - that's not a valid content-by-path target, so surface it as an error
+            // instead of silently redirecting to the site root.
+            throw new NeosContentFetchException(sprintf('Neos redirected to a location with no usable path: "%s".', $location));
+        }
+
+        return '/' . $path;
     }
 
     /**

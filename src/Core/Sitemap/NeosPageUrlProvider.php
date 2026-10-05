@@ -6,9 +6,9 @@ namespace nlxNeosContent\Core\Sitemap;
 
 use nlxNeosContent\Error\Sitemap\OffsetPagingNotSupportedException;
 use nlxNeosContent\Error\Sitemap\PageTreeCouldNotBeLoaddedException;
-use nlxNeosContent\Neos\Endpoint\AbstractNeosPageTreeLoader;
 use nlxNeosContent\Neos\DTO\NeosPageCollection;
 use nlxNeosContent\Neos\DTO\NeosPageDTO;
+use nlxNeosContent\Service\NeosPageTreeService;
 use Shopware\Core\Content\Sitemap\Provider\AbstractUrlProvider;
 use Shopware\Core\Content\Sitemap\Struct\Url;
 use Shopware\Core\Content\Sitemap\Struct\UrlResult;
@@ -20,7 +20,7 @@ use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 class NeosPageUrlProvider extends AbstractUrlProvider
 {
     public function __construct(
-        private readonly AbstractNeosPageTreeLoader $loader,
+        private readonly NeosPageTreeService $neosPageTreeService,
     ) {
     }
 
@@ -41,7 +41,7 @@ class NeosPageUrlProvider extends AbstractUrlProvider
         }
 
         try {
-            $tree = $this->loader->load($context);
+            $tree = $this->neosPageTreeService->loadTreeForContext($context);
         } catch (\Throwable $e) {
             throw new PageTreeCouldNotBeLoaddedException(code: 1738078146, previous: $e);
         }

@@ -5,12 +5,17 @@ declare(strict_types=1);
 namespace nlxNeosContent\Neos\Endpoint;
 
 use nlxNeosContent\Neos\DTO\NeosPageCollection;
-use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 readonly abstract class AbstractNeosPageTreeLoader
 {
     public function getDecorated(): AbstractNeosPageTreeLoader {
         return $this;
     }
-    abstract function load(SalesChannelContext $salesChannelContext): NeosPageCollection;
+    abstract function load(string $salesChannelId, string $languageId): NeosPageCollection;
+
+    /**
+     * @param list<array{string, string}> $requests salesChannelId, languageId tuples
+     * @return list<NeosPageTreeLoadResult> one result per request, order not guaranteed, never throws per-request
+     */
+    abstract function loadMany(array $requests): array;
 }

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace nlxNeosContent\Listener\NavigationExtension;
 
 use nlxNeosContent\Factory\NeosPageTreeItemFactory;
-use nlxNeosContent\Neos\Endpoint\AbstractNeosPageTreeLoader;
 use nlxNeosContent\Service\ConfigService;
+use nlxNeosContent\Service\NeosPageTreeService;
 use Shopware\Core\Content\Category\Event\NavigationLoadedEvent;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 
@@ -14,7 +14,7 @@ use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 readonly class NavigationLoadedListener
 {
     public function __construct(
-        private AbstractNeosPageTreeLoader $neosPageTreeLoader,
+        private NeosPageTreeService $neosPageTreeService,
         private NeosPageTreeItemFactory $neosPageTreeItemFactory,
         private ConfigService $configService,
     ) {
@@ -33,7 +33,7 @@ readonly class NavigationLoadedListener
         $navigation = $navigationLoadedEvent->getNavigation();
         $tree = $navigation->getTree();
 
-        $pages = $this->neosPageTreeLoader->load(
+        $pages = $this->neosPageTreeService->loadTreeForContext(
             $navigationLoadedEvent->getSalesChannelContext()
         );
         $pages = iterator_to_array($this->neosPageTreeItemFactory->create($pages));

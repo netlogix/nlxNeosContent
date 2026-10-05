@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace nlxNeosContent\Neos\Endpoint;
 
 use nlxNeosContent\Neos\DTO\NeosPageCollection;
+use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\Plugin\Exception\DecorationPatternException;
-use Shopware\Core\System\SalesChannel\Aggregate\SalesChannelDomain\SalesChannelDomainEntity;
-use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\DependencyInjection\Attribute\AsAlias;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Serializer\Normalizer\UnwrappingDenormalizer;
@@ -17,11 +16,21 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 #[AsAlias(AbstractNeosPageTreeLoader::class)]
 readonly class NeosPageTreeLoader extends AbstractNeosPageTreeLoader
 {
+    /**
+     * Bounds a single tree's worst-case latency when fetching SEVERAL concurrently
+     * (loadMany() with more than one request) - without it, one slow/cold domain
+     * could block the whole batch. A lone request (the common real-storefront-404
+     * fast path) gets no such ceiling - it's no different from load(), which has
+     * never had one, and doesn't need protecting from a batch it isn't part of.
+     */
+    private const CONCURRENT_REQUEST_TIMEOUT = 3.0;
+
     function __construct(
         #[Autowire(service: 'nlx-neos-content.neos-client')]
         private HttpClientInterface $neosClient,
         #[Autowire(service: 'serializer')]
         private SerializerInterface $serializer,
+        private LoggerInterface $logger,
     ) {
     }
 
@@ -30,29 +39,58 @@ readonly class NeosPageTreeLoader extends AbstractNeosPageTreeLoader
         throw new DecorationPatternException(self::class);
     }
 
-    public function load(SalesChannelContext $salesChannelContext): NeosPageCollection
+    public function load(string $salesChannelId, string $languageId): NeosPageCollection
     {
-        $domain = $salesChannelContext->getSalesChannel()
-            ->getDomains()
-            ->filter(fn (SalesChannelDomainEntity $domain) => $domain->getId() === $salesChannelContext->getDomainId()
-                || $domain->getLanguageId() === $salesChannelContext->getLanguageId())
-            ->first();
-
-        if (!$domain instanceof SalesChannelDomainEntity) {
-            throw new \InvalidArgumentException("The salesChannelContext doesn't contain the relevant domain.", code: 1786620843);
-        }
-
         $response = $this->neosClient->request('GET', 'neos/shopware-api/pagetree', [
             'headers' => [
-                'x-sw-sales-channel-id' => $salesChannelContext->getSalesChannelId(),
-                'x-sw-language-id' => $salesChannelContext->getLanguageId(),
-                'x-sw-sales-channel-domain' => $domain->getUrl(),
-                'x-sw-context-token' => $salesChannelContext->getSalesChannel()->getAccessKey()
+                'x-sw-sales-channel-id' => $salesChannelId,
+                'x-sw-language-id' => $languageId,
             ]
         ]);
 
         return $this->serializer->deserialize($response->getContent(), NeosPageCollection::class, 'json', [
             UnwrappingDenormalizer::UNWRAP_PATH => '[pages]'
         ]);
+    }
+
+    public function loadMany(array $requests): array
+    {
+        $requestOptions = count($requests) > 1 ? ['timeout' => self::CONCURRENT_REQUEST_TIMEOUT] : [];
+
+        $pending = [];
+        foreach ($requests as $request) {
+            [$salesChannelId, $languageId] = $request;
+            $response = $this->neosClient->request('GET', 'neos/shopware-api/pagetree', [
+                'headers' => [
+                    'x-sw-sales-channel-id' => $salesChannelId,
+                    'x-sw-language-id' => $languageId,
+                ],
+                ...$requestOptions,
+            ]);
+            $pending[] = [$request, $response];
+        }
+
+        // Requests above were only started, not awaited - Symfony's HttpClient runs them
+        // concurrently under the hood, so this loop's total wait is ~one round trip, not N.
+        $results = [];
+        foreach ($pending as [$request, $response]) {
+            [$salesChannelId, $languageId] = $request;
+
+            try {
+                $tree = $this->serializer->deserialize($response->getContent(), NeosPageCollection::class, 'json', [
+                    UnwrappingDenormalizer::UNWRAP_PATH => '[pages]'
+                ]);
+                $results[] = new NeosPageTreeLoadResult($salesChannelId, $languageId, $tree);
+            } catch (\Throwable $e) {
+                // Signals a failed fetch, not a genuinely empty tree - CachedNeosPageTreeLoader
+                // must not cache this as if Neos really had no pages here. Logged here, same as
+                // load()'s single-tree failures are by CachedNeosPageTreeLoader's own catch -
+                // loadMany()'s per-candidate failures never reach that one.
+                $this->logger->error($e, ['salesChannelId' => $salesChannelId, 'languageId' => $languageId]);
+                $results[] = new NeosPageTreeLoadResult($salesChannelId, $languageId, new NeosPageCollection(), failed: true);
+            }
+        }
+
+        return $results;
     }
 }

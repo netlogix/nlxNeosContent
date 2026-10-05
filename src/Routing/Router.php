@@ -5,11 +5,21 @@ declare(strict_types=1);
 namespace nlxNeosContent\Routing;
 
 use nlxNeosContent\Service\ConfigService;
+use nlxNeosContent\Service\NeosPageTreeService;
 use nlxNeosContent\Storefront\Controller\NeosPageController;
+use Shopware\Core\Defaults;
+use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\NotFilter;
 use Shopware\Core\PlatformRequest;
+use Shopware\Core\System\SalesChannel\SalesChannelCollection;
+use Shopware\Core\System\SalesChannel\SalesChannelEntity;
 use Symfony\Component\DependencyInjection\Attribute\AsDecorator;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\DependencyInjection\Attribute\AutowireDecorated;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\CacheWarmer\WarmableInterface;
 use Symfony\Component\Routing\RequestContext;
 use Symfony\Component\Routing\RouteCollection;
@@ -18,11 +28,17 @@ use Symfony\Component\Routing\RouterInterface;
 #[AsDecorator('router')]
 readonly class Router implements RouterInterface, WarmableInterface
 {
+    /**
+     * @param EntityRepository<SalesChannelCollection> $salesChannelRepository
+     */
     function __construct(
         #[AutowireDecorated]
         private readonly RouterInterface $inner,
         #[Autowire(service: ConfigService::class)]
         private readonly ConfigService $configService,
+        private readonly RequestStack $requestStack,
+        private readonly NeosPageTreeService $neosPageTreeService,
+        private readonly EntityRepository $salesChannelRepository,
     ) {
     }
 
@@ -51,15 +67,28 @@ readonly class Router implements RouterInterface, WarmableInterface
         try {
             return $this->inner->match($pathinfo);
         } catch (\Exception $e) {
-            if (
-                !$this->configService->isEnabled() ||
-                !$this->configService->isNavigationExtensionEnabled()
-            ) {
+            // Deliberately not also checking isNavigationExtensionEnabled() here: without a
+            // request in scope yet, we can't know which sales channel it'd need to be checked
+            // for, and checking the global default would wrongly block/allow every channel
+            // the same way regardless of its own override. resolveCandidateTreeArgs() checks
+            // it per candidate sales channel instead - the only place that's actually correct.
+            if (!$this->configService->isEnabled()) {
                 throw $e;
             }
             try {
                 return $this->matchNeosPath($pathinfo);
             } catch (\Exception) {
+            }
+
+            if ($this->currentStorefrontSalesChannelId() !== null) {
+                // Neither Shopware nor the cached tree has anything for this path. Don't give up
+                // yet - Neos may still know a redirect or asset for it that never made it into
+                // the (page-only) tree. Let NeosPageController ask Neos live and decide from its
+                // actual response (redirect/asset/content/404) instead of assuming a miss here.
+                // Only for real storefront requests: the Admin API's seo-url-availability check
+                // (RouteBlocklistService, no sales channel in scope) must stay tree-only so a slow
+                // live request never blocks Shopware's own SEO url creation from succeeding.
+                return $this->dispatchToNeosPageController($pathinfo);
             }
 
             throw $e;
@@ -68,12 +97,111 @@ readonly class Router implements RouterInterface, WarmableInterface
 
     protected function matchNeosPath(string $pathinfo): array
     {
-        return [
-            'neos' => 1,
-            '_routeScope' => ['storefront'],
-            '_controller' => NeosPageController::class . '::index',
-            PlatformRequest::ATTRIBUTE_HTTP_CACHE => true,
-        ];
+        // Throws NoTreeItemFoundException when no candidate's tree contains the path,
+        // which bubbles up to match()'s catch block and falls back to the original
+        // routing exception.
+        $this->neosPageTreeService->searchForPathInPageTrees($pathinfo, $this->resolveCandidateTreeArgs());
+
+        return $this->dispatchToNeosPageController($pathinfo);
+    }
+
+    private function dispatchToNeosPageController(string $pathinfo): array
+    {
+        // Delegate to the real, registered route (the same one NeosAwareSeoResolver rewrites a
+        // stale alias to) instead of hand-building a route array that would otherwise have to
+        // be kept in sync with whatever that route actually declares.
+        $match = $this->inner->match(NeosPageController::CONTENT_BY_PATH_ROUTE_PREFIX . ltrim($pathinfo, '/'));
+        // Symfony merges every key of a match() result into the request's attributes, so this
+        // marks the request as having gone through this routing decision - NeosPageController
+        // refuses to render without it, since a direct hit would otherwise skip it entirely.
+        $match[NeosPageController::INTERNAL_DISPATCH_ATTRIBUTE] = true;
+
+        return $match;
+    }
+
+    /**
+     * The current request's sales channel id, but only if it's a real storefront request (as
+     * opposed to e.g. an Admin API request with no sales channel in scope) with the navigation
+     * extension enabled for that specific channel.
+     */
+    private function currentStorefrontSalesChannelId(): ?string
+    {
+        $salesChannelId = $this->requestStack->getCurrentRequest()
+            ?->attributes->get(PlatformRequest::ATTRIBUTE_SALES_CHANNEL_ID);
+
+        if ($salesChannelId === null || !$this->configService->isNavigationExtensionEnabled($salesChannelId)) {
+            return null;
+        }
+
+        return $salesChannelId;
+    }
+
+    /**
+     * @return iterable<array{string, string}> tuples of [salesChannelId, languageId]
+     */
+    private function resolveCandidateTreeArgs(): iterable
+    {
+        $request = $this->requestStack->getCurrentRequest();
+
+        $salesChannelId = $request?->attributes->get(PlatformRequest::ATTRIBUTE_SALES_CHANNEL_ID);
+        $languageId = $request?->headers->get(PlatformRequest::HEADER_LANGUAGE_ID);
+
+        if ($salesChannelId !== null && $languageId !== null) {
+            // match()'s own gate only checks the global default, so a sales channel that
+            // overrides extendNavigation to disabled must still be excluded here - same
+            // per-channel check the enumeration fallback below already applies.
+            if ($this->configService->isNavigationExtensionEnabled($salesChannelId)) {
+                yield [$salesChannelId, $languageId];
+            }
+
+            return;
+        }
+
+        //No storefront request to read the sales channel/language from - e.g. when called
+        //via RouteBlocklistService while validating a seo url from the Admin API. Check every
+        //Neos-connected sales channel's languages instead of assuming a single one.
+        $criteria = new Criteria();
+        $criteria->addAssociation('domains');
+        $criteria->addAssociation('type');
+        $criteria->addFilter(new EqualsFilter('type.id', Defaults::SALES_CHANNEL_TYPE_STOREFRONT));
+        $criteria->addFilter(new NotFilter(NotFilter::CONNECTION_AND, [new EqualsFilter('domains.id', null)]));
+
+        $seen = [];
+
+        // RouteBlocklistService's own call to $router->match() carries no Context, but it runs
+        // synchronously inside the same Admin API request that's validating the seo url - which
+        // Shopware's own ApiRequestContextResolver already attached a real Context to before the
+        // controller ran. Reuse that instead of manufacturing a fresh one.
+        $context = $request?->attributes->get(PlatformRequest::ATTRIBUTE_CONTEXT_OBJECT);
+        if (!$context instanceof Context) {
+            if ($request === null) {
+                // No request in scope at all - the CLI-equivalent case createCLIContext() exists for.
+                $context = Context::createCLIContext();
+            } else {
+                // A request exists but isn't Admin/Store-API-scoped, so Shopware never attached one -
+                // there's no controller here to pass a context down from either.
+                // @phpstan-ignore shopware.disallow.default.context.creation
+                $context = Context::createDefaultContext();
+            }
+        }
+        $salesChannels = $this->salesChannelRepository->search($criteria, $context)->getEntities();
+
+        /** @var SalesChannelEntity $salesChannel */
+        foreach ($salesChannels as $salesChannel) {
+            if (!$this->configService->isNavigationExtensionEnabled($salesChannel->getId())) {
+                continue;
+            }
+
+            foreach ($salesChannel->getDomains() ?? [] as $domain) {
+                $key = $salesChannel->getId() . '-' . $domain->getLanguageId();
+                if (isset($seen[$key])) {
+                    continue;
+                }
+                $seen[$key] = true;
+
+                yield [$salesChannel->getId(), $domain->getLanguageId()];
+            }
+        }
     }
 
     public function warmUp(string $cacheDir, ?string $buildDir = null): array

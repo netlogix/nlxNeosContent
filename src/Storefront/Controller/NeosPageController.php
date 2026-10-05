@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace nlxNeosContent\Storefront\Controller;
 
+use nlxNeosContent\Error\PageTree\NoTreeItemFoundException;
 use nlxNeosContent\Neos\DTO\NeosPageCollection;
 use nlxNeosContent\Neos\DTO\NeosPageDTO;
+use nlxNeosContent\Neos\DTO\NeosResults\NeosAssetResult;
 use nlxNeosContent\Neos\DTO\NeosResults\NeosContentResult;
 use nlxNeosContent\Neos\DTO\NeosResults\NeosRedirectResult;
 use nlxNeosContent\Neos\HeadTag\HreflangLink;
@@ -14,16 +16,13 @@ use nlxNeosContent\Neos\HeadTag\NeosHeadDataFactory;
 use nlxNeosContent\Service\ContentExchangeService;
 use nlxNeosContent\Service\NeosPageTreeService;
 use nlxNeosContent\Service\ResolverContextService;
-use nlxNeosContent\Twig\NeosPagePathExtension;
+use nlxNeosContent\Service\ShopwareLinkRedirectResolver;
 use Shopware\Core\Content\Category\CategoryDefinition;
-use Shopware\Core\Content\Category\CategoryEntity;
-use Shopware\Core\Content\Category\SalesChannel\NavigationRoute;
 use Shopware\Core\Content\Cms\CmsPageEntity;
 use Shopware\Core\Framework\Adapter\Cache\CacheTagCollector;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\Struct\ArrayStruct;
+use Shopware\Core\PlatformRequest;
 use Shopware\Core\System\SalesChannel\Aggregate\SalesChannelDomain\SalesChannelDomainEntity;
-use Shopware\Core\System\SalesChannel\Entity\SalesChannelRepository;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Controller\StorefrontController;
 use Shopware\Storefront\Page\GenericPageLoader;
@@ -33,12 +32,23 @@ use Symfony\Component\HttpClient\Exception\ClientException;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Annotation\Route;
 
 class NeosPageController extends StorefrontController
 {
     public const CACHE_TAG_ALL = 'nlx-cbp-page';
     public const CACHE_TAG_PREFIX = 'nlx-cbp-page-';
     public const HEAD_TAGS_EXTENSION = 'neosHeadTags';
+    public const CONTENT_BY_PATH_ROUTE_PREFIX = '/neos-cms/';
+
+    /**
+     * Request attribute only Router::matchNeosPath() and NeosAwareSeoResolver ever set - both
+     * confirm the path actually exists in the current tree before routing here. Its absence
+     * means this route was matched directly from a raw request path, which skips that check
+     * entirely and would otherwise turn this internal route into a second, public URL for
+     * whatever content Neos happens to have at that path.
+     */
+    public const INTERNAL_DISPATCH_ATTRIBUTE = '_nlxNeosContentInternalDispatch';
 
     function __construct(
         private readonly ContentExchangeService $contentExchangeService,
@@ -49,17 +59,95 @@ class NeosPageController extends StorefrontController
         private readonly CacheTagCollector $cacheTagCollector,
         private readonly NeosHeadDataFactory $neosHeadDataFactory,
         private readonly JsonLdUrlRewriter $jsonLdUrlRewriter,
-        private readonly NeosPagePathExtension $neosPagePathExtension,
+        private readonly ShopwareLinkRedirectResolver $shopwareLinkRedirectResolver,
     ) {
     }
 
-    function index(Request $request, SalesChannelContext $salesChannelContext): Response
+    #[Route(
+        path: self::CONTENT_BY_PATH_ROUTE_PREFIX . '{path}',
+        name: 'frontend.neos.content-by-path',
+        requirements: ['path' => '.+'],
+        defaults: [
+            '_routeScope' => ['storefront'],
+            PlatformRequest::ATTRIBUTE_HTTP_CACHE => true,
+            // Neos pages are content/CMS, not checkout - same reasoning Shopware's own
+            // frontend.maintenance.singlepage applies to keep CMS pages (imprint, privacy, ...)
+            // reachable while maintenance mode blocks the shop itself.
+            PlatformRequest::ATTRIBUTE_IS_ALLOWED_IN_MAINTENANCE => true,
+        ],
+        methods: ['GET', 'POST'],
+    )]
+    function index(Request $request, SalesChannelContext $salesChannelContext, string $path): Response
     {
+        // A raw request to this path never carries INTERNAL_DISPATCH_ATTRIBUTE - only our own
+        // fallback/rewrite logic sets it, after having already confirmed the path belongs to
+        // the current tree. Without it, this would otherwise double as a public, un-vetted URL
+        // for the same content the tree-based resolution already serves through its real path.
+        if ($request->attributes->get(self::INTERNAL_DISPATCH_ATTRIBUTE) !== true) {
+            throw $this->createNotFoundException();
+        }
+
         if ($request->isMethod('POST') && !$this->hasFormLikeRequestStructure($request)) {
             return new Response(status: Response::HTTP_BAD_REQUEST);
         }
 
-        return $this->renderPath($request->getPathInfo(), $request, $salesChannelContext);
+        return $this->renderPath('/' . $path, $request, $salesChannelContext);
+    }
+
+    /**
+     * Renders a Neos-authored page's content as a bare, chrome-less fragment - the same
+     * "widget" shape Shopware's own CmsController::page() renders CMS pages as for
+     * data-ajax-modal use (fetch by XHR, drop the response into a modal). Unlike index(), this
+     * is a directly routable, always-public endpoint - no page tree lookup by path is needed,
+     * since the identifier itself is the input (as stored by, say, a footer link or the basic
+     * information "shop page or Neos page" override), and there's no bare-path/full-page
+     * ambiguity to gate against.
+     */
+    #[Route(
+        path: '/widgets/neos-cms/{identifier}',
+        name: 'frontend.neos.content-widget',
+        defaults: [
+            '_routeScope' => ['storefront'],
+            'XmlHttpRequest' => true,
+            PlatformRequest::ATTRIBUTE_HTTP_CACHE => true,
+        ],
+        methods: ['GET'],
+    )]
+    public function widget(string $identifier, Request $request, SalesChannelContext $salesChannelContext): Response
+    {
+        $normalizedIdentifier = self::sanitizeNodeIdentifier($identifier);
+
+        $pathInfo = $this->neosPageTreeService->findPathInfoForIdentifierAndContext($normalizedIdentifier, $salesChannelContext);
+        if ($pathInfo === null || $pathInfo === '') {
+            throw $this->createNotFoundException();
+        }
+
+        try {
+            $neosContentResult = $this->contentExchangeService->fetchCmsSectionsFromNeosByPath($pathInfo, $salesChannelContext);
+        } catch (ClientException $e) {
+            if ($e->getCode() === 404) {
+                throw $this->createNotFoundException(previous: $e);
+            }
+
+            throw $e;
+        }
+
+        if (!$neosContentResult instanceof NeosContentResult) {
+            // A widget embed only ever wants page content - a redirect or a raw asset at this
+            // path isn't something that makes sense to show inline.
+            throw $this->createNotFoundException();
+        }
+
+        $cmsPage = $this->buildCmsPageFromContentResult($neosContentResult, $request, $salesChannelContext);
+
+        $this->cacheTagCollector->addTag(
+            self::getCacheTagFromIdentifier($normalizedIdentifier),
+            self::CACHE_TAG_ALL,
+        );
+
+        return $this->renderStorefront('@Storefront/storefront/page/content/detail.html.twig', [
+            'cmsPage' => $cmsPage,
+        ]);
     }
 
     /**
@@ -95,21 +183,54 @@ class NeosPageController extends StorefrontController
         }
 
         if ($neosContentResult instanceof NeosRedirectResult) {
-            return new RedirectResponse($neosContentResult->getRedirectPathInfo(), Response::HTTP_SEE_OTHER);
+            // Force 303 after a POST regardless of what Neos answered, so the browser GETs the
+            // target instead of re-submitting the form body to it (standard post-redirect-get).
+            $statusCode = $request->isMethod('POST') ? Response::HTTP_SEE_OTHER : $neosContentResult->getStatusCode();
+
+            $redirectPathInfo = $neosContentResult->getRedirectPathInfo();
+            $currentDomain = $this->contentExchangeService->getCurrentDomain($salesChannelContext);
+
+            $shopwareLinkTarget = $this->shopwareLinkRedirectResolver->resolve(
+                $redirectPathInfo,
+                $currentDomain->getUrl(),
+                $salesChannelContext
+            );
+            if ($shopwareLinkTarget !== null) {
+                return new RedirectResponse($shopwareLinkTarget, $statusCode);
+            }
+
+            if (parse_url($redirectPathInfo, PHP_URL_SCHEME) !== null) {
+                // Already a full, external URL (ContentExchangeService::extractRedirectPathInfo()
+                // only hands back an absolute URL for a target outside this Neos - re-rooting it
+                // under Shopware's own domain below would turn a real external target into a
+                // broken, made-up one).
+                return new RedirectResponse($redirectPathInfo, $statusCode);
+            }
+
+            return new RedirectResponse(
+                $this->prependDomainPathUnlessPresent($currentDomain->getUrl(), $redirectPathInfo),
+                $statusCode
+            );
         }
 
-        $sections = $neosContentResult->getSections();
-        $resolverContext = $this->resolverContextService->getResolverContextForEntityNameAndId(
-            entityName: CategoryDefinition::ENTITY_NAME,
-            entityId: $salesChannelContext->getSalesChannel()->getNavigationCategoryId(),
-            context: $salesChannelContext,
-            request: $request,
-        );
-        $this->contentExchangeService->loadSlotData($sections->getBlocks(), $resolverContext);
-        $cmsPage = new CmsPageEntity();
-        $cmsPage->setSections($sections);
+        if ($neosContentResult instanceof NeosAssetResult) {
+            return new Response(
+                $neosContentResult->getContent(),
+                $neosContentResult->getStatusCode(),
+                ['Content-Type' => $neosContentResult->getContentType()],
+            );
+        }
 
-        $breadcrumb = $this->neosPageTreeService->findAncestorChainForPathAndContext($pathInfo, $salesChannelContext);
+        $cmsPage = $this->buildCmsPageFromContentResult($neosContentResult, $request, $salesChannelContext);
+
+        try {
+            $breadcrumb = $this->neosPageTreeService->findAncestorChainForPathAndContext($pathInfo, $salesChannelContext);
+        } catch (NoTreeItemFoundException) {
+            // Neos returned real content for a path our cached tree (up to 24h stale) doesn't
+            // have yet - rare, but rendering it without a breadcrumb isn't worth it; treat it
+            // like the miss it still is from the tree's point of view.
+            throw $this->createNotFoundException();
+        }
         $treeItem = $breadcrumb[count($breadcrumb) - 1];
         //Setting NavigationId so the navigation js can display the active page
         $identifier = self::sanitizeNodeIdentifier($treeItem->identifier);
@@ -153,27 +274,34 @@ class NeosPageController extends StorefrontController
         $this->cacheTagCollector->addTag(...$breadcrumbTags);
 
         $breadcrumb = $this->prependHomeNameBreadcrumbItem($breadcrumb, $salesChannelContext);
-        // Resolving the url only for the (few) items actually rendered here, not eagerly
-        // for the whole tree - the tree-sourced NeosPageDTOs otherwise leave it null.
-        $breadcrumbItems = array_map(
-            fn (NeosPageDTO $item): NeosPageDTO => new NeosPageDTO(
-                identifier: $item->identifier,
-                label: $item->label,
-                path: $item->path,
-                children: $item->children,
-                hiddenInIndex: $item->hiddenInIndex,
-                url: $this->neosPagePathExtension->getNeosPageUrl($item->path),
-            ),
-            iterator_to_array($breadcrumb)
-        );
 
         return $this->renderStorefront('@Storefront/storefront/page/neosPage.html.twig', [
             'page' => $page,
             'cmsPage' => $cmsPage,
             'landingPage' => [],
             'navigationExtensionDisabled' => $navigationExtensionDisabled,
-            'breadcrumb' => $breadcrumbItems,
+            'breadcrumb' => iterator_to_array($breadcrumb),
         ]);
+    }
+
+    private function buildCmsPageFromContentResult(
+        NeosContentResult $neosContentResult,
+        Request $request,
+        SalesChannelContext $salesChannelContext
+    ): CmsPageEntity {
+        $sections = $neosContentResult->getSections();
+        $resolverContext = $this->resolverContextService->getResolverContextForEntityNameAndId(
+            entityName: CategoryDefinition::ENTITY_NAME,
+            entityId: $salesChannelContext->getSalesChannel()->getNavigationCategoryId(),
+            context: $salesChannelContext,
+            request: $request,
+        );
+        $this->contentExchangeService->loadSlotData($sections->getBlocks(), $resolverContext);
+
+        $cmsPage = new CmsPageEntity();
+        $cmsPage->setSections($sections);
+
+        return $cmsPage;
     }
 
     private function prependHomeNameBreadcrumbItem(
@@ -239,6 +367,26 @@ class NeosPageController extends StorefrontController
         }
 
         return $headTags;
+    }
+
+    /**
+     * Shopware's routing determines the locale from the domain's own path prefix (e.g. "/de"), so
+     * a bare Neos path needs that prefix restored. Neos may already have put it there though.
+     */
+    private function prependDomainPathUnlessPresent(string $domainUrl, string $path): string
+    {
+        $path = ltrim($path, '/');
+        $domainUrlParts = parse_url($domainUrl);
+        $domainPath = trim($domainUrlParts['path'] ?? '', '/');
+
+        if ($domainPath !== '' && preg_match('#^' . preg_quote($domainPath, '#') . '(?:[/?\#]|$)#i', $path) === 1) {
+            $origin = $domainUrlParts['scheme'] . '://' . $domainUrlParts['host']
+                . (isset($domainUrlParts['port']) ? ':' . $domainUrlParts['port'] : '');
+
+            return $origin . '/' . $path;
+        }
+
+        return rtrim($domainUrl, '/') . '/' . $path;
     }
 
     private function hasFormLikeRequestStructure(Request $request): bool
