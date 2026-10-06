@@ -91,7 +91,28 @@ class NeosPageController extends StorefrontController
             return new Response(status: Response::HTTP_BAD_REQUEST);
         }
 
-        return $this->renderPath('/' . $path, $request, $salesChannelContext);
+        try {
+            $page = $this->neosPageTreeService->findNodeIdentifierForPathAndContext($path, $salesChannelContext);
+        } catch (NoTreeItemFoundException) {
+            // Not in the cached tree - let Neos itself answer for the path (redirect, asset or 404).
+            return $this->renderPath('/' . $path, $request, $salesChannelContext);
+        }
+
+        // Matched by its raw Neos path, but the page has a different templated SEO URL. Forms in
+        // Neos content still post to the raw path, so only GET requests are redirected.
+        if ($request->isMethod('GET') && trim($page->seoPath, '/') !== trim($path, '/')) {
+            $this->cacheTagCollector->addTag(self::getCacheTagFromIdentifier($page->identifier), self::CACHE_TAG_ALL);
+            $queryString = $request->getQueryString();
+
+            return new RedirectResponse(
+                rtrim($this->contentExchangeService->getCurrentDomain($salesChannelContext)->getUrl(), '/')
+                    . '/' . ltrim($page->seoPath, '/')
+                    . ($queryString !== null ? '?' . $queryString : ''),
+                Response::HTTP_MOVED_PERMANENTLY
+            );
+        }
+
+        return $this->renderPath('/' . trim($page->path, '/'), $request, $salesChannelContext);
     }
 
     /**
@@ -117,7 +138,7 @@ class NeosPageController extends StorefrontController
     {
         $normalizedIdentifier = self::sanitizeNodeIdentifier($identifier);
 
-        $pathInfo = $this->neosPageTreeService->findPathInfoForIdentifierAndContext($normalizedIdentifier, $salesChannelContext);
+        $pathInfo = $this->neosPageTreeService->findPageForIdentifierAndContext($normalizedIdentifier, $salesChannelContext)?->path;
         if ($pathInfo === null || $pathInfo === '') {
             throw $this->createNotFoundException();
         }
@@ -252,7 +273,7 @@ class NeosPageController extends StorefrontController
             $metaInformation->setMetaDescription($headData->getDescription());
         }
         if ($headData->getCanonical() !== null) {
-            $metaInformation->setCanonical(rtrim($currentDomain->getUrl(), '/') . '/' . trim($pathInfo, '/'));
+            $metaInformation->setCanonical(rtrim($currentDomain->getUrl(), '/') . '/' . ltrim($treeItem->seoPath, '/'));
         }
         if ($headData->getRobots() !== null) {
             $metaInformation->setRobots($headData->getRobots());
@@ -335,7 +356,12 @@ class NeosPageController extends StorefrontController
                 continue;
             }
 
-            $href = rtrim($domain->getUrl(), '/') . '/' . trim($hreflangLink->contentPath, '/');
+            $seoPath = $this->neosPageTreeService->findSeoPathForNeosPath(
+                $hreflangLink->contentPath,
+                $salesChannelContext->getSalesChannelId(),
+                $domain->getLanguageId()
+            );
+            $href = rtrim($domain->getUrl(), '/') . '/' . ltrim($seoPath, '/');
             $headTags[] = sprintf(
                 '<link rel="alternate" hreflang="%s" href="%s">',
                 htmlspecialchars($hreflangLink->hreflangCode, ENT_QUOTES, 'UTF-8'),

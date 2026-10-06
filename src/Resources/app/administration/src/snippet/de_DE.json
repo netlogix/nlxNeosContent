@@ -100,5 +100,13 @@
         "descriptionTextModule": "Einstellungen für die Integration der Enterprise Content Platform in Shopware.",
         "cardTitle": "CMS-Verbindungs-Einstellungen",
         "messageSaveSuccess": "Die Einstellungen wurden erfolgreich gespeichert."
+    },
+    "nlx-neos-seo-url-template-card": {
+        "titleCard": "SEO-URL-Template für Seiten der Enterprise Content Platform",
+        "labelTemplate": "Inhaltsseite",
+        "helpTextTemplate": "Twig-Template für die Storefront-URL jeder Seite der Enterprise Content Platform. Verfügbare Variablen: page.path, page.label, page.identifier, page.customFields und page.breadcrumb (Bezeichnungen von der obersten Seite bis zur Seite selbst). Die Ausgabe wird in URL-Schreibweise umgewandelt, mit dem raw-Filter bleiben die Schrägstriche von page.path erhalten. Aufrufe des ursprünglichen Pfads werden auf die neue URL weitergeleitet. Leer lassen, um die ursprünglichen Pfade zu verwenden.",
+        "textNoPagesForPreview": "Keine Seiten für eine Vorschau vorhanden.",
+        "textPreviewNotPossible": "Für dieses Template konnte keine Vorschau erzeugt werden.",
+        "messageSaveError": "Das SEO-URL-Template für Seiten der Enterprise Content Platform konnte nicht gespeichert werden. Bitte prüfen Sie es auf Fehler."
     }
 }

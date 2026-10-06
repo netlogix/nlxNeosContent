@@ -67,7 +67,7 @@ class NeosPageUrlProvider extends AbstractUrlProvider
     private function convert(NeosPageDTO $page): Url
     {
         $url = new Url();
-        $url->setLoc(trim($page->path, '/'));
+        $url->setLoc(ltrim($page->seoPath, '/'));
         $url->setLastmod(new \DateTime());
         $url->setChangefreq('daily');
         $url->setResource('neos_page');
