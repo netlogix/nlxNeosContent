@@ -9,6 +9,7 @@ use nlxNeosContent\Neos\DTO\NeosPageCollection;
 use nlxNeosContent\Neos\DTO\NeosPageDTO;
 use nlxNeosContent\Service\NeosPageSeoUrlTemplateRenderer;
 use PHPUnit\Framework\TestCase;
+use Shopware\Core\Content\Seo\SeoUrlPlaceholderHandler;
 use Shopware\Core\Content\Seo\SeoUrlTwigFactory;
 use Twig\Error\Error;
 use Twig\Error\SyntaxError;
@@ -30,6 +31,16 @@ class NeosPageSeoUrlTemplateRendererTest extends TestCase
         static::assertSame(
             ['/', 'content/about-us/', 'content/about-us/our-team/', 'https://example.com/partner'],
             $this->seoPaths($this->renderer()->apply($this->tree(), $template))
+        );
+    }
+
+    public function testTrailingSlashIsKeptInUrl(): void
+    {
+        $pages = $this->renderer()->apply($this->tree(), '{{ page.path|raw }}/');
+
+        static::assertSame(
+            SeoUrlPlaceholderHandler::DOMAIN_PLACEHOLDER . '/about-us/#',
+            $pages[1]->getUrl()
         );
     }
 

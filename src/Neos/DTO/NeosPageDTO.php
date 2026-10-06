@@ -36,7 +36,7 @@ readonly class NeosPageDTO
             return $this->path;
         }
 
-        return sprintf('%s/%s#', SeoUrlPlaceholderHandler::DOMAIN_PLACEHOLDER, trim($this->seoPath, '/'));
+        return sprintf('%s/%s#', SeoUrlPlaceholderHandler::DOMAIN_PLACEHOLDER, ltrim($this->seoPath, '/'));
     }
 
     public static function isExternalUrl(string $path): bool

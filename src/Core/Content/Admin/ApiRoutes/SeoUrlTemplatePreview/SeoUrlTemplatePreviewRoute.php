@@ -79,7 +79,7 @@ class SeoUrlTemplatePreviewRoute extends AbstractSeoUrlTemplatePreviewRoute
                 continue;
             }
 
-            $previews[] = ['label' => $page->label, 'path' => $page->path, 'seoPath' => '/' . trim($page->seoPath, '/')];
+            $previews[] = ['label' => $page->label, 'path' => $page->path, 'seoPath' => '/' . ltrim($page->seoPath, '/')];
             if (\count($previews) >= self::PREVIEW_LIMIT) {
                 break;
             }

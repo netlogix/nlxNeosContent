@@ -273,7 +273,7 @@ class NeosPageController extends StorefrontController
             $metaInformation->setMetaDescription($headData->getDescription());
         }
         if ($headData->getCanonical() !== null) {
-            $metaInformation->setCanonical(rtrim($currentDomain->getUrl(), '/') . '/' . trim($treeItem->seoPath, '/'));
+            $metaInformation->setCanonical(rtrim($currentDomain->getUrl(), '/') . '/' . ltrim($treeItem->seoPath, '/'));
         }
         if ($headData->getRobots() !== null) {
             $metaInformation->setRobots($headData->getRobots());
@@ -361,7 +361,7 @@ class NeosPageController extends StorefrontController
                 $salesChannelContext->getSalesChannelId(),
                 $domain->getLanguageId()
             );
-            $href = rtrim($domain->getUrl(), '/') . '/' . trim($seoPath, '/');
+            $href = rtrim($domain->getUrl(), '/') . '/' . ltrim($seoPath, '/');
             $headTags[] = sprintf(
                 '<link rel="alternate" hreflang="%s" href="%s">',
                 htmlspecialchars($hreflangLink->hreflangCode, ENT_QUOTES, 'UTF-8'),

@@ -92,7 +92,9 @@ content/{{ page.path|raw }}
 ```
 
 The rendered URL is used for navigation links, breadcrumbs, the sitemap, canonical and hreflang
-tags, and the language switch. A GET request to a page's original Neos path (e.g. a link inside
+tags, and the language switch. A trailing slash in the template (e.g. `{{ page.path|raw }}/`)
+is kept in all of these. As with Shopware's own category URLs, the same path without the slash
+still opens the page, and its canonical tag points to the URL with the slash. A GET request to a page's original Neos path (e.g. a link inside
 Neos content) is redirected with a `301` to its new URL. Form submissions to the original path
 keep working. The home page and shortcuts to external URLs are never rewritten. If a page's
 template renders empty, that page keeps its Neos path. An invalid template is logged, and all
