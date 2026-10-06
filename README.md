@@ -62,6 +62,43 @@ first: if a Neos page has since taken over that same path, it's rendered instead
 Shopware's redirect. If no Neos page exists there, Shopware's own redirect proceeds exactly as
 before.
 
+## SEO URL templates for Neos pages
+
+By default a Neos page is served under the path Neos sends for it in the page tree. To change
+these URLs, set a template in the "SEO URL template for Enterprise Content Platform pages" card
+under Settings → SEO. As with Shopware's own SEO URL templates, there is a global template and
+an optional override per sales channel. The card shows a preview of the resulting URLs.
+
+The template is Twig. Its output is slugified, the same as Shopware's own SEO URL templates.
+These variables are available:
+
+| Variable            | Content                                                     |
+|---------------------|-------------------------------------------------------------|
+| `page.path`         | Path of the page in Neos, without leading/trailing slashes   |
+| `page.label`        | Label of the page                                           |
+| `page.identifier`   | Node identifier of the page                                 |
+| `page.customFields` | Custom fields of the page (see above)                       |
+| `page.breadcrumb`   | Labels from the top level page down to the page itself      |
+
+```twig
+{# today's URLs, the default #}
+{{ page.path|raw }}
+
+{# prefixed #}
+content/{{ page.path|raw }}
+
+{# built from the page labels #}
+{% for part in page.breadcrumb %}{{ part }}/{% endfor %}
+```
+
+The rendered URL is used for navigation links, breadcrumbs, the sitemap, canonical and hreflang
+tags, and the language switch. A GET request to a page's original Neos path (e.g. a link inside
+Neos content) is redirected with a `301` to its new URL. Form submissions to the original path
+keep working. The home page and shortcuts to external URLs are never rewritten. If a page's
+template renders empty, that page keeps its Neos path. An invalid template is logged, and all
+pages keep their Neos paths. Saving the template clears the cached page tree, so new URLs apply
+right away.
+
 ## Requirements
 
 - Shopware `>= 6.6.10.4`

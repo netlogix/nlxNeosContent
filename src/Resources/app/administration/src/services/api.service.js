@@ -89,6 +89,20 @@ export default class NlxNeosContentApiService extends ApiService {
             });
     }
 
+    previewSeoUrlTemplate(template, salesChannelId = null) {
+        const apiRoute = `${this.getApiBasePath()}/seo-url-template/preview`;
+        return this.httpClient
+            .post(
+                apiRoute,
+                { template, salesChannelId },
+                { headers: this.getBasicHeaders() }
+            ).then((response) => {
+                return { success: true, data: response.data };
+            }).catch((error) => {
+                return { success: false, data: error.response?.data ?? { message: 'Network error' } };
+            });
+    }
+
     getNeosPageTree() {
         return this.proxyGetRequest('pagetree');
     }

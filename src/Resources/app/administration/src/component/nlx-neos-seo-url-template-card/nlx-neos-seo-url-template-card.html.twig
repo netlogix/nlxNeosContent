@@ -1,0 +1,78 @@
+{# Reuses the native card's classes to get its preview and validity icon styles. #}
+<mt-card
+    class="sw-seo-url-template-card nlx-neos-seo-url-template-card"
+    position-identifier="nlx-neos-seo-url-template-card"
+    :title="$tc('nlx-neos-seo-url-template-card.titleCard')"
+    :is-loading="isLoading"
+>
+    <template #toolbar>
+        <sw-sales-channel-switch
+            :label="$tc('sw-seo-url-template-card.general.labelSalesChannelSelect')"
+            @change-sales-channel-id="onSalesChannelChanged"
+        />
+    </template>
+
+    <div
+        v-if="!isLoading"
+        class="sw-seo-url-template-card__seo-url"
+    >
+        <sw-inherit-wrapper
+            v-model:value="values[currentKey]"
+            :has-parent="salesChannelId !== null"
+            :inherited-value="values.null"
+            @update:value="debouncedFetchPreview"
+        >
+            <template #content="props">
+                <mt-text-field
+                    :is-inheritance-field="props.isInheritField"
+                    :is-inherited="props.isInherited"
+                    :model-value="props.currentValue"
+                    :disabled="props.isInherited"
+                    name="nlx-neos-page-seo-url-template"
+                    :label="$tc('nlx-neos-seo-url-template-card.labelTemplate')"
+                    :help-text="$tc('nlx-neos-seo-url-template-card.helpTextTemplate')"
+                    :placeholder="placeholder"
+                    @update:model-value="props.updateCurrentValue"
+                    @inheritance-restore="props.restoreInheritance"
+                    @inheritance-remove="props.removeInheritance"
+                >
+                    <template #suffix>
+                        <sw-loader
+                            v-if="previewLoading"
+                            size="16px"
+                        />
+                        <mt-icon
+                            v-else-if="previewError"
+                            v-tooltip="$tc('sw-seo-url-template-card.general.tooltipInvalidTemplate')"
+                            name="regular-times"
+                        />
+                        <mt-icon
+                            v-else
+                            v-tooltip="$tc('sw-seo-url-template-card.general.tooltipValidTemplate')"
+                            name="regular-checkmark"
+                        />
+                    </template>
+                </mt-text-field>
+            </template>
+        </sw-inherit-wrapper>
+
+        <div class="sw-seo-url-template-card__preview">
+            <span class="sw-seo-url-template-card__preview-label">
+                {{ $tc('sw-seo-url-template-card.general.preview') }}
+            </span>
+            <div v-if="previewError">
+                {{ previewError }}
+            </div>
+            <div v-else-if="previews.length === 0">
+                {{ $tc('nlx-neos-seo-url-template-card.textNoPagesForPreview') }}
+            </div>
+            <div
+                v-for="preview in previews"
+                v-else
+                :key="preview.path"
+            >
+                {{ preview.label }}: {{ preview.seoPath }}
+            </div>
+        </div>
+    </div>
+</mt-card>

@@ -74,10 +74,10 @@ class NeosPagePathExtension extends AbstractExtension
     {
         $normalizedIdentifier = str_replace('-', '', $nodeIdentifier);
 
-        $pathInfo = $this->neosPageTreeService->findPathInfoForIdentifierAndContext(
+        $pathInfo = $this->neosPageTreeService->findPageForIdentifierAndContext(
             $normalizedIdentifier,
             $context
-        );
+        )?->seoPath;
 
         if ($pathInfo === '' || $pathInfo === null) {
             throw new UnknownNeosPathException(code: 1786546010);

@@ -82,7 +82,7 @@ class ContextControllerDecorator extends ContextController
             );
 
             $pathInfo = $nodeIdentifier !== null
-                ? $this->neosPageTreeService->findPathInfoForIdentifierAndContext($nodeIdentifier, $newContext)
+                ? $this->neosPageTreeService->findPageForIdentifierAndContext($nodeIdentifier, $newContext)?->seoPath
                 : null;
 
             // No node to resolve, or no equivalent page exists for the target language;

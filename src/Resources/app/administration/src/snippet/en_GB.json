@@ -100,5 +100,13 @@
         "descriptionTextModule": "Settings for the integration of the Enterprise Content Platform in Shopware.",
         "cardTitle": "CMS Connection Settings",
         "messageSaveSuccess": "Configuration has been saved successfully."
+    },
+    "nlx-neos-seo-url-template-card": {
+        "titleCard": "SEO URL template for Enterprise Content Platform pages",
+        "labelTemplate": "Content page",
+        "helpTextTemplate": "Twig template for the storefront URL of every page of the Enterprise Content Platform. Available variables: page.path, page.label, page.identifier, page.customFields and page.breadcrumb (labels from the top level page down to the page itself). Output is slugified, use the raw filter to keep the slashes of page.path. Requests to the original path are redirected to the new URL. Leave empty to use the original paths.",
+        "textNoPagesForPreview": "No pages available for a preview.",
+        "textPreviewNotPossible": "A preview for this template could not be generated.",
+        "messageSaveError": "The SEO URL template for Enterprise Content Platform pages could not be saved. Please check it for errors."
     }
 }
