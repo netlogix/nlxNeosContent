@@ -102,7 +102,6 @@ readonly class CachedNeosPageTreeLoader extends AbstractNeosPageTreeLoader
 
     private function cacheKey(string $salesChannelId, string $languageId): string
     {
-        // Versioned: trees cached before NeosPageDTO::$seoPath existed would unserialize without it.
-        return self::CACHE_KEY . '-v2-' . $salesChannelId . '-' . $languageId;
+        return self::CACHE_KEY . '-' . $salesChannelId . '-' . $languageId;
     }
 }
