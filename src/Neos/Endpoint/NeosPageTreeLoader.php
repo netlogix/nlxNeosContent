@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace nlxNeosContent\Neos\Endpoint;
 
 use nlxNeosContent\Neos\DTO\NeosPageCollection;
+use nlxNeosContent\Service\ConfigService;
+use nlxNeosContent\Service\NeosPageSeoUrlTemplateRenderer;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Symfony\Component\DependencyInjection\Attribute\AsAlias;
@@ -12,6 +14,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Serializer\Normalizer\UnwrappingDenormalizer;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Twig\Error\Error as TwigError;
 
 #[AsAlias(AbstractNeosPageTreeLoader::class)]
 readonly class NeosPageTreeLoader extends AbstractNeosPageTreeLoader
@@ -31,6 +34,8 @@ readonly class NeosPageTreeLoader extends AbstractNeosPageTreeLoader
         #[Autowire(service: 'serializer')]
         private SerializerInterface $serializer,
         private LoggerInterface $logger,
+        private ConfigService $configService,
+        private NeosPageSeoUrlTemplateRenderer $seoUrlTemplateRenderer,
     ) {
     }
 
@@ -48,9 +53,11 @@ readonly class NeosPageTreeLoader extends AbstractNeosPageTreeLoader
             ]
         ]);
 
-        return $this->serializer->deserialize($response->getContent(), NeosPageCollection::class, 'json', [
+        $tree = $this->serializer->deserialize($response->getContent(), NeosPageCollection::class, 'json', [
             UnwrappingDenormalizer::UNWRAP_PATH => '[pages]'
         ]);
+
+        return $this->applySeoUrlTemplate($tree, $salesChannelId);
     }
 
     public function loadMany(array $requests): array
@@ -80,7 +87,7 @@ readonly class NeosPageTreeLoader extends AbstractNeosPageTreeLoader
                 $tree = $this->serializer->deserialize($response->getContent(), NeosPageCollection::class, 'json', [
                     UnwrappingDenormalizer::UNWRAP_PATH => '[pages]'
                 ]);
-                $results[] = new NeosPageTreeLoadResult($salesChannelId, $languageId, $tree);
+                $results[] = new NeosPageTreeLoadResult($salesChannelId, $languageId, $this->applySeoUrlTemplate($tree, $salesChannelId));
             } catch (\Throwable $e) {
                 // Signals a failed fetch, not a genuinely empty tree - CachedNeosPageTreeLoader
                 // must not cache this as if Neos really had no pages here. Logged here, same as
@@ -92,5 +99,26 @@ readonly class NeosPageTreeLoader extends AbstractNeosPageTreeLoader
         }
 
         return $results;
+    }
+
+    private function applySeoUrlTemplate(NeosPageCollection $tree, string $salesChannelId): NeosPageCollection
+    {
+        $template = $this->configService->getNeosPageSeoUrlTemplate($salesChannelId);
+        if ($template === '') {
+            return $tree;
+        }
+
+        try {
+            return $this->seoUrlTemplateRenderer->apply($tree, $template);
+        } catch (TwigError $e) {
+            // A broken template must not take the storefront down - keep serving the Neos paths instead.
+            $this->logger->error('Invalid Neos page SEO URL template, falling back to Neos paths', [
+                'exception' => $e,
+                'salesChannelId' => $salesChannelId,
+                'template' => $template,
+            ]);
+
+            return $tree;
+        }
     }
 }

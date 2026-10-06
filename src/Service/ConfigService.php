@@ -16,6 +16,7 @@ class ConfigService
 {
     public const CONFIG_DOMAIN = 'NlxNeosContent.config';
     public const SETTING_DOMAIN = 'NlxNeosContent.settings';
+    public const NEOS_PAGE_SEO_URL_TEMPLATE_KEY = self::CONFIG_DOMAIN . '.neosPageSeoUrlTemplate';
 
     public function __construct(
         private readonly SystemConfigService $systemConfigService,
@@ -54,6 +55,11 @@ class ConfigService
     public function isNavigationExtensionEnabled(?string $salesChannelId = null): bool
     {
         return $this->systemConfigService->getBool($this->getConfigKey('extendNavigation'), $salesChannelId);
+    }
+
+    public function getNeosPageSeoUrlTemplate(?string $salesChannelId = null): string
+    {
+        return trim($this->systemConfigService->getString(self::NEOS_PAGE_SEO_URL_TEMPLATE_KEY, $salesChannelId));
     }
 
     private function getConfigKey(string $key): string

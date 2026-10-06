@@ -41,21 +41,50 @@ class NeosPageTreeService
         );
     }
 
+    /**
+     * Matches the page's public SEO path first and only then its raw Neos path, so a page
+     * whose templated URL happens to equal another page's Neos path still wins.
+     * Compare the result's seoPath with $pathInfo to tell which of the two matched.
+     */
     public function findByPathInfoInTree(string $pathInfo, NeosPageCollection $tree): NeosPageDTO
     {
+        $pathInfo = trim($pathInfo, '/');
+
+        return $this->findInTree($tree, static fn (NeosPageDTO $page) => trim($page->seoPath, '/') === $pathInfo)
+            ?? $this->findInTree($tree, static fn (NeosPageDTO $page) => trim($page->path, '/') === $pathInfo)
+            ?? throw new NoTreeItemFoundException($pathInfo);
+    }
+
+    /**
+     * Public SEO path of the page at the given raw Neos path in that language's tree,
+     * or the Neos path itself when the tree doesn't contain it.
+     */
+    public function findSeoPathForNeosPath(string $neosPath, string $salesChannelId, string $languageId): string
+    {
+        $tree = $this->neosPageTreeLoader->load($salesChannelId, $languageId);
+        $neosPath = trim($neosPath, '/');
+
+        return $this->findInTree($tree, static fn (NeosPageDTO $page) => trim($page->path, '/') === $neosPath)->seoPath
+            ?? $neosPath;
+    }
+
+    /**
+     * @param callable(NeosPageDTO): bool $matches
+     */
+    private function findInTree(NeosPageCollection $tree, callable $matches): ?NeosPageDTO
+    {
         foreach ($tree as $treeItem) {
-            if (trim($pathInfo, '/') === trim($treeItem->path, '/')) {
+            if ($matches($treeItem)) {
                 return $treeItem;
             }
 
-            try {
-                return $this->findByPathInfoInTree($pathInfo, $treeItem->children);
-            } catch (NoTreeItemFoundException $noTreeItemFoundException) {
-                continue;
+            $found = $this->findInTree($treeItem->children, $matches);
+            if ($found !== null) {
+                return $found;
             }
         }
 
-        throw new NoTreeItemFoundException($pathInfo);
+        return null;
     }
 
     /**
@@ -106,27 +135,13 @@ class NeosPageTreeService
         return null;
     }
 
-    public function findPathInfoForIdentifierAndContext($nodeIdentifier, SalesChannelContext $salesChannelContext): ?string
+    public function findPageForIdentifierAndContext(string $nodeIdentifier, SalesChannelContext $salesChannelContext): ?NeosPageDTO
     {
         $neosPageTree = $this->loadTreeForContext($salesChannelContext);
 
-        return $this->findPathInfoByNodeIdentifier($nodeIdentifier, $neosPageTree);
-    }
-
-    public function findPathInfoByNodeIdentifier(string $nodeIdentifier, NeosPageCollection $tree): ?string
-    {
-        foreach ($tree as $treeItem) {
-            if ($nodeIdentifier === str_replace('-', '', $treeItem->identifier)) {
-                return $treeItem->path;
-            }
-
-            $pathInfo = $this->findPathInfoByNodeIdentifier($nodeIdentifier, $treeItem->children);
-
-            if ($pathInfo !== null) {
-                return $pathInfo;
-            }
-        }
-
-        return null;
+        return $this->findInTree(
+            $neosPageTree,
+            static fn (NeosPageDTO $page) => $nodeIdentifier === str_replace('-', '', $page->identifier)
+        );
     }
 }

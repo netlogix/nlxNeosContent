@@ -9,6 +9,12 @@ use Shopware\Core\Content\Seo\SeoUrlPlaceholderHandler;
 readonly class NeosPageDTO
 {
     /**
+     * Public storefront path of the page, rendered from the Neos page SEO URL template.
+     * Equals $path when no template is configured.
+     */
+    public string $seoPath;
+
+    /**
      * @param string $path Content path of the page, or an absolute URL for shortcuts to external targets
      * @param array<string, mixed> $customFields Installation specific data of the page, added on the Neos side
      */
@@ -19,7 +25,9 @@ readonly class NeosPageDTO
         public NeosPageCollection $children,
         public bool $hiddenInIndex = false,
         public array $customFields = [],
+        ?string $seoPath = null,
     ) {
+        $this->seoPath = $seoPath ?? $path;
     }
 
     public function getUrl(): string
@@ -28,7 +36,7 @@ readonly class NeosPageDTO
             return $this->path;
         }
 
-        return sprintf('%s/%s#', SeoUrlPlaceholderHandler::DOMAIN_PLACEHOLDER, trim($this->path, '/'));
+        return sprintf('%s/%s#', SeoUrlPlaceholderHandler::DOMAIN_PLACEHOLDER, ltrim($this->seoPath, '/'));
     }
 
     public static function isExternalUrl(string $path): bool

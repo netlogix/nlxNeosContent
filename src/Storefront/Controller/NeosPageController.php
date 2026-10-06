@@ -18,15 +18,11 @@ use nlxNeosContent\Service\NeosPageTreeService;
 use nlxNeosContent\Service\ResolverContextService;
 use nlxNeosContent\Service\ShopwareLinkRedirectResolver;
 use Shopware\Core\Content\Category\CategoryDefinition;
-use Shopware\Core\Content\Category\CategoryEntity;
-use Shopware\Core\Content\Category\SalesChannel\NavigationRoute;
 use Shopware\Core\Content\Cms\CmsPageEntity;
 use Shopware\Core\Framework\Adapter\Cache\CacheTagCollector;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\Struct\ArrayStruct;
 use Shopware\Core\PlatformRequest;
 use Shopware\Core\System\SalesChannel\Aggregate\SalesChannelDomain\SalesChannelDomainEntity;
-use Shopware\Core\System\SalesChannel\Entity\SalesChannelRepository;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Controller\StorefrontController;
 use Shopware\Storefront\Page\GenericPageLoader;
@@ -63,8 +59,6 @@ class NeosPageController extends StorefrontController
         private readonly CacheTagCollector $cacheTagCollector,
         private readonly NeosHeadDataFactory $neosHeadDataFactory,
         private readonly JsonLdUrlRewriter $jsonLdUrlRewriter,
-        #[Autowire(service: 'sales_channel.category.repository')]
-        private readonly SalesChannelRepository $categoryRepository,
         private readonly ShopwareLinkRedirectResolver $shopwareLinkRedirectResolver,
     ) {
     }
@@ -97,7 +91,28 @@ class NeosPageController extends StorefrontController
             return new Response(status: Response::HTTP_BAD_REQUEST);
         }
 
-        return $this->renderPath('/' . $path, $request, $salesChannelContext);
+        try {
+            $page = $this->neosPageTreeService->findNodeIdentifierForPathAndContext($path, $salesChannelContext);
+        } catch (NoTreeItemFoundException) {
+            // Not in the cached tree - let Neos itself answer for the path (redirect, asset or 404).
+            return $this->renderPath('/' . $path, $request, $salesChannelContext);
+        }
+
+        // Matched by its raw Neos path, but the page has a different templated SEO URL. Forms in
+        // Neos content still post to the raw path, so only GET requests are redirected.
+        if ($request->isMethod('GET') && trim($page->seoPath, '/') !== trim($path, '/')) {
+            $this->cacheTagCollector->addTag(self::getCacheTagFromIdentifier($page->identifier), self::CACHE_TAG_ALL);
+            $queryString = $request->getQueryString();
+
+            return new RedirectResponse(
+                rtrim($this->contentExchangeService->getCurrentDomain($salesChannelContext)->getUrl(), '/')
+                    . '/' . ltrim($page->seoPath, '/')
+                    . ($queryString !== null ? '?' . $queryString : ''),
+                Response::HTTP_MOVED_PERMANENTLY
+            );
+        }
+
+        return $this->renderPath('/' . trim($page->path, '/'), $request, $salesChannelContext);
     }
 
     /**
@@ -123,7 +138,7 @@ class NeosPageController extends StorefrontController
     {
         $normalizedIdentifier = self::sanitizeNodeIdentifier($identifier);
 
-        $pathInfo = $this->neosPageTreeService->findPathInfoForIdentifierAndContext($normalizedIdentifier, $salesChannelContext);
+        $pathInfo = $this->neosPageTreeService->findPageForIdentifierAndContext($normalizedIdentifier, $salesChannelContext)?->path;
         if ($pathInfo === null || $pathInfo === '') {
             throw $this->createNotFoundException();
         }
@@ -258,7 +273,7 @@ class NeosPageController extends StorefrontController
             $metaInformation->setMetaDescription($headData->getDescription());
         }
         if ($headData->getCanonical() !== null) {
-            $metaInformation->setCanonical(rtrim($currentDomain->getUrl(), '/') . '/' . trim($pathInfo, '/'));
+            $metaInformation->setCanonical(rtrim($currentDomain->getUrl(), '/') . '/' . ltrim($treeItem->seoPath, '/'));
         }
         if ($headData->getRobots() !== null) {
             $metaInformation->setRobots($headData->getRobots());
@@ -279,7 +294,7 @@ class NeosPageController extends StorefrontController
         $breadcrumbTags[] = self::CACHE_TAG_ALL;
         $this->cacheTagCollector->addTag(...$breadcrumbTags);
 
-        $breadcrumb = $this->prependHomeCategoryBreadcrumbItem($breadcrumb, $salesChannelContext);
+        $breadcrumb = $this->prependHomeNameBreadcrumbItem($breadcrumb, $salesChannelContext);
 
         return $this->renderStorefront('@Storefront/storefront/page/neosPage.html.twig', [
             'page' => $page,
@@ -310,32 +325,19 @@ class NeosPageController extends StorefrontController
         return $cmsPage;
     }
 
-    /**
-     * Prepends the sales channel's Home category (its navigation root) as the first
-     * breadcrumb item, named after however it's set up in the Administration - mirroring
-     * how Neos itself always shows the site name as the first breadcrumb item.
-     */
-    private function prependHomeCategoryBreadcrumbItem(
+    private function prependHomeNameBreadcrumbItem(
         NeosPageCollection $breadcrumb,
         SalesChannelContext $salesChannelContext
     ): NeosPageCollection {
-        $homeCategoryId = $salesChannelContext->getSalesChannel()->getNavigationCategoryId();
-        $homeCategory = $this->categoryRepository
-            ->search(new Criteria([$homeCategoryId]), $salesChannelContext)
-            ->getEntities()
-            ->first();
-
-        $homeLabel = $homeCategory instanceof CategoryEntity ? $homeCategory->getTranslated()['name'] ?? null : null;
-        if (empty($homeLabel)) {
-            return $breadcrumb;
-        }
-
-        // The category is read outside the sales channel's own cache-tagged read trace,
-        // so tag explicitly: a renamed/moved Home category should invalidate this page too.
-        $this->cacheTagCollector->addTag(NavigationRoute::ALL_TAG);
+        $salesChannel = $salesChannelContext->getSalesChannel();
 
         return new NeosPageCollection(
-            new NeosPageDTO($homeCategoryId, $homeLabel, '', new NeosPageCollection()),
+            new NeosPageDTO(
+                identifier: $salesChannel->getNavigationCategoryId(),
+                label: $salesChannel->getTranslation('homeName') ?: $this->trans('general.homeLink'),
+                path: '',
+                children: new NeosPageCollection(),
+            ),
             ...iterator_to_array($breadcrumb)
         );
     }
@@ -354,7 +356,12 @@ class NeosPageController extends StorefrontController
                 continue;
             }
 
-            $href = rtrim($domain->getUrl(), '/') . '/' . trim($hreflangLink->contentPath, '/');
+            $seoPath = $this->neosPageTreeService->findSeoPathForNeosPath(
+                $hreflangLink->contentPath,
+                $salesChannelContext->getSalesChannelId(),
+                $domain->getLanguageId()
+            );
+            $href = rtrim($domain->getUrl(), '/') . '/' . ltrim($seoPath, '/');
             $headTags[] = sprintf(
                 '<link rel="alternate" hreflang="%s" href="%s">',
                 htmlspecialchars($hreflangLink->hreflangCode, ENT_QUOTES, 'UTF-8'),
