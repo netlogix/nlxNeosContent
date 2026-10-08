@@ -5,7 +5,6 @@ import defaultSearchConfiguration from './default-search-configuration';
 
 const { Module } = Shopware;
 
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
 Module.register('nlx-neos-landing-page', {
     type: 'plugin',
     name: 'neos_landing_page',

@@ -92,17 +92,17 @@ class CmsSectionController extends StorefrontController
             }
         }
 
-        if ($entityResponse->count() === 0) {
+        if ($entityResponse->getEntities()->count() === 0) {
             throw new \RuntimeException(
                 sprintf('No entity found for entity name "%s" and id "%s"', $entityName, $entityId)
             );
         }
 
         if (empty($entityId)) {
-            $entityId = $entityResponse->first()->getUniqueIdentifier();
+            $entityId = $entityResponse->getEntities()->first()->getUniqueIdentifier();
         }
 
-        $entity = $entityResponse->first();
+        $entity = $entityResponse->getEntities()->first();
         if (!assert($entity instanceof Entity)) {
             throw new \RuntimeException(
                 sprintf(
@@ -159,7 +159,7 @@ class CmsSectionController extends StorefrontController
 
         $navigationPage = new NavigationPage();
         $navigationPage->setCmsPage($cmsPage);
-        $entity = $entityResponse->first();
+        $entity = $entityResponse->getEntities()->first();
         if ($entity instanceof CategoryEntity) {
             $navigationPage->setCategory($entity);
             $cmsPage->setType('category');

@@ -6,7 +6,7 @@ namespace nlxNeosContent\Service;
 
 use Exception;
 use nlxNeosContent\Core\Content\NeosNode\NeosNodeEntity;
-use nlxNeosContent\Core\Notification\NotificationServiceInterface;
+use nlxNeosContent\Core\Notification\NotificationService;
 use nlxNeosContent\Error\DataIntegrity\CanNotDeleteDefaultLayoutPageException;
 use nlxNeosContent\Error\RequestError\NeosUrlNotConfiguredException;
 use Shopware\Core\Defaults;
@@ -29,7 +29,7 @@ class NeosLayoutPageService
     public function __construct(
         private readonly EntityRepository $cmsPageRepository,
         private readonly EntityRepository $nlxNeosNodeRepository,
-        private readonly NotificationServiceInterface $notificationService,
+        private readonly NotificationService $notificationService,
         private readonly HttpClientInterface $neosClient,
         private readonly SystemConfigService $systemConfigService,
         private readonly TranslatorInterface $translator,

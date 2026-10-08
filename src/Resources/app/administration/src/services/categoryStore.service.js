@@ -5,18 +5,18 @@ export default class CategoryStoreService {
 
     async getCategories() {
         await this._checkStoreLoaded()
-        return Shopware.State.get('nlxNeosCategories').data;
+        return Shopware.Store.get('nlxNeosCategories').data;
     }
 
     async getCategory(id) {
         await this._checkStoreLoaded();
-        return Shopware.State.get('nlxNeosCategories').data.find((category) => category.id === id);
+        return Shopware.Store.get('nlxNeosCategories').data.find((category) => category.id === id);
     }
 
     async _checkStoreLoaded() {
-        if (!Shopware.State.get('nlxNeosCategories').data) {
+        if (!Shopware.Store.get('nlxNeosCategories').data) {
             const categories = await this._fetchCategories();
-            Shopware.State.commit('nlxNeosCategories/setData', categories);
+            Shopware.Store.get('nlxNeosCategories').setData(categories);
         }
     }
 

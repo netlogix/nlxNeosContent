@@ -8,6 +8,7 @@ use nlxNeosContent\Service\ConfigService;
 use nlxNeosContent\Service\NeosPageTreeService;
 use nlxNeosContent\Storefront\Controller\NeosPageController;
 use Shopware\Core\Defaults;
+use Shopware\Core\Framework\Api\Context\SystemSource;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -180,8 +181,7 @@ readonly class Router implements RouterInterface, WarmableInterface
             } else {
                 // A request exists but isn't Admin/Store-API-scoped, so Shopware never attached one -
                 // there's no controller here to pass a context down from either.
-                // @phpstan-ignore shopware.disallow.default.context.creation
-                $context = Context::createDefaultContext();
+                $context = new Context(new SystemSource());
             }
         }
         $salesChannels = $this->salesChannelRepository->search($criteria, $context)->getEntities();
