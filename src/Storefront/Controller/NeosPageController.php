@@ -88,7 +88,7 @@ class NeosPageController extends StorefrontController
         }
 
         if ($request->isMethod('POST') && !$this->hasFormLikeRequestStructure($request)) {
-            return new Response(status: Response::HTTP_BAD_REQUEST);
+            return new Response('Unexpected POST request', Response::HTTP_BAD_REQUEST);
         }
 
         try {

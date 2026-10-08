@@ -1,7 +1,5 @@
 import template from './nlx-sw-category-detail-neos.html.twig'
 
-const {Application} = Shopware;
-
 Shopware.Component.extend(
     'nlx-sw-category-detail-neos',
     'sw-category-detail',
@@ -54,7 +52,7 @@ Shopware.Component.extend(
 
             nlxNeosCategory() {
                 if (this.nlxNeosCategory) {
-                    Shopware.State.commit('nlxNeosCategory/setData', this.nlxNeosCategory);
+                    Shopware.Store.get('nlxNeosCategory').setData(this.nlxNeosCategory);
                 }
             }
         }

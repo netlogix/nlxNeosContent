@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/symfony/dependency-injection/7.4/Loader/schema/services.schema.json
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+        bind:
+            $neosClient: '@nlx-neos-content.neos-client'
+
+    nlxNeosContent\:
+        resource: ../../*
+
+    # Lazy, because the factory reads the system config: the router depends on this
+    # client, so building it eagerly needs a database for every console command.
+    nlx-neos-content.neos-client:
+        class: Symfony\Contracts\HttpClient\HttpClientInterface
+        lazy: true
+        factory: [nlxNeosContent\HttpClient\NeosClientFactory, create]
+        arguments:
+            - '@nlxNeosContent\Service\ConfigService'
+
+    # Swap this alias (e.g. to a System-Config-backed implementation) to change
+    # the head-tag allow-list source without touching NeosHeadDataFactory or
+    # its callers.
+    nlxNeosContent\Neos\HeadTag\HeadTagAllowListProviderInterface: '@nlxNeosContent\Neos\HeadTag\HardcodedHeadTagAllowListProvider'

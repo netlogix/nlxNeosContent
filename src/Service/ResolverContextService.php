@@ -108,7 +108,7 @@ class ResolverContextService
         $criteria->addAssociation('media.media');
         $criteria->addAssociation('manufacturer.media');
         $criteria->addFilter(new EqualsFilter('active', true));
-        $product = $this->productRepository->search($criteria, $context)->first();
+        $product = $this->productRepository->search($criteria, $context)->getEntities()->first();
 
         if (!$product instanceof ProductEntity) {
             throw new \RuntimeException(
@@ -145,6 +145,7 @@ class ResolverContextService
         $criteria->setLimit(1);
         $category = $this->categoryRepository
             ->search($criteria, $context)
+            ->getEntities()
             ->get($categoryId);
 
         if (!$category instanceof CategoryEntity) {
@@ -191,6 +192,7 @@ class ResolverContextService
 
         $landingPage = $this->landingPageRepository
             ->search($criteria, $context)
+            ->getEntities()
             ->get($landingPageId);
 
         if (!$landingPage instanceof LandingPageEntity) {

@@ -1,31 +1,31 @@
-Shopware.State.registerModule('nlxNeosCategory', {
-    namespaced: true,
+Shopware.Store.register({
+    id: 'nlxNeosCategory',
 
-    state() {
+    state: () => {
         return {
             data: null,
-        }
+        };
     },
 
-    mutations: {
-        setData(state, data) {
-            state.data = data;
-        }
-    }
+    actions: {
+        setData(data) {
+            this.data = data;
+        },
+    },
 });
 
-Shopware.State.registerModule('nlxNeosCategories', {
-    namespaced: true,
+Shopware.Store.register({
+    id: 'nlxNeosCategories',
 
-    state() {
+    state: () => {
         return {
             data: null,
-        }
+        };
     },
 
-    mutations: {
-        setData(state, data) {
-            state.data = data;
-        }
-    }
+    actions: {
+        setData(data) {
+            this.data = data;
+        },
+    },
 });

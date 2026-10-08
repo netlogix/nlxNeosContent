@@ -21,8 +21,8 @@ import AsyncService from './services/async.service';
 
 import './state/nlxNeosCategory';
 
-import localeDE from './snippet/de_DE.json';
-import localeEN from './snippet/en_GB.json';
+import localeDE from './snippet/de-DE.json';
+import localeEN from './snippet/en-GB.json';
 
 const {Application} = Shopware;
 

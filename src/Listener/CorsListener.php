@@ -35,7 +35,7 @@ readonly class CorsListener
             return;
         }
 
-        $response = new Response();
+        $response = new Response(null, Response::HTTP_NO_CONTENT);
         $event->setResponse($response);
     }
 
