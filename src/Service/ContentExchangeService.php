@@ -16,6 +16,7 @@ use Shopware\Core\Content\Cms\DataResolver\ResolverContext\ResolverContext;
 use Shopware\Core\Defaults;
 use Shopware\Core\System\SalesChannel\Aggregate\SalesChannelDomain\SalesChannelDomainEntity;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Shopware\Storefront\Framework\Routing\RequestTransformer;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpClient\Exception\ClientException;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -84,11 +85,17 @@ class ContentExchangeService
         );
     }
 
-    public function fetchCmsSectionsFromNeosByPath(string $pathInfo, SalesChannelContext $salesChannelContext): NeosContentResult|NeosRedirectResult|NeosAssetResult
-    {
-        $uri = self::CONTENT_BY_PATH_URI_PREFIX . trim($pathInfo, '/');
-        $response = $this->neosClient->request('GET', $uri, [
-            'headers' => $this->buildSwHeaders($salesChannelContext),
+    /**
+     * Passing the storefront request forwards its query string and public URI to Neos, so
+     * content that depends on them (e.g. prefilled forms) sees what the visitor requested.
+     */
+    public function fetchCmsSectionsFromNeosByPath(
+        string $pathInfo,
+        SalesChannelContext $salesChannelContext,
+        ?Request $request = null
+    ): NeosContentResult|NeosRedirectResult|NeosAssetResult {
+        $response = $this->neosClient->request('GET', $this->buildContentByPathUri($pathInfo, $request), [
+            'headers' => $this->buildSwHeaders($salesChannelContext, $request),
             'max_redirects' => 0,
         ]);
 
@@ -100,7 +107,7 @@ class ContentExchangeService
         $contentType = $request->headers->get('Content-Type', '');
 
         if (str_starts_with($contentType, 'application/json')) {
-            $headers = array_merge($this->buildSwHeaders($salesChannelContext), ['Content-Type' => $contentType]);
+            $headers = array_merge($this->buildSwHeaders($salesChannelContext, $request), ['Content-Type' => $contentType]);
             $body = $request->getContent();
         } else {
             // Recreate formdata since in php it is already consumed by the request
@@ -110,14 +117,13 @@ class ContentExchangeService
             ));
 
             $headers = array_merge(
-                $this->buildSwHeaders($salesChannelContext),
+                $this->buildSwHeaders($salesChannelContext, $request),
                 $formData->getPreparedHeaders()->toArray()
             );
             $body = $formData->bodyToIterable();
         }
 
-        $uri = self::CONTENT_BY_PATH_URI_PREFIX . trim($pathInfo, '/');
-        $response = $this->neosClient->request('POST', $uri, [
+        $response = $this->neosClient->request('POST', $this->buildContentByPathUri($pathInfo, $request), [
             'headers' => $headers,
             'body' => $body,
             'max_redirects' => 0,
@@ -161,19 +167,61 @@ class ContentExchangeService
             return new NeosAssetResult(content: $content, statusCode: $statusCode, contentType: $contentType);
         }
 
-        return $this->serializer->denormalize($content, NeosContentResult::class, 'json');
+        $result = $this->serializer->denormalize($content, NeosContentResult::class, 'json');
+        assert($result instanceof NeosContentResult);
+
+        if (!$this->isCacheable($response)) {
+            return new NeosContentResult(sections: $result->getSections(), head: $result->getHead(), cacheable: false);
+        }
+
+        return $result;
     }
 
-    private function buildSwHeaders(SalesChannelContext $salesChannelContext): array
+    private function isCacheable(ResponseInterface $response): bool
+    {
+        $cacheControl = implode(',', $response->getHeaders(false)['cache-control'] ?? []);
+
+        return preg_match('/(^|,)\s*no-store\s*(,|$)/i', $cacheControl) !== 1;
+    }
+
+    private function buildContentByPathUri(string $pathInfo, ?Request $request): string
+    {
+        $uri = self::CONTENT_BY_PATH_URI_PREFIX . trim($pathInfo, '/');
+        $queryString = $request?->getQueryString();
+
+        return $queryString !== null && $queryString !== '' ? $uri . '?' . $queryString : $uri;
+    }
+
+    private function buildSwHeaders(SalesChannelContext $salesChannelContext, ?Request $request = null): array
     {
         $domain = $this->getCurrentDomain($salesChannelContext);
 
-        return [
+        $headers = [
             'x-sw-language-id' => $salesChannelContext->getLanguageId(),
             'x-sw-sales-channel-id' => $salesChannelContext->getSalesChannelId(),
             'x-sw-sales-channel-domain' => $domain->getUrl(),
             'x-sw-context-token' => $salesChannelContext->getSalesChannel()->getAccessKey(),
         ];
+
+        if ($request !== null) {
+            $headers['x-sw-request-uri'] = $this->getPublicRequestUri($request);
+        }
+
+        return $headers;
+    }
+
+    /**
+     * The request reaching our controllers has already been rewritten by Shopware's SEO URL
+     * resolution (and our own content-by-path routing), so getUri() would return the internal path.
+     */
+    private function getPublicRequestUri(Request $request): string
+    {
+        $requestUri = $request->attributes->get(RequestTransformer::ORIGINAL_REQUEST_URI);
+        if (!is_string($requestUri) || $requestUri === '') {
+            $requestUri = $request->getRequestUri();
+        }
+
+        return $request->getSchemeAndHttpHost() . $requestUri;
     }
 
     public function getCurrentDomain(SalesChannelContext $salesChannelContext): SalesChannelDomainEntity

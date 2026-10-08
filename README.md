@@ -35,6 +35,19 @@ own routing stays authoritative there.
 
 Enable or disable this behavior per sales channel via the plugin's `extendNavigation` setting.
 
+### Request data passed to Neos
+
+Neos renders these pages through the content-by-path API, so it never sees the visitor's request
+itself. The plugin passes on what page content might depend on:
+
+- The query string of the storefront request is appended to the API request.
+- The `x-sw-request-uri` header carries the public URL the visitor requested, e.g. for form
+  submissions that store the page they were sent from.
+
+Pages are cached by Shopware's HTTP cache like any other storefront page. If Neos answers with
+`Cache-Control: no-store`, e.g. because a form was prefilled with personal data, the plugin
+disables the HTTP cache for that response.
+
 ### Custom fields of Neos pages
 
 Neos pages can carry installation specific data for the navigation, e.g. a teaser text and image
