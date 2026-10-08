@@ -168,7 +168,6 @@ class ContentExchangeService
         }
 
         $result = $this->serializer->denormalize($content, NeosContentResult::class, 'json');
-        assert($result instanceof NeosContentResult);
 
         if (!$this->isCacheable($response)) {
             return new NeosContentResult(sections: $result->getSections(), head: $result->getHead(), cacheable: false);
