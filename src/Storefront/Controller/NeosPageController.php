@@ -192,7 +192,8 @@ class NeosPageController extends StorefrontController
                     ),
            default =>  $this->contentExchangeService->fetchCmsSectionsFromNeosByPath(
                         $pathInfo,
-                        $salesChannelContext
+                        $salesChannelContext,
+                        $request
                     )
                 };
         } catch (ClientException $e) {
@@ -240,6 +241,12 @@ class NeosPageController extends StorefrontController
                 $neosContentResult->getStatusCode(),
                 ['Content-Type' => $neosContentResult->getContentType()],
             );
+        }
+
+        if (!$neosContentResult->isCacheable()) {
+            // Read by Shopware's CacheResponseSubscriber only once the response exists, so it can
+            // still be switched off per request here.
+            $request->attributes->set(PlatformRequest::ATTRIBUTE_HTTP_CACHE, false);
         }
 
         $cmsPage = $this->buildCmsPageFromContentResult($neosContentResult, $request, $salesChannelContext);
