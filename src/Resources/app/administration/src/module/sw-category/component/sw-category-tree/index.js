@@ -8,6 +8,8 @@ export default {
         'nlxConfigService',
     ],
 
+    emits: ['unsaved-changes'],
+
     data() {
         return {
             neosPagesData: [],
@@ -60,7 +62,7 @@ export default {
             let routeName = 'sw.category.detail';
             if (category.data?.neos) {
                 routeName = 'sw.category.detail.neos.index';
-                Shopware.State.commit('nlxNeosCategory/setData', category);
+                Shopware.Store.get('nlxNeosCategory').setData(category);
             }
             const route = {
                 name: routeName,
