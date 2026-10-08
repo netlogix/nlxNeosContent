@@ -6,6 +6,8 @@ export default {
 
     inject: ['repositoryFactory'],
 
+    emits: ['modal-close'],
+
     mixins: [
         Mixin.getByName('notification')
     ],

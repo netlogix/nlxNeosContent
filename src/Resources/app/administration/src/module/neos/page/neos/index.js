@@ -184,7 +184,7 @@ Shopware.Component.register('neos-index', {
                     }
                     return response.data.token;
                 });
-            } catch (error) {
+            } catch {
                 // Best-effort background refresh - Shopware fires another token-changed event in
                 // ~5 minutes, so a failed attempt here isn't worth interrupting the user for.
                 return;
@@ -314,8 +314,8 @@ Shopware.Component.register('neos-index', {
                 let cached = null;
                 try {
                     cached = JSON.parse(localStorage.getItem(storageKey) || 'null');
-                } catch (e) {
-                    cached = null;
+                } catch {
+                    // ignore unreadable cache entries
                 }
 
                 if (cached && Date.now() - cached.timestamp < MIN_INTERVAL_MS) {
@@ -324,7 +324,7 @@ Shopware.Component.register('neos-index', {
                 const iframeUri = await doLoginWithRetry();
                 try {
                     localStorage.setItem(storageKey, JSON.stringify({timestamp: Date.now(), iframeUri}));
-                } catch (e) {
+                } catch {
                     // ignore cache write errors
                 }
                 return iframeUri;
