@@ -5,29 +5,22 @@ declare(strict_types=1);
 namespace nlxNeosContent;
 
 use Doctrine\DBAL\Connection;
-use nlxNeosContent\Core\Notification\NotificationService;
-use nlxNeosContent\Core\Notification\NotificationService66;
-use nlxNeosContent\Core\Notification\NotificationServiceInterface;
 use nlxNeosContent\Neos\Endpoint\CachedNeosPageTreeLoader;
 use nlxNeosContent\Service\NeosAuthorizationRoleService;
 use nlxNeosContent\Service\NeosCmsPageLifecycleService;
 use RuntimeException;
 use Shopware\Core\Framework\Adapter\Cache\CacheInvalidator;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\Feature;
 use Shopware\Core\Framework\Plugin;
 use Shopware\Core\Framework\Plugin\Context\ActivateContext;
 use Shopware\Core\Framework\Plugin\Context\DeactivateContext;
 use Shopware\Core\Framework\Plugin\Context\InstallContext;
 use Shopware\Core\Framework\Plugin\Context\UninstallContext;
 use Shopware\Core\Framework\Plugin\Context\UpdateContext;
-use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
-use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Symfony\Component\DependencyInjection\Definition;
 
 
-class NlxNeosContent extends Plugin implements CompilerPassInterface
+class NlxNeosContent extends Plugin
 {
 
     public function install(InstallContext $installContext): void
@@ -57,23 +50,6 @@ class NlxNeosContent extends Plugin implements CompilerPassInterface
 
         // Cached page trees hold serialized NeosPageDTOs, which may not match the updated class.
         $this->getCacheInvalidator()->invalidate([CachedNeosPageTreeLoader::CACHE_KEY], true);
-    }
-
-    function build(ContainerBuilder $container): void
-    {
-        parent::build($container);
-
-        $container->addCompilerPass($this);
-    }
-
-    public function process(ContainerBuilder $container): void
-    {
-        $container->setDefinition(
-            NotificationServiceInterface::class,
-            (new Definition(Feature::isActive('v6.7.0.0') ? NotificationService::class : NotificationService66::class))
-                ->setAutoconfigured(true)
-                ->setAutowired(true)
-        );
     }
 
     public function activate(ActivateContext $activateContext): void
