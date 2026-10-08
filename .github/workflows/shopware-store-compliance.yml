@@ -32,7 +32,7 @@ jobs:
 
       # inspired by https://github.com/shopware/github-actions/blob/main/extension-verifier/action.yml
       - name: Install Shopware-CLI
-        uses: shopware/shopware-cli-action@v1
+        uses: shopware/shopware-cli-action@v3
 
       # Store compliance ignores the validation ignores of .shopware-extension.yml,
       # so the gitignored administration build has to exist
