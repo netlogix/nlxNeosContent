@@ -154,7 +154,7 @@ class PreviewController extends StorefrontController
         $page = $this->cmsPageRepository->search(
             ($criteria),
             $context
-        )->first();
+        )->getEntities()->first();
 
         return $page;
     }

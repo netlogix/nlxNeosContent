@@ -22,7 +22,7 @@ class PluginInfoService
         $criteria->addFilter(new EqualsFilter('name', $technicalName));
 
         /** @var PluginEntity|null $plugin */
-        $plugin = $this->pluginRepository->search($criteria, $context)->first();
+        $plugin = $this->pluginRepository->search($criteria, $context)->getEntities()->first();
 
         if (!$plugin) {
             throw new \RuntimeException("Plugin with technical name '{$technicalName}' not found.");

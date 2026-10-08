@@ -189,7 +189,7 @@ class NeosAuthorizationRoleService
         $roleCriteria->setIds([$roleId]);
 
         /** @var AclRoleEntity $role */
-        $role = $this->aclRoleRepository->search($roleCriteria, $context)->first();
+        $role = $this->aclRoleRepository->search($roleCriteria, $context)->getEntities()->first();
         $deleteAclUserRoles = array_map(fn ($id) => [
             'aclRoleId' => $roleId,
             'userId' => $id
