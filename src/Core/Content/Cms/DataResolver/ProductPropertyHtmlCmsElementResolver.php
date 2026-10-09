@@ -13,7 +13,6 @@ use Shopware\Core\Content\Cms\DataResolver\ResolverContext\EntityResolverContext
 use Shopware\Core\Content\Cms\DataResolver\ResolverContext\ResolverContext;
 use Shopware\Core\Content\Cms\SalesChannel\Struct\HtmlStruct;
 use Shopware\Core\Content\Product\ProductEntity;
-use Shopware\Core\Content\Property\Aggregate\PropertyGroupOption\PropertyGroupOptionEntity;
 use Shopware\Core\Content\Property\PropertyGroupCollection;
 use Shopware\Core\Content\Property\PropertyGroupDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -93,7 +92,7 @@ class ProductPropertyHtmlCmsElementResolver extends AbstractCmsElementResolver
     {
         $names = [];
         foreach ($groups->get($groupId)?->getOptions() ?? [] as $option) {
-            if ($option instanceof PropertyGroupOptionEntity && \in_array($option->getId(), $propertyIds, true)) {
+            if (\in_array($option->getId(), $propertyIds, true)) {
                 $names[] = htmlspecialchars((string) ($option->getTranslation('name') ?? $option->getName()));
             }
         }
