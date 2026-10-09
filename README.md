@@ -114,6 +114,15 @@ template renders empty, that page keeps its Neos path. An invalid template is lo
 pages keep their Neos paths. Saving the template clears the cached page tree, so new URLs apply
 right away.
 
+## Product property placeholders
+
+Besides Shopware's own placeholders like `{{ product.name }}`, Neos content on product pages can use these
+placeholders for the product's options of a property group:
+
+- `{{ product.propertyValue.<propertyGroupId> }}` - the option names, e.g. `Red, Blue`
+- `{{ product.propertyPosition.<propertyGroupId> }}` - the position of the option within the sorted options
+  of the group, as a percentage (e.g. the 2nd of 3 options becomes `67`, no option becomes `0`)
+
 ## Requirements
 
 - Shopware `>= 6.6.10.4`
