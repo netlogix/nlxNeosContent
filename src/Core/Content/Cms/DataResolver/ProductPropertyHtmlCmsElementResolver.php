@@ -17,6 +17,7 @@ use Shopware\Core\Content\Property\PropertyGroupCollection;
 use Shopware\Core\Content\Property\PropertyGroupDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Symfony\Component\DependencyInjection\Attribute\AsDecorator;
+use Symfony\Component\DependencyInjection\Attribute\AutowireDecorated;
 
 /**
  * Replaces placeholders for the product's options of a property group:
@@ -30,6 +31,7 @@ class ProductPropertyHtmlCmsElementResolver extends AbstractCmsElementResolver
     private const PLACEHOLDER_PATTERN = '/{{\s*product\.(propertyValue|propertyPosition)\.([0-9a-f]{32})\s*}}/';
 
     public function __construct(
+        #[AutowireDecorated]
         private readonly AbstractCmsElementResolver $decorated,
     ) {
     }
