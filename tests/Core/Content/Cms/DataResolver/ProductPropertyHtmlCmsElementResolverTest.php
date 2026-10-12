@@ -6,6 +6,8 @@ namespace nlxNeosContent\Tests\Core\Content\Cms\DataResolver;
 
 use nlxNeosContent\Core\Content\Cms\DataResolver\ProductPropertyHtmlCmsElementResolver;
 use PHPUnit\Framework\TestCase;
+use Shopware\Core\Content\Category\CategoryDefinition;
+use Shopware\Core\Content\Category\CategoryEntity;
 use Shopware\Core\Content\Cms\Aggregate\CmsSlot\CmsSlotEntity;
 use Shopware\Core\Content\Cms\DataResolver\Element\ElementDataCollection;
 use Shopware\Core\Content\Cms\DataResolver\Element\HtmlCmsElementResolver;
@@ -73,6 +75,21 @@ class ProductPropertyHtmlCmsElementResolverTest extends TestCase
         $resolver = new ProductPropertyHtmlCmsElementResolver(new HtmlCmsElementResolver());
         $slot = $this->slot($content);
         $context = new ResolverContext($this->salesChannelContext(), new Request());
+
+        static::assertNull($resolver->collect($slot, $context));
+
+        $resolver->enrich($slot, $context, new ElementDataCollection());
+        static::assertSame($content, $this->content($slot));
+    }
+
+    public function testPagesOfOtherEntitiesKeepTheContent(): void
+    {
+        $content = '{{ product.propertyPosition.' . self::GROUP_ID . ' }}';
+        $resolver = new ProductPropertyHtmlCmsElementResolver(new HtmlCmsElementResolver());
+        $slot = $this->slot($content);
+        $category = new CategoryEntity();
+        $category->setId('0190000000000000000000000000000c');
+        $context = new EntityResolverContext($this->salesChannelContext(), new Request(), new CategoryDefinition(), $category);
 
         static::assertNull($resolver->collect($slot, $context));
 

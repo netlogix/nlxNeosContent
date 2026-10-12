@@ -46,7 +46,11 @@ class ProductPropertyHtmlCmsElementResolver extends AbstractCmsElementResolver
         $criteriaCollection = $this->decorated->collect($slot, $resolverContext);
 
         $groupIds = $this->findGroupIds($slot);
-        if ($groupIds === [] || !$resolverContext instanceof EntityResolverContext) {
+        if (
+            $groupIds === []
+            || !$resolverContext instanceof EntityResolverContext
+            || !$resolverContext->getEntity() instanceof ProductEntity
+        ) {
             return $criteriaCollection;
         }
 
