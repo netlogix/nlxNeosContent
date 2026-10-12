@@ -51,6 +51,14 @@ class ProductPropertyHtmlCmsElementResolverTest extends TestCase
         static::assertSame('25', $this->render('{{product.propertyPosition.' . self::GROUP_ID . '}}', ['low']));
     }
 
+    public function testAlphanumericGroupsSortOptionsByName(): void
+    {
+        $sorting = PropertyGroupDefinition::SORTING_TYPE_ALPHANUMERIC;
+
+        static::assertSame('75', $this->render('{{ product.propertyPosition.' . self::GROUP_ID . ' }}', ['low'], $sorting));
+        static::assertSame('High, Low', $this->render('{{ product.propertyValue.' . self::GROUP_ID . ' }}', ['low', 'high'], $sorting));
+    }
+
     public function testPropertyValueIsReplacedWithTheNamesOfTheProductsOptions(): void
     {
         static::assertSame(
@@ -100,7 +108,11 @@ class ProductPropertyHtmlCmsElementResolverTest extends TestCase
     /**
      * @param list<string> $propertyIds
      */
-    private function render(string $content, array $propertyIds): string
+    private function render(
+        string $content,
+        array $propertyIds,
+        string $sortingType = PropertyGroupDefinition::SORTING_TYPE_POSITION,
+    ): string
     {
         $resolver = new ProductPropertyHtmlCmsElementResolver(new HtmlCmsElementResolver());
         $slot = $this->slot($content);
@@ -117,17 +129,17 @@ class ProductPropertyHtmlCmsElementResolverTest extends TestCase
         static::assertSame([self::GROUP_ID], $criteria->all()[PropertyGroupDefinition::class][$key]->getIds());
 
         $result = new ElementDataCollection();
-        $result->add($key, new EntitySearchResult('property_group', 1, $this->propertyGroups(), null, new Criteria(), Context::createDefaultContext()));
+        $result->add($key, new EntitySearchResult('property_group', 1, $this->propertyGroups($sortingType), null, new Criteria(), Context::createDefaultContext()));
         $resolver->enrich($slot, $context, $result);
 
         return $this->content($slot);
     }
 
-    private function propertyGroups(): PropertyGroupCollection
+    private function propertyGroups(string $sortingType): PropertyGroupCollection
     {
         $group = new PropertyGroupEntity();
         $group->setId(self::GROUP_ID);
-        $group->setSortingType(PropertyGroupDefinition::SORTING_TYPE_POSITION);
+        $group->setSortingType($sortingType);
         $group->setOptions(new PropertyGroupOptionCollection([
             $this->option('high', 'High', 3),
             $this->option('low', 'Low', 1),
@@ -143,6 +155,7 @@ class ProductPropertyHtmlCmsElementResolverTest extends TestCase
         $option = new PropertyGroupOptionEntity();
         $option->setId($id);
         $option->setName($name);
+        $option->setTranslated(['name' => $name]);
         $option->setPosition($position);
 
         return $option;
