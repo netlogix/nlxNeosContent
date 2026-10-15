@@ -57,6 +57,11 @@ class ConfigService
         return $this->systemConfigService->getBool($this->getConfigKey('extendNavigation'), $salesChannelId);
     }
 
+    public function isTrailingSlashRedirectEnabled(?string $salesChannelId = null): bool
+    {
+        return $this->systemConfigService->getBool($this->getConfigKey('redirectTrailingSlash'), $salesChannelId);
+    }
+
     public function getNeosPageSeoUrlTemplate(?string $salesChannelId = null): string
     {
         return trim($this->systemConfigService->getString(self::NEOS_PAGE_SEO_URL_TEMPLATE_KEY, $salesChannelId));
