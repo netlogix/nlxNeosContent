@@ -21,5 +21,21 @@
                 Dadurch können Sie Inhalte aus dem CMS nahtlos in Ihrem Shopware Storefront integrieren und anzeigen.
             </helpText>
         </input-field>
+        <input-field type="bool">
+            <name>redirectTrailingSlash</name>
+            <label>Redirect trailing slash mismatches</label>
+            <label lang="de-DE">Abweichenden abschließenden Slash umleiten</label>
+            <defaultValue>false</defaultValue>
+            <helpText>
+                If enabled, content pages requested with a trailing slash that doesn't match the Neos page SEO URL
+                template are redirected: to the URL with a slash if the template ends with one, otherwise to the
+                URL without it.
+            </helpText>
+            <helpText lang="de-DE">
+                Wenn aktiviert, werden Inhaltsseiten, deren abschließender Slash nicht zum SEO-URL-Template
+                für Neos-Seiten passt, umgeleitet: auf die URL mit Slash, wenn das Template mit einem endet,
+                ansonsten auf die URL ohne.
+            </helpText>
+        </input-field>
     </card>
 </config>

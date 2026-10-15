@@ -102,13 +102,17 @@ class NeosPageController extends StorefrontController
         }
 
         // The SEO URL template decides whether page URLs end with a slash.
-        $trailingSlash = str_ends_with($this->configService->getNeosPageSeoUrlTemplate($salesChannelContext->getSalesChannelId()), '/');
+        $salesChannelId = $salesChannelContext->getSalesChannelId();
+        $trailingSlash = str_ends_with($this->configService->getNeosPageSeoUrlTemplate($salesChannelId), '/');
 
         // Matched by its raw Neos path or with the wrong trailing slash, but the page has a different
         // SEO URL. Forms in Neos content still post to the raw path, so only GET requests are redirected.
         if (
             $request->isMethod('GET')
-            && (trim($page->seoPath, '/') !== trim($path, '/') || $this->hasTrailingSlashMismatch($request, $trailingSlash))
+            && (
+                trim($page->seoPath, '/') !== trim($path, '/')
+                || ($this->configService->isTrailingSlashRedirectEnabled($salesChannelId) && $this->hasTrailingSlashMismatch($request, $trailingSlash))
+            )
         ) {
             $this->cacheTagCollector->addTag(self::getCacheTagFromIdentifier($page->identifier), self::CACHE_TAG_ALL);
             $queryString = $request->getQueryString();
