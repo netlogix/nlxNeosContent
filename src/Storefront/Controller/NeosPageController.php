@@ -13,6 +13,7 @@ use nlxNeosContent\Neos\DTO\NeosResults\NeosRedirectResult;
 use nlxNeosContent\Neos\HeadTag\HreflangLink;
 use nlxNeosContent\Neos\HeadTag\JsonLdUrlRewriter;
 use nlxNeosContent\Neos\HeadTag\NeosHeadDataFactory;
+use nlxNeosContent\Service\ConfigService;
 use nlxNeosContent\Service\ContentExchangeService;
 use nlxNeosContent\Service\NeosPageTreeService;
 use nlxNeosContent\Service\ResolverContextService;
@@ -25,6 +26,7 @@ use Shopware\Core\PlatformRequest;
 use Shopware\Core\System\SalesChannel\Aggregate\SalesChannelDomain\SalesChannelDomainEntity;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Controller\StorefrontController;
+use Shopware\Storefront\Framework\Routing\RequestTransformer;
 use Shopware\Storefront\Page\GenericPageLoader;
 use Shopware\Storefront\Page\GenericPageLoaderInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -60,6 +62,7 @@ class NeosPageController extends StorefrontController
         private readonly NeosHeadDataFactory $neosHeadDataFactory,
         private readonly JsonLdUrlRewriter $jsonLdUrlRewriter,
         private readonly ShopwareLinkRedirectResolver $shopwareLinkRedirectResolver,
+        private readonly ConfigService $configService,
     ) {
     }
 
@@ -98,15 +101,21 @@ class NeosPageController extends StorefrontController
             return $this->renderPath('/' . $path, $request, $salesChannelContext);
         }
 
-        // Matched by its raw Neos path, but the page has a different templated SEO URL. Forms in
-        // Neos content still post to the raw path, so only GET requests are redirected.
-        if ($request->isMethod('GET') && trim($page->seoPath, '/') !== trim($path, '/')) {
+        // The SEO URL template decides whether page URLs end with a slash.
+        $trailingSlash = str_ends_with($this->configService->getNeosPageSeoUrlTemplate($salesChannelContext->getSalesChannelId()), '/');
+
+        // Matched by its raw Neos path or with the wrong trailing slash, but the page has a different
+        // SEO URL. Forms in Neos content still post to the raw path, so only GET requests are redirected.
+        if (
+            $request->isMethod('GET')
+            && (trim($page->seoPath, '/') !== trim($path, '/') || $this->hasTrailingSlashMismatch($request, $trailingSlash))
+        ) {
             $this->cacheTagCollector->addTag(self::getCacheTagFromIdentifier($page->identifier), self::CACHE_TAG_ALL);
             $queryString = $request->getQueryString();
 
             return new RedirectResponse(
                 rtrim($this->contentExchangeService->getCurrentDomain($salesChannelContext)->getUrl(), '/')
-                    . '/' . ltrim($page->seoPath, '/')
+                    . '/' . trim($page->seoPath, '/') . ($trailingSlash ? '/' : '')
                     . ($queryString !== null ? '?' . $queryString : ''),
                 Response::HTTP_MOVED_PERMANENTLY
             );
@@ -424,6 +433,20 @@ class NeosPageController extends StorefrontController
         }
 
         return rtrim($domainUrl, '/') . '/' . $path;
+    }
+
+    /**
+     * Shopware's SeoResolver strips the trailing slash before routing, so $path never has one -
+     * only the original request URI still tells whether the client sent it.
+     */
+    private function hasTrailingSlashMismatch(Request $request, bool $trailingSlash): bool
+    {
+        $requestUri = $request->attributes->get(RequestTransformer::ORIGINAL_REQUEST_URI);
+        if (!is_string($requestUri)) {
+            return false;
+        }
+
+        return str_ends_with((string) parse_url($requestUri, PHP_URL_PATH), '/') !== $trailingSlash;
     }
 
     private function hasFormLikeRequestStructure(Request $request): bool
