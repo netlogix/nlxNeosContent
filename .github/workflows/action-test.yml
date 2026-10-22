@@ -58,3 +58,7 @@ jobs:
         working-directory: custom/plugins/${{ inputs.extension-name }}
         shell: bash
         run: composer validate --no-check-lock
+
+      - name: 'Run PHPUnit'
+        shell: bash
+        run: vendor/bin/phpunit --configuration custom/plugins/${{ inputs.extension-name }}/phpunit.xml.dist

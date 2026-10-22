@@ -2,3 +2,4 @@ src/Resources/public/administration
 src/Resources/public/static
 vendor/
 .idea/
+.phpunit.result.cache
