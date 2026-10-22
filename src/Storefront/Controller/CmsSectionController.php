@@ -172,7 +172,7 @@ class CmsSectionController extends StorefrontController
         $parameters['page'] = $navigationPage;
 
         return $this->render(
-            '@Storefront/storefront/page/content/detail.html.twig',
+            '@Storefront/storefront/page/content/nlx-neos-cms-section.html.twig',
             $parameters
         );
     }
