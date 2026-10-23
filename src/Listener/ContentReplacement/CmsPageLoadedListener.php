@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace nlxNeosContent\Listener\ContentReplacement;
 
+use nlxNeosContent\Core\Content\Cms\SalesChannel\ResolverContextAwareCmsPageLoader;
 use nlxNeosContent\Core\Content\NeosNode\NeosNodeEntity;
 use nlxNeosContent\Error\ContentReplacement\MissingCmsPageEntityException;
 use nlxNeosContent\Error\ContentReplacement\MissingEntityIdForResolverContextException;
@@ -16,9 +17,11 @@ use Shopware\Core\Content\Cms\Aggregate\CmsSection\CmsSectionCollection;
 use Shopware\Core\Content\Cms\CmsPageEntity;
 use Shopware\Core\Content\Cms\DataResolver\FieldConfig;
 use Shopware\Core\Content\Cms\DataResolver\FieldConfigCollection;
+use Shopware\Core\Content\Cms\DataResolver\ResolverContext\EntityResolverContext;
 use Shopware\Core\Content\Cms\DataResolver\ResolverContext\ResolverContext;
 use Shopware\Core\Content\Cms\Events\CmsPageLoadedEvent;
 use Shopware\Core\Content\Product\ProductDefinition;
+use Shopware\Core\Content\Product\ProductEntity;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpFoundation\Request;
@@ -135,12 +138,17 @@ class CmsPageLoadedListener
         Request $request,
         CmsPageEntity $cmsPage,
     ): CmsSectionCollection {
-        $resolverContext = $this->resolverContextService->getResolverContextForEntityNameAndId(
-            ProductDefinition::ENTITY_NAME,
-            $productId,
-            $salesChannelContext,
-            $request
-        );
+        $resolverContext = self::productResolverContextOfCmsPageLoader($request);
+        if ($resolverContext !== null) {
+            $productId = $resolverContext->getEntity()->getUniqueIdentifier();
+        } else {
+            $resolverContext = $this->resolverContextService->getResolverContextForEntityNameAndId(
+                ProductDefinition::ENTITY_NAME,
+                $productId,
+                $salesChannelContext,
+                $request
+            );
+        }
 
         $alternativeCmsBlocksFromNeos = $this->contentExchangeService->getAlternativeCmsSectionsFromNeos(
             $cmsPage,
@@ -166,6 +174,19 @@ class CmsPageLoadedListener
 
         $this->contentExchangeService->loadSlotData($alternativeCmsBlocksFromNeos->getBlocks(), $resolverContext);
         return $alternativeCmsBlocksFromNeos;
+    }
+
+    /**
+     * The resolver context Shopware loads the product detail page with, see ResolverContextAwareCmsPageLoader. On the
+     * URL of a parent product, its product is the variant Shopware shows, not the parent of the request's "productId".
+     */
+    private static function productResolverContextOfCmsPageLoader(Request $request): ?EntityResolverContext
+    {
+        $resolverContext = $request->attributes->get(ResolverContextAwareCmsPageLoader::REQUEST_ATTRIBUTE);
+
+        return $resolverContext instanceof EntityResolverContext && $resolverContext->getEntity() instanceof ProductEntity
+            ? $resolverContext
+            : null;
     }
 
     private function getNewShopPageBlocks(
