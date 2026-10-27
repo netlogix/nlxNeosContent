@@ -5,4 +5,7 @@
 /.env.test export-ignore
 /.gitignore export-ignore
 /phpunit.xml.dist export-ignore
+/phpunit.integration.xml.dist export-ignore
+/docker-compose.yaml export-ignore
+/Makefile export-ignore
 .shopware-extension.yml export-ignore

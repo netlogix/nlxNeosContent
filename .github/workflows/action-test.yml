@@ -62,3 +62,7 @@ jobs:
       - name: 'Run PHPUnit'
         shell: bash
         run: vendor/bin/phpunit --configuration custom/plugins/${{ inputs.extension-name }}/phpunit.xml.dist
+
+      - name: 'Run PHPUnit integration tests'
+        shell: bash
+        run: vendor/bin/phpunit --configuration custom/plugins/${{ inputs.extension-name }}/phpunit.integration.xml.dist
