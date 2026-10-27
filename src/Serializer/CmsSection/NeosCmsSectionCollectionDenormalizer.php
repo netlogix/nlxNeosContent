@@ -20,7 +20,6 @@ class NeosCmsSectionCollectionDenormalizer implements DenormalizerInterface, Ser
         $cmsSectionCollection = new NeosCmsSectionCollection();
         $position = 0;
         foreach (json_decode($data, true) as $sectionData) {
-            /** @var NeosCmsSectionEntity $cmsSection */
             if (!is_array($sectionData)) {
                 throw new FaultyNeosSectionDataException(
                     message: sprintf(
@@ -31,6 +30,7 @@ class NeosCmsSectionCollectionDenormalizer implements DenormalizerInterface, Ser
                     code: 1771927301
                 );
             }
+            /** @var NeosCmsSectionEntity $cmsSection */
             $cmsSection = $this->serializer->denormalize($sectionData, NeosCmsSectionEntity::class, $format, $context);
             $cmsSection->setPosition($position);
             $cmsSectionCollection->add($cmsSection);
