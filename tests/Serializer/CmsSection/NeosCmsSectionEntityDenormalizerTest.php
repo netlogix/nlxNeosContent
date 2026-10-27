@@ -7,6 +7,7 @@ namespace nlxNeosContent\Tests\Serializer\CmsSection;
 use nlxNeosContent\Core\Content\Cms\Aggregate\CmsBlock\NeosCmsBlockCollection;
 use nlxNeosContent\Serializer\CmsSection\NeosCmsSectionEntityDenormalizer;
 use nlxNeosContent\Core\Content\Cms\Aggregate\CmsSection\NeosCmsSectionEntity;
+use nlxNeosContent\Error\ContentReplacement\FaultyNeosSectionDataException;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use Symfony\Component\Serializer\SerializerInterface;
@@ -26,6 +27,27 @@ class NeosCmsSectionEntityDenormalizerTest extends TestCase
         static::assertSame('', $this->denormalize(['cssClass' => null])->getCssClass());
     }
 
+    public function testNullTypeThrowsFaultySectionDataException(): void
+    {
+        $this->expectException(FaultyNeosSectionDataException::class);
+
+        $this->denormalize(['type' => null]);
+    }
+
+    public function testMissingBlocksAreDenormalizedAsEmptyList(): void
+    {
+        $serializer = $this->createMockForIntersectionOfInterfaces([SerializerInterface::class, DenormalizerInterface::class]);
+        $serializer->expects(static::once())
+            ->method('denormalize')
+            ->with([], NeosCmsBlockCollection::class)
+            ->willReturn(new NeosCmsBlockCollection());
+
+        $denormalizer = new NeosCmsSectionEntityDenormalizer();
+        $denormalizer->setSerializer($serializer);
+
+        $denormalizer->denormalize(['type' => 'default'], NeosCmsSectionEntity::class);
+    }
+
     private function denormalize(array $data): NeosCmsSectionEntity
     {
         $serializer = $this->createMockForIntersectionOfInterfaces([SerializerInterface::class, DenormalizerInterface::class]);
@@ -35,7 +57,7 @@ class NeosCmsSectionEntityDenormalizerTest extends TestCase
         $denormalizer->setSerializer($serializer);
 
         return $denormalizer->denormalize(
-            ['type' => 'default', 'blocks' => []] + $data,
+            $data + ['type' => 'default', 'blocks' => []],
             NeosCmsSectionEntity::class
         );
     }

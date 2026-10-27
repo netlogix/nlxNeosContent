@@ -6,6 +6,7 @@ namespace nlxNeosContent\Serializer\CmsSection;
 
 use nlxNeosContent\Core\Content\Cms\Aggregate\CmsBlock\NeosCmsBlockCollection;
 use nlxNeosContent\Core\Content\Cms\Aggregate\CmsSection\NeosCmsSectionEntity;
+use nlxNeosContent\Error\ContentReplacement\FaultyNeosSectionDataException;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\DataAbstractionLayer\FieldVisibility;
 use Shopware\Core\Framework\Uuid\Uuid;
@@ -29,6 +30,16 @@ class NeosCmsSectionEntityDenormalizer implements DenormalizerInterface, Seriali
         ?string $format = null,
         array $context = []
     ): NeosCmsSectionEntity {
+        if (!isset($data['type'])) {
+            throw new FaultyNeosSectionDataException(
+                message: sprintf(
+                    'Expected section data to contain a "type", got: %s',
+                    is_array($data) ? 'keys [' . implode(', ', array_keys($data)) . ']' : get_debug_type($data)
+                ),
+                code: 1793104878
+            );
+        }
+
         $cmsSection = new NeosCmsSectionEntity();
         $fieldVisibility = new FieldVisibility([]);
         $cmsSection->setId(Uuid::randomHex());
@@ -41,7 +52,7 @@ class NeosCmsSectionEntityDenormalizer implements DenormalizerInterface, Seriali
         $cmsSection->setBackgroundMediaMode($data['backgroundMediaMode'] ?? 'cover');
         $cmsSection->internalSetEntityData('cms_section', $fieldVisibility);
         $blocks = $this->serializer->denormalize(
-            $data['blocks'],
+            $data['blocks'] ?? [],
             NeosCmsBlockCollection::class,
             $format,
             ['sectionId' => $cmsSection->getId()]
