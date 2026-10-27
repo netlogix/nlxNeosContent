@@ -34,6 +34,7 @@ use Symfony\Component\HttpClient\Exception\ClientException;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 
 class NeosPageController extends StorefrontController
@@ -159,11 +160,7 @@ class NeosPageController extends StorefrontController
         try {
             $neosContentResult = $this->contentExchangeService->fetchCmsSectionsFromNeosByPath($pathInfo, $salesChannelContext);
         } catch (ClientException $e) {
-            if ($e->getCode() === 404) {
-                throw $this->createNotFoundException(previous: $e);
-            }
-
-            throw $e;
+            throw $this->mapNeosClientException($e);
         }
 
         if (!$neosContentResult instanceof NeosContentResult) {
@@ -210,11 +207,7 @@ class NeosPageController extends StorefrontController
                     )
                 };
         } catch (ClientException $e) {
-            if ($e->getCode() === 404) {
-                throw $this->createNotFoundException(previous: $e);
-            } else {
-                throw $e;
-            }
+            throw $this->mapNeosClientException($e);
         }
 
         if ($neosContentResult instanceof NeosRedirectResult) {
@@ -323,6 +316,16 @@ class NeosPageController extends StorefrontController
             'navigationExtensionDisabled' => $navigationExtensionDisabled,
             'breadcrumb' => iterator_to_array($breadcrumb),
         ]);
+    }
+
+    private function mapNeosClientException(ClientException $e): \Throwable
+    {
+        return match ($e->getCode()) {
+            Response::HTTP_NOT_FOUND => $this->createNotFoundException(previous: $e),
+            // Not createAccessDeniedException(): its security-core exception only becomes a 403 behind a firewall Shopware doesn't have.
+            Response::HTTP_FORBIDDEN => new AccessDeniedHttpException(previous: $e),
+            default => $e,
+        };
     }
 
     private function buildCmsPageFromContentResult(
