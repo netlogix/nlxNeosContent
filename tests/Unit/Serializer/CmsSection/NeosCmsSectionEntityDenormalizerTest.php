@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace nlxNeosContent\Tests\Serializer\CmsSection;
+namespace nlxNeosContent\Tests\Unit\Serializer\CmsSection;
 
 use nlxNeosContent\Core\Content\Cms\Aggregate\CmsBlock\NeosCmsBlockCollection;
-use nlxNeosContent\Serializer\CmsSection\NeosCmsSectionEntityDenormalizer;
 use nlxNeosContent\Core\Content\Cms\Aggregate\CmsSection\NeosCmsSectionEntity;
+use nlxNeosContent\Serializer\CmsSection\NeosCmsSectionEntityDenormalizer;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use Symfony\Component\Serializer\SerializerInterface;

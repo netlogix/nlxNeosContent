@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace nlxNeosContent\Tests\Core\Content\Cms\SalesChannel;
+namespace nlxNeosContent\Tests\Unit\Core\Content\Cms\SalesChannel;
 
 use nlxNeosContent\Core\Content\Cms\SalesChannel\ResolverContextAwareCmsPageLoader;
 use PHPUnit\Framework\TestCase;
