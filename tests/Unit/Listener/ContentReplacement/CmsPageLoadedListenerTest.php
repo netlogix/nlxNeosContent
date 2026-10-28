@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace nlxNeosContent\Tests\Listener\ContentReplacement;
+namespace nlxNeosContent\Tests\Unit\Listener\ContentReplacement;
 
 use nlxNeosContent\Core\Content\Cms\SalesChannel\ResolverContextAwareCmsPageLoader;
 use nlxNeosContent\Core\Content\NeosNode\NeosNodeEntity;

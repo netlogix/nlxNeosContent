@@ -1,0 +1,11 @@
+services:
+  shopware:
+    image: dockware/shopware:6.7.13.1
+    ports:
+      - "${SHOPWARE_PORT:-8000}:80"
+      - '3306:3306'
+    environment:
+      PHP_VERSION: "8.2"
+    volumes:
+      - ./:/var/www/html/custom/plugins/nlxNeosContent
+      - /var/www/html/custom/plugins/nlxNeosContent/vendor

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace nlxNeosContent\Tests\Storefront;
+namespace nlxNeosContent\Tests\Unit\Storefront;
 
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -99,7 +99,7 @@ class NlxNeosCmsSectionTemplateTest extends TestCase
     {
         $twig = new Environment(new ArrayLoader([
             self::TEMPLATE => file_get_contents(
-                __DIR__ . '/../../src/Resources/views/storefront/page/content/nlx-neos-cms-section.html.twig'
+                __DIR__ . '/../../../src/Resources/views/storefront/page/content/nlx-neos-cms-section.html.twig'
             ),
             self::SHOPWARE_TEMPLATE => file_get_contents(
                 \dirname((new \ReflectionClass(Storefront::class))->getFileName())
