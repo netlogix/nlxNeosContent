@@ -227,20 +227,13 @@ class NeosCmsPageLifecycleService
                     );
                 SQL
         );
+    }
 
+    public function dropNeosNodeTable(): void
+    {
         $this->connection->executeStatement(
             <<<SQL
-                    DELETE FROM cms_page
-                    WHERE id IN (
-                        SELECT cms_page_id FROM nlx_neos_node
-                    );
-                SQL
-        );
-
-        //FIXME Drop nlx_neos_node table, currently not possible due to creation with migrations
-        $this->connection->executeStatement(
-            <<<SQL
-                    DELETE FROM nlx_neos_node;
+                    DROP TABLE IF EXISTS nlx_neos_node;
                 SQL
         );
     }
