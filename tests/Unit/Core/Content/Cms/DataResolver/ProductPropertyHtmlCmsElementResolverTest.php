@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace nlxNeosContent\Tests\Core\Content\Cms\DataResolver;
+namespace nlxNeosContent\Tests\Unit\Core\Content\Cms\DataResolver;
 
 use nlxNeosContent\Core\Content\Cms\DataResolver\ProductPropertyHtmlCmsElementResolver;
 use PHPUnit\Framework\TestCase;

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace nlxNeosContent\Tests\Service;
+namespace nlxNeosContent\Tests\Unit\Service;
 
 use nlxNeosContent\Neos\DTO\NeosResults\NeosContentResult;
 use nlxNeosContent\Service\ConfigService;

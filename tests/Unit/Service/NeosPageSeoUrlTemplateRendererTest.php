@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace nlxNeosContent\Tests\Service;
+namespace nlxNeosContent\Tests\Unit\Service;
 
 use Cocur\Slugify\Slugify;
 use nlxNeosContent\Neos\DTO\NeosPageCollection;
