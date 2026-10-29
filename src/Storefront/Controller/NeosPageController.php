@@ -35,6 +35,7 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Symfony\Component\HttpKernel\Exception\GoneHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 
 class NeosPageController extends StorefrontController
@@ -324,6 +325,7 @@ class NeosPageController extends StorefrontController
             Response::HTTP_NOT_FOUND => $this->createNotFoundException(previous: $e),
             // Not createAccessDeniedException(): its security-core exception only becomes a 403 behind a firewall Shopware doesn't have.
             Response::HTTP_FORBIDDEN => new AccessDeniedHttpException(previous: $e),
+            Response::HTTP_GONE => new GoneHttpException(previous: $e),
             default => $e,
         };
     }
