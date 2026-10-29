@@ -77,8 +77,14 @@ class NlxNeosContent extends Plugin
             $neosAuthorizationRoleService->removeNeosEditorRole($context);
         });
 
+        $neosCmsPageLifecycleService = $this->getNeosCmsPageLifecycleService();
+
         //Remove cms pages
-        $this->getNeosCmsPageLifecycleService()->removeCmsPages();
+        $neosCmsPageLifecycleService->removeCmsPages();
+
+        if (!$uninstallContext->keepUserData()) {
+            $neosCmsPageLifecycleService->dropNeosNodeTable();
+        }
     }
 
     private function getNeosAuthorizationRoleService(): NeosAuthorizationRoleService
