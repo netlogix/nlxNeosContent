@@ -140,7 +140,7 @@ Shopware.Component.register('neos-index', {
         async bootstrapNeosIframe() {
             await this.loadConfig();
 
-            const neosBaseUri = await this.nlxAsyncService.withRetry(() => this.nlxAsyncService.withTimeout(
+            const neosBaseUri = this.neosBaseUri = await this.nlxAsyncService.withRetry(() => this.nlxAsyncService.withTimeout(
                 this.nlxConfigService.getSetting('neosBaseUri'), DEFAULT_TIMEOUT_MS, 'Loading Neos configuration'
             ));
             this.inactiveConfiguration = !neosBaseUri;
@@ -158,7 +158,6 @@ Shopware.Component.register('neos-index', {
                 return;
             }
 
-            this.neosBaseUri = neosBaseUri;
             this.loadNeosIntoIframe();
             this.registerTokenRefreshListener(loginService, neosBaseUri);
         },
