@@ -342,7 +342,7 @@ class NeosPageController extends StorefrontController
             context: $salesChannelContext,
             request: $request,
         );
-        $this->contentExchangeService->loadSlotData($sections->getBlocks(), $resolverContext);
+        $this->contentExchangeService->loadSectionData($sections, $resolverContext);
 
         $cmsPage = new CmsPageEntity();
         $cmsPage->setSections($sections);

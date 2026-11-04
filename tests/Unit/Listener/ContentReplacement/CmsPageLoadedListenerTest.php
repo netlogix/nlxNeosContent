@@ -68,7 +68,7 @@ class CmsPageLoadedListenerTest extends TestCase
         $contentExchangeService = $this->createMock(ContentExchangeService::class);
         $contentExchangeService->method('getAlternativeCmsSectionsFromNeos')->willReturn(new CmsSectionCollection());
         $contentExchangeService->expects(static::once())
-            ->method('loadSlotData')
+            ->method('loadSectionData')
             ->with(static::anything(), static::identicalTo($expectedResolverContext));
 
         return new CmsPageLoadedListener($contentExchangeService, $resolverContextService);
