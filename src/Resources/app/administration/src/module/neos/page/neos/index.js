@@ -6,6 +6,7 @@ const {Criteria} = Shopware.Data;
 const {api} = Shopware.Context;
 
 const DEFAULT_TIMEOUT_MS = 15000;
+const NEOS_TOKEN_REFRESH_AFTER_MS = 5 * 60 * 1000;
 
 Shopware.Component.register('neos-index', {
     template,
@@ -85,6 +86,7 @@ Shopware.Component.register('neos-index', {
             }
             if (event.data && event.data.type === 'nlxUserActivity') {
                 Shopware.Service('userActivityService').updateLastUserActivity();
+                this.ensureFreshNeosToken();
             }
             if (event.data && event.data.type === 'nlxOpenCmsPage') {
                 this.$router.push({
@@ -152,8 +154,26 @@ Shopware.Component.register('neos-index', {
                 return;
             }
 
+            this.neosBaseUri = neosBaseUri;
             this.loadNeosIntoIframe();
             this.registerTokenRefreshListener(loginService, neosBaseUri);
+        },
+
+        // Shopware's own refresh timer doesn't run while the tab is frozen or the machine sleeps,
+        // so the Neos token is renewed on activity inside the iframe as well.
+        ensureFreshNeosToken() {
+            if (!this.neosBaseUri || this.neosTokenRefresh) return;
+
+            const loginService = Shopware.Service('loginService');
+            if (!loginService.isLoggedIn()) {
+                this.triggerLoginModal(loginService);
+                return;
+            }
+
+            if (Date.now() - this.neosTokenRefreshedAt < NEOS_TOKEN_REFRESH_AFTER_MS) return;
+
+            this.neosTokenRefresh = this.refreshNeosToken(this.neosBaseUri)
+                .finally(() => { this.neosTokenRefresh = null; });
         },
 
         loadFilloutRegistrationScript() {
@@ -207,6 +227,7 @@ Shopware.Component.register('neos-index', {
                 },
                 tokenRefreshRoute
             );
+            this.neosTokenRefreshedAt = Date.now();
         },
 
         async loadConfig() {
@@ -225,6 +246,7 @@ Shopware.Component.register('neos-index', {
                 }
                 return response.data.token;
             });
+            this.neosTokenRefreshedAt = Date.now();
             this.config.apiUrl = api.schemeAndHttpHost;
 
             const currentRoute = this.$router.currentRoute;
