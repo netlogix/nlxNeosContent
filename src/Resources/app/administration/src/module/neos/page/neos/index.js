@@ -6,7 +6,11 @@ const {Criteria} = Shopware.Data;
 const {api} = Shopware.Context;
 
 const DEFAULT_TIMEOUT_MS = 15000;
-const NEOS_TOKEN_REFRESH_AFTER_MS = 5 * 60 * 1000;
+
+function getTokenRefreshDueAt(jwt) {
+    const {iat, exp} = JSON.parse(atob(jwt.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+    return (iat + (exp - iat) / 2) * 1000;
+}
 
 Shopware.Component.register('neos-index', {
     template,
@@ -170,7 +174,7 @@ Shopware.Component.register('neos-index', {
                 return;
             }
 
-            if (Date.now() - this.neosTokenRefreshedAt < NEOS_TOKEN_REFRESH_AFTER_MS) return;
+            if (Date.now() < this.neosTokenRefreshDueAt) return;
 
             this.neosTokenRefresh = this.refreshNeosToken(this.neosBaseUri)
                 .finally(() => { this.neosTokenRefresh = null; });
@@ -227,7 +231,7 @@ Shopware.Component.register('neos-index', {
                 },
                 tokenRefreshRoute
             );
-            this.neosTokenRefreshedAt = Date.now();
+            this.neosTokenRefreshDueAt = getTokenRefreshDueAt(token);
         },
 
         async loadConfig() {
@@ -246,7 +250,7 @@ Shopware.Component.register('neos-index', {
                 }
                 return response.data.token;
             });
-            this.neosTokenRefreshedAt = Date.now();
+            this.neosTokenRefreshDueAt = getTokenRefreshDueAt(this.config.token);
             this.config.apiUrl = api.schemeAndHttpHost;
 
             const currentRoute = this.$router.currentRoute;
