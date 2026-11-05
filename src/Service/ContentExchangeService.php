@@ -10,6 +10,10 @@ use nlxNeosContent\Neos\DTO\NeosResults\NeosContentResult;
 use nlxNeosContent\Neos\DTO\NeosResults\NeosRedirectResult;
 use Shopware\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockCollection;
 use Shopware\Core\Content\Cms\Aggregate\CmsSection\CmsSectionCollection;
+use Shopware\Core\Content\Cms\Aggregate\CmsSection\CmsSectionEntity;
+use Shopware\Core\Content\Media\MediaCollection;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Content\Cms\CmsPageEntity;
 use Shopware\Core\Content\Cms\DataResolver\CmsSlotsDataResolver;
 use Shopware\Core\Content\Cms\DataResolver\ResolverContext\ResolverContext;
@@ -46,6 +50,8 @@ class ContentExchangeService
         #[Autowire(service: 'cache.object')]
         private readonly TagAwareCacheInterface $cache,
         private readonly ConfigService $configService,
+        #[Autowire(service: 'media.repository')]
+        private readonly ?EntityRepository $mediaRepository = null,
     ) {
     }
 
@@ -372,5 +378,32 @@ class ContentExchangeService
         $slots = $this->cmsSlotsDataResolver->resolve($blocks->getSlots(), $resolverContext);
 
         $blocks->setSlots($slots);
+    }
+
+    public function loadSectionData(CmsSectionCollection $sections, ResolverContext $resolverContext): void
+    {
+        $this->loadSectionBackgroundMedia($sections, $resolverContext);
+        $this->loadSlotData($sections->getBlocks(), $resolverContext);
+    }
+
+    private function loadSectionBackgroundMedia(CmsSectionCollection $sections, ResolverContext $resolverContext): void
+    {
+        $mediaIds = array_values(array_unique(array_filter(
+            $sections->map(fn (CmsSectionEntity $section) => $section->getBackgroundMediaId())
+        )));
+        if (!$mediaIds || !$this->mediaRepository) {
+            return;
+        }
+
+        /** @var MediaCollection $media */
+        $media = $this->mediaRepository
+            ->search(new Criteria($mediaIds), $resolverContext->getSalesChannelContext()->getContext())
+            ->getEntities();
+        foreach ($sections as $section) {
+            $backgroundMedia = $media->get((string)$section->getBackgroundMediaId());
+            if ($backgroundMedia) {
+                $section->setBackgroundMedia($backgroundMedia);
+            }
+        }
     }
 }

@@ -8,7 +8,16 @@ use nlxNeosContent\Neos\DTO\NeosResults\NeosContentResult;
 use nlxNeosContent\Service\ConfigService;
 use nlxNeosContent\Service\ContentExchangeService;
 use PHPUnit\Framework\TestCase;
+use Shopware\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockCollection;
 use Shopware\Core\Content\Cms\Aggregate\CmsSection\CmsSectionCollection;
+use Shopware\Core\Content\Cms\Aggregate\CmsSection\CmsSectionEntity;
+use Shopware\Core\Content\Cms\DataResolver\ResolverContext\ResolverContext;
+use Shopware\Core\Content\Media\MediaCollection;
+use Shopware\Core\Content\Media\MediaEntity;
+use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopware\Core\Content\Cms\DataResolver\CmsSlotsDataResolver;
 use Shopware\Core\System\SalesChannel\Aggregate\SalesChannelDomain\SalesChannelDomainCollection;
 use Shopware\Core\System\SalesChannel\Aggregate\SalesChannelDomain\SalesChannelDomainEntity;
@@ -76,7 +85,57 @@ class ContentExchangeServiceTest extends TestCase
         static::assertTrue($result->isCacheable());
     }
 
-    private function service(MockResponse $response): ContentExchangeService
+    public function testLoadSectionDataSetsTheBackgroundMediaOfSections(): void
+    {
+        $media = new MediaEntity();
+        $media->setId('media-1');
+        $withImage = $this->section('section-1', 'media-1');
+        $withoutImage = $this->section('section-2', null);
+
+        $mediaRepository = $this->createMock(EntityRepository::class);
+        $mediaRepository->expects(static::once())
+            ->method('search')
+            ->with(static::callback(fn (Criteria $criteria) => $criteria->getIds() === ['media-1']))
+            ->willReturnCallback(fn (Criteria $criteria, Context $context) => new EntitySearchResult(
+                'media', 1, new MediaCollection([$media]), null, $criteria, $context
+            ));
+
+        $salesChannelContext = $this->createMock(SalesChannelContext::class);
+        $salesChannelContext->method('getContext')->willReturn(Context::createDefaultContext());
+
+        $this->service(new MockResponse('{}'), $mediaRepository)->loadSectionData(
+            new CmsSectionCollection([$withImage, $withoutImage]),
+            new ResolverContext($salesChannelContext, new Request())
+        );
+
+        static::assertSame($media, $withImage->getBackgroundMedia());
+        static::assertNull($withoutImage->getBackgroundMedia());
+    }
+
+    public function testLoadSectionDataSkipsTheMediaSearchWithoutBackgroundImages(): void
+    {
+        $mediaRepository = $this->createMock(EntityRepository::class);
+        $mediaRepository->expects(static::never())->method('search');
+
+        $this->service(new MockResponse('{}'), $mediaRepository)->loadSectionData(
+            new CmsSectionCollection([$this->section('section-1', null)]),
+            new ResolverContext($this->createMock(SalesChannelContext::class), new Request())
+        );
+    }
+
+    private function section(string $id, ?string $backgroundMediaId): CmsSectionEntity
+    {
+        $section = new CmsSectionEntity();
+        $section->setId($id);
+        $section->setBlocks(new CmsBlockCollection());
+        if ($backgroundMediaId) {
+            $section->setBackgroundMediaId($backgroundMediaId);
+        }
+
+        return $section;
+    }
+
+    private function service(MockResponse $response, ?EntityRepository $mediaRepository = null): ContentExchangeService
     {
         $client = new MockHttpClient(function (string $method, string $url, array $options) use ($response) {
             $this->requests[] = ['method' => $method, 'url' => $url, 'options' => $options];
@@ -93,6 +152,7 @@ class ContentExchangeServiceTest extends TestCase
             $client,
             $this->createMock(TagAwareCacheInterface::class),
             $this->createMock(ConfigService::class),
+            $mediaRepository,
         );
     }
 

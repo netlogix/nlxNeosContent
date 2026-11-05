@@ -50,6 +50,9 @@ class NeosCmsSectionEntityDenormalizer implements DenormalizerInterface, Seriali
         $cmsSection->setBackgroundColor($data['backgroundColor'] ?? '');
         $cmsSection->setCssClass($data['cssClass'] ?? '');
         $cmsSection->setBackgroundMediaMode($data['backgroundMediaMode'] ?? 'cover');
+        if (!empty($data['backgroundMediaId'])) {
+            $cmsSection->setBackgroundMediaId($data['backgroundMediaId']);
+        }
         $cmsSection->internalSetEntityData('cms_section', $fieldVisibility);
         $blocks = $this->serializer->denormalize(
             $data['blocks'] ?? [],
