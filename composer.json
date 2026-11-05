@@ -55,8 +55,8 @@
             "en-GB": "https://websolutions.netlogix.de/kontakt/"
         },
         "description": {
-            "de-DE": "Dieses Plugin ermöglicht es, Shopware Layouts und Inhaltsseiten mit einem Enterprise-CMS aus Neos zu gestalten, Inhalte redaktionell zu pflegen und direkt im Storefront auszuspielen sowie die Shopware Navigation um Seiten aus Neos zu erweitern.",
-            "en-GB": "This plugin lets you design Shopware layouts and content pages with an enterprise CMS powered by Neos, manage content editorially, deliver it straight into your Shopware storefront and extend the Shopware navigation with pages from Neos."
+            "de-DE": "Dieses Plugin ermöglicht es, Shopware Layouts mit einem Enterprise-CMS aus Neos zu gestalten und im Storefront auszuspielen. Optional erweitert es die Navigation um Seiten aus Neos.",
+            "en-GB": "This plugin lets you design Shopware layouts with an enterprise CMS powered by Neos and deliver them to your storefront. Optionally, it extends the navigation with Neos pages."
         },
         "shopware-admin": "Resources/app/administration"
     }
