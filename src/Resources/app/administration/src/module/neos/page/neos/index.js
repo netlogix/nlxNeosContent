@@ -7,6 +7,11 @@ const {api} = Shopware.Context;
 
 const DEFAULT_TIMEOUT_MS = 15000;
 
+function getTokenRefreshDueAt(jwt) {
+    const {iat, exp} = JSON.parse(atob(jwt.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+    return (iat + (exp - iat) / 2) * 1000;
+}
+
 Shopware.Component.register('neos-index', {
     template,
 
@@ -85,6 +90,7 @@ Shopware.Component.register('neos-index', {
             }
             if (event.data && event.data.type === 'nlxUserActivity') {
                 Shopware.Service('userActivityService').updateLastUserActivity();
+                this.ensureFreshNeosToken();
             }
             if (event.data && event.data.type === 'nlxOpenCmsPage') {
                 this.$router.push({
@@ -134,7 +140,7 @@ Shopware.Component.register('neos-index', {
         async bootstrapNeosIframe() {
             await this.loadConfig();
 
-            const neosBaseUri = await this.nlxAsyncService.withRetry(() => this.nlxAsyncService.withTimeout(
+            const neosBaseUri = this.neosBaseUri = await this.nlxAsyncService.withRetry(() => this.nlxAsyncService.withTimeout(
                 this.nlxConfigService.getSetting('neosBaseUri'), DEFAULT_TIMEOUT_MS, 'Loading Neos configuration'
             ));
             this.inactiveConfiguration = !neosBaseUri;
@@ -154,6 +160,23 @@ Shopware.Component.register('neos-index', {
 
             this.loadNeosIntoIframe();
             this.registerTokenRefreshListener(loginService, neosBaseUri);
+        },
+
+        // Shopware's own refresh timer doesn't run while the tab is frozen or the machine sleeps,
+        // so the Neos token is renewed on activity inside the iframe as well.
+        ensureFreshNeosToken() {
+            if (!this.neosBaseUri || this.neosTokenRefresh) return;
+
+            const loginService = Shopware.Service('loginService');
+            if (!loginService.isLoggedIn()) {
+                this.triggerLoginModal(loginService);
+                return;
+            }
+
+            if (Date.now() < this.neosTokenRefreshDueAt) return;
+
+            this.neosTokenRefresh = this.refreshNeosToken(this.neosBaseUri)
+                .finally(() => { this.neosTokenRefresh = null; });
         },
 
         loadFilloutRegistrationScript() {
@@ -207,6 +230,7 @@ Shopware.Component.register('neos-index', {
                 },
                 tokenRefreshRoute
             );
+            this.neosTokenRefreshDueAt = getTokenRefreshDueAt(token);
         },
 
         async loadConfig() {
@@ -225,6 +249,7 @@ Shopware.Component.register('neos-index', {
                 }
                 return response.data.token;
             });
+            this.neosTokenRefreshDueAt = getTokenRefreshDueAt(this.config.token);
             this.config.apiUrl = api.schemeAndHttpHost;
 
             const currentRoute = this.$router.currentRoute;

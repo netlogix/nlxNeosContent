@@ -1,7 +1,7 @@
 {
     "name": "netlogix/neos-content",
-    "description": "This plugin enables Shopware templates to be designed with an Enterprise CMS.",
-    "version": "0.7.7",
+    "description": "This plugin enables Shopware CMS layouts to be designed with an Enterprise CMS. Optionally, it allows to extend the Shopware navigation with CMS content pages.",
+    "version": "0.7.8",
     "type": "shopware-platform-plugin",
     "license": "MIT",
     "autoload": {
@@ -55,8 +55,8 @@
             "en-GB": "https://websolutions.netlogix.de/kontakt/"
         },
         "description": {
-            "de-DE": "Dieses Plugin ermöglicht es, Shopware Templates mit einem Enterprise-CMS aus Neos zu gestalten und Inhalte redaktionell zu pflegen sowie direkt im Storefront auszuspielen.",
-            "en-GB": "This plugin lets you design Shopware templates with an enterprise CMS powered by Neos, manage content editorially and deliver it straight into your Shopware storefront."
+            "de-DE": "Dieses Plugin ermöglicht es, Shopware Layouts mit einem Enterprise-CMS aus Neos zu gestalten und im Storefront auszuspielen. Optional erweitert es die Navigation um Seiten aus Neos.",
+            "en-GB": "This plugin lets you design Shopware layouts with an enterprise CMS powered by Neos and deliver them to your storefront. Optionally, it extends the navigation with Neos pages."
         },
         "shopware-admin": "Resources/app/administration"
     }
