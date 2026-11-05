@@ -27,6 +27,20 @@ class NeosCmsSectionEntityDenormalizerTest extends TestCase
         static::assertSame('', $this->denormalize(['cssClass' => null])->getCssClass());
     }
 
+    public function testBackgroundMediaIsTakenFromNeos(): void
+    {
+        $section = $this->denormalize(['backgroundMediaId' => 'media-1', 'backgroundMediaMode' => 'contain']);
+
+        static::assertSame('media-1', $section->getBackgroundMediaId());
+        static::assertSame('contain', $section->getBackgroundMediaMode());
+    }
+
+    public function testNoBackgroundMediaWithoutOneFromNeos(): void
+    {
+        static::assertNull($this->denormalize([])->getBackgroundMediaId());
+        static::assertNull($this->denormalize(['backgroundMediaId' => null])->getBackgroundMediaId());
+    }
+
     public function testNullTypeThrowsFaultySectionDataException(): void
     {
         $this->expectException(FaultyNeosSectionDataException::class);

@@ -128,7 +128,7 @@ class CmsPageLoadedListener
             $salesChannelContext,
         );
 
-        $this->contentExchangeService->loadSlotData($alternativeCmsSectionsFromNeos->getBlocks(), $resolverContext);
+        $this->contentExchangeService->loadSectionData($alternativeCmsSectionsFromNeos, $resolverContext);
         return $alternativeCmsSectionsFromNeos;
     }
 
@@ -172,7 +172,7 @@ class CmsPageLoadedListener
             );
         }
 
-        $this->contentExchangeService->loadSlotData($alternativeCmsBlocksFromNeos->getBlocks(), $resolverContext);
+        $this->contentExchangeService->loadSectionData($alternativeCmsBlocksFromNeos, $resolverContext);
         return $alternativeCmsBlocksFromNeos;
     }
 
@@ -210,7 +210,7 @@ class CmsPageLoadedListener
             $cmsPageEntity,
             $salesChannelContext,
         );
-        $this->contentExchangeService->loadSlotData($alternativeSections->getBlocks(), $resolverContext);
+        $this->contentExchangeService->loadSectionData($alternativeSections, $resolverContext);
         return $alternativeSections;
     }
 }

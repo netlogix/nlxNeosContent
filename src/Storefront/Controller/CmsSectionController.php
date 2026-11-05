@@ -145,7 +145,7 @@ class CmsSectionController extends StorefrontController
         }
 
 
-        $this->contentExchangeService->loadSlotData($section->getBlocks(), $resolverContext);
+        $this->contentExchangeService->loadSectionData(new CmsSectionCollection([$section]), $resolverContext);
 
         $parameters = [
             'section' => $section,
