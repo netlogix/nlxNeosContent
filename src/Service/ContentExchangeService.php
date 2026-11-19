@@ -307,6 +307,10 @@ class ContentExchangeService
         $prefixPosition = strpos($path, self::CONTENT_BY_PATH_URI_PREFIX);
         if ($prefixPosition !== false) {
             $path = substr($path, $prefixPosition + strlen(self::CONTENT_BY_PATH_URI_PREFIX));
+            if (trim($path, '/') === '') {
+                // The bare prefix is the homepage, a valid redirect target.
+                return '/';
+            }
         }
 
         //Not every redirect Neos issues preserves the content-by-path prefix (e.g. core

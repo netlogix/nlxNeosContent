@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace nlxNeosContent\Tests\Unit\Service;
 
+use nlxNeosContent\Error\RequestError\NeosContentFetchException;
 use nlxNeosContent\Neos\DTO\NeosResults\NeosContentResult;
+use nlxNeosContent\Neos\DTO\NeosResults\NeosRedirectResult;
 use nlxNeosContent\Service\ConfigService;
 use nlxNeosContent\Service\ContentExchangeService;
 use PHPUnit\Framework\TestCase;
@@ -85,6 +87,27 @@ class ContentExchangeServiceTest extends TestCase
         static::assertTrue($result->isCacheable());
     }
 
+    public function testRedirectToTheHomepageIsRelayedAsRootPath(): void
+    {
+        $result = $this->service(new MockResponse('', [
+            'http_code' => 301,
+            'response_headers' => ['location' => 'https://neos.example/neos/shopware-api/content-by-path/'],
+        ]))->fetchCmsSectionsFromNeosByPath('/old-page/', $this->salesChannelContext());
+
+        static::assertInstanceOf(NeosRedirectResult::class, $result);
+        static::assertSame('/', $result->getRedirectPathInfo());
+    }
+
+    public function testRedirectWithoutPathIsRejected(): void
+    {
+        $this->expectException(NeosContentFetchException::class);
+
+        $this->service(new MockResponse('', [
+            'http_code' => 301,
+            'response_headers' => ['location' => 'https://neos.example'],
+        ]))->fetchCmsSectionsFromNeosByPath('/old-page/', $this->salesChannelContext());
+    }
+
     public function testLoadSectionDataSetsTheBackgroundMediaOfSections(): void
     {
         $media = new MediaEntity();
@@ -146,12 +169,15 @@ class ContentExchangeServiceTest extends TestCase
         $serializer = $this->createMock(DenormalizerInterface::class);
         $serializer->method('denormalize')->willReturn(new NeosContentResult(new CmsSectionCollection()));
 
+        $configService = $this->createMock(ConfigService::class);
+        $configService->method('getBaseUrl')->willReturn('https://neos.example');
+
         return new ContentExchangeService(
             $serializer,
             $this->createMock(CmsSlotsDataResolver::class),
             $client,
             $this->createMock(TagAwareCacheInterface::class),
-            $this->createMock(ConfigService::class),
+            $configService,
             $mediaRepository,
         );
     }
