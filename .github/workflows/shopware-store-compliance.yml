@@ -43,4 +43,5 @@ jobs:
 
       - name: Run verifier
         shell: bash
-        run: shopware-cli extension validate --store-compliance .
+        # shopware-cli 0.21 checks formatting by default; skipped until the codebase is reformatted in a separate change
+        run: shopware-cli extension validate --store-compliance --exclude-formatters .
