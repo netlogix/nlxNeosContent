@@ -50,7 +50,7 @@ export default {
     },
 
     async created() {
-        if ((await this.nlxConfigService.getConfig('extendNavigation') ?? false)) {
+        if (this.nlxConfigService.isNavigationExtensionEnabled()) {
             this.neosPagesData = await this.nlxCategoryStoreService.getCategories()
         } else {
             this.neosPagesData = [];

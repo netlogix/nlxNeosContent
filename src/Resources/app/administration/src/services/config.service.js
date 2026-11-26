@@ -1,17 +1,18 @@
+/**
+ * Plugin settings the administration needs. The plugin adds them to /api/_info/config
+ * (AdminInfoConfigListener), which the administration loads before any plugin code runs,
+ * so they can be read without the system_config:read privilege.
+ */
 export default class ConfigService {
-    systemConfigApiService;
-
-    constructor() {
-        this.systemConfigApiService = Shopware.ApiService.getByName('systemConfigApiService');
+    get config() {
+        return Shopware.Context.app.config.nlxNeosContent ?? {};
     }
 
-    async getSetting(settingKey) {
-        const settings = await this.systemConfigApiService.getValues('NlxNeosContent');
-        return settings[`NlxNeosContent.settings.${settingKey}`];
+    getNeosBaseUri() {
+        return this.config.neosBaseUri ?? null;
     }
 
-    async getConfig(configKey) {
-        const configs = await this.systemConfigApiService.getValues('NlxNeosContent');
-        return configs[`NlxNeosContent.config.${configKey}`];
+    isNavigationExtensionEnabled() {
+        return this.config.navigationExtensionEnabled ?? false;
     }
 }
