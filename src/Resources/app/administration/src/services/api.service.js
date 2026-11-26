@@ -117,7 +117,10 @@ export default class NlxNeosContentApiService extends ApiService {
         return request.then((response) => {
             return { success: true, data: response.data };
         }).catch((error) => {
-            return { success: false, data: error.response?.data ?? { message: 'Network error' } };
+            const data = error.response?.data ?? { message: 'Network error' };
+            // The code identifies the matching entry in the Shopware log.
+            const message = data.code ? `${data.message} (${data.code})` : data.message;
+            return { success: false, data: { ...data, message } };
         });
     }
 }
