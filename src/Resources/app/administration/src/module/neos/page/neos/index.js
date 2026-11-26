@@ -140,9 +140,7 @@ Shopware.Component.register('neos-index', {
         async bootstrapNeosIframe() {
             await this.loadConfig();
 
-            const neosBaseUri = this.neosBaseUri = await this.nlxAsyncService.withRetry(() => this.nlxAsyncService.withTimeout(
-                this.nlxConfigService.getSetting('neosBaseUri'), DEFAULT_TIMEOUT_MS, 'Loading Neos configuration'
-            ));
+            const neosBaseUri = this.neosBaseUri = this.nlxConfigService.getNeosBaseUri();
             this.inactiveConfiguration = !neosBaseUri;
             this.toggleContentScroll(this.inactiveConfiguration);
             if (this.inactiveConfiguration) {
@@ -253,9 +251,7 @@ Shopware.Component.register('neos-index', {
             this.config.apiUrl = api.schemeAndHttpHost;
 
             const currentRoute = this.$router.currentRoute;
-            const neosBaseUri = await this.nlxAsyncService.withRetry(() => this.nlxAsyncService.withTimeout(
-                this.nlxConfigService.getSetting('neosBaseUri'), DEFAULT_TIMEOUT_MS, 'Loading Neos configuration'
-            ));
+            const neosBaseUri = this.nlxConfigService.getNeosBaseUri();
             if (currentRoute._value.name === 'nlx.neos.index') {
                 this.config.neosLoginRoute = this.nlxRoutes.getNeosIndexRoute(neosBaseUri);
             }
