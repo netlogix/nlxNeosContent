@@ -32,6 +32,7 @@ use Symfony\Component\HttpClient\Exception\ClientException;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
@@ -68,6 +69,50 @@ class ContentExchangeServiceTest extends TestCase
         foreach ($sent['options']['headers'] as $header) {
             static::assertStringStartsNotWith('x-sw-request-uri', $header);
         }
+    }
+
+    public static function traversingPaths(): iterable
+    {
+        yield 'parent segment' => ['../../../robots.txt'];
+        yield 'parent segment in the middle' => ['/blog/../../../robots.txt'];
+        yield 'current segment' => ['/./contact'];
+        yield 'trailing parent segment' => ['/blog/..'];
+        yield 'backslash' => ['/..\\..\\robots.txt'];
+    }
+
+    #[DataProvider('traversingPaths')]
+    public function testPathTraversalIsRejectedWithoutRequest(string $pathInfo): void
+    {
+        try {
+            $this->service(new MockResponse('{}'))->fetchCmsSectionsFromNeosByPath($pathInfo, $this->salesChannelContext());
+            static::fail('Expected a NotFoundHttpException');
+        } catch (NotFoundHttpException) {
+        }
+
+        static::assertSame([], $this->requests);
+    }
+
+    public function testPathTraversalIsRejectedForFormSubmits(): void
+    {
+        try {
+            $this->service(new MockResponse('{}'))
+                ->submitFormToNeosByPath('/../../form', Request::create('/x', 'POST', ['name' => 'x']), $this->salesChannelContext());
+            static::fail('Expected a NotFoundHttpException');
+        } catch (NotFoundHttpException) {
+        }
+
+        static::assertSame([], $this->requests);
+    }
+
+    public function testPathSegmentsAreEncoded(): void
+    {
+        $this->service(new MockResponse('{}', ['response_headers' => ['content-type' => 'application/json']]))
+            ->fetchCmsSectionsFromNeosByPath('/über uns/a?b#c/..%2F/', $this->salesChannelContext());
+
+        static::assertSame(
+            'https://neos.example/neos/shopware-api/content-by-path/%C3%BCber%20uns/a%3Fb%23c/..%252F',
+            $this->requests[0]['url']
+        );
     }
 
     public function testNoStoreResponseIsNotCacheable(): void

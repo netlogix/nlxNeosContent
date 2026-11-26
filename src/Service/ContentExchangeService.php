@@ -25,6 +25,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpClient\Exception\ClientException;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Mime\Part\DataPart;
 use Symfony\Component\Mime\Part\Multipart\FormDataPart;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
@@ -191,7 +192,15 @@ class ContentExchangeService
 
     private function buildContentByPathUri(string $pathInfo, ?Request $request): string
     {
-        $uri = self::CONTENT_BY_PATH_URI_PREFIX . trim($pathInfo, '/');
+        $segments = explode('/', trim($pathInfo, '/'));
+        foreach ($segments as $segment) {
+            // The HTTP client resolves dot segments, which would let the path escape the content-by-path endpoint.
+            if ($segment === '.' || $segment === '..' || str_contains($segment, '\\')) {
+                throw new NotFoundHttpException(sprintf('Invalid content path "%s".', $pathInfo));
+            }
+        }
+
+        $uri = self::CONTENT_BY_PATH_URI_PREFIX . implode('/', array_map(rawurlencode(...), $segments));
         $queryString = $request?->getQueryString();
 
         return $queryString !== null && $queryString !== '' ? $uri . '?' . $queryString : $uri;
