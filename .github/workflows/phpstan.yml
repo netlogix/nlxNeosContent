@@ -7,11 +7,8 @@ on:
       - develop
     paths:
       - 'src/**'
+  # Every pull request, whatever its base, so stacked pull requests get checked too
   pull_request:
-    branches:
-      - main
-      - develop
-      - 'feature/**'
     paths:
       - 'src/**'
 
