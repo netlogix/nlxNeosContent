@@ -45,7 +45,7 @@ class ApiRequestContextResolver implements RequestContextResolverInterface
             return;
         }
 
-        $privileges = NeosAuthorizationRoleService::getWhiteListPrivileges();
+        $privileges = NeosAuthorizationRoleService::getNeosTokenPrivileges();
         $privileges = $source->isAdmin()
             ? $privileges
             : array_filter($privileges, fn ($p) => $source->isAllowed($p));

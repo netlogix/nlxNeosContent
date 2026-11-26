@@ -18,18 +18,14 @@ class NeosAuthorizationRoleService
     public const NEOS_EDITOR = 'Neos-Editor';
 
     /**
-     * The first four privileges are always given to an "empty" ACL role
-     * which makes sense since otherwise the admin area throws Errors at the user
+     * What Neos needs from the Shopware API. Every Neos role gets these, and a Neos token carries
+     * them as far as its user has them.
      *
-     * 'system_config:read', 'acl_role:read' & 'user:read' are necessary for the Neos authentication
+     * 'acl_role:read' & 'user:read' are necessary for the Neos authentication.
      */
-    public const
-        BASIC_PRIVILEGES = [
-        "log_entry:create",
-        "message_queue_stats:read",
+    public const BASIC_PRIVILEGES = [
         'acl_role:read',
         'category:read',
-        'cms_page:read',
         'language:read',
         'locale:read',
         'media:read',
@@ -45,8 +41,21 @@ class NeosAuthorizationRoleService
         'sales_channel:read',
         'sales_channel_domain:read',
         'sales_channel_type:read',
-        'system_config:read',
         'user:read',
+    ];
+
+    /**
+     * Added to the viewer role on top of the basic privileges. Mostly what the administration
+     * needs to be usable; Neos never gets these.
+     */
+    public const NEOS_VIEWER_PRIVILEGES = [
+        'log_entry:create',
+        'message_queue_stats:read',
+        'system_config:read',
+        'cms_page:read',
+        'neos.viewer',
+        'neos:read',
+        'nlx_neos_node:read',
         // "View categories" in the administration (category.viewer and the privileges it requires),
         // so both roles can open the category tree with its Neos pages.
         'category.viewer',
@@ -72,24 +81,28 @@ class NeosAuthorizationRoleService
         'seo_url:read',
         'shipping_method:read',
         'tag:read',
-    ],
-        NEOS_VIEWER_PRIVILEGES = [
-        'cms_page:read',
-        'neos.viewer',
-        'neos:read',
-        'nlx_neos_node:read',
-    ],
-        NEOS_EDITOR_PRIVILEGES = [
+    ];
+
+    /**
+     * Added to the editor role on top of everything the viewer role has.
+     */
+    public const NEOS_EDITOR_PRIVILEGES = [
         'cms_page:create',
         'cms_page:update',
         'category:update',
         'neos.editor',
-        'neos.viewer',
         'neos:edit',
-        'neos:read',
         'nlx_neos_node:create',
-        'nlx_neos_node:read',
         'nlx_neos_node:update',
+    ];
+
+    /**
+     * Editor privileges Neos uses itself. A Neos token only carries them if its user has them;
+     * otherwise Neos has to tell the user what is missing.
+     */
+    public const NEOS_OPTIONAL_TOKEN_PRIVILEGES = [
+        'category:update',
+        'neos:edit',
     ];
 
     public function __construct(
@@ -98,13 +111,13 @@ class NeosAuthorizationRoleService
     ) {
     }
 
-    public static function getWhiteListPrivileges(): array
+    /**
+     * The most a Neos token may carry. The request context of a token is limited to the part of
+     * these its user actually has.
+     */
+    public static function getNeosTokenPrivileges(): array
     {
-        return array_unique([
-            ...self::BASIC_PRIVILEGES,
-            ...self::NEOS_VIEWER_PRIVILEGES,
-            ...self::NEOS_EDITOR_PRIVILEGES
-        ]);
+        return [...self::BASIC_PRIVILEGES, ...self::NEOS_OPTIONAL_TOKEN_PRIVILEGES];
     }
 
     public function createNeosViewerRole(
@@ -126,7 +139,7 @@ class NeosAuthorizationRoleService
         $this->installRole(
             $this::NEOS_EDITOR,
             'This role has all editorial privileges for the Neos CMS',
-            self::NEOS_EDITOR_PRIVILEGES,
+            [...self::NEOS_VIEWER_PRIVILEGES, ...self::NEOS_EDITOR_PRIVILEGES],
             $context
         );
     }
@@ -156,7 +169,7 @@ class NeosAuthorizationRoleService
         $this->refreshRole(
             $this::NEOS_EDITOR,
             'This role has all editorial privileges for the Neos CMS',
-            self::NEOS_EDITOR_PRIVILEGES,
+            [...self::NEOS_VIEWER_PRIVILEGES, ...self::NEOS_EDITOR_PRIVILEGES],
             $context
         );
     }
@@ -184,7 +197,7 @@ class NeosAuthorizationRoleService
             'id' => $roleId,
             'name' => $roleName,
             'description' => $description,
-            'privileges' => array_merge(self::BASIC_PRIVILEGES, $privileges)
+            'privileges' => array_values(array_unique([...self::BASIC_PRIVILEGES, ...$privileges]))
         ];
 
         $this->aclRoleRepository->upsert([$roleData], $context);
