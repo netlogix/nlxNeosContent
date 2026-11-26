@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace nlxNeosContent\Tests\Unit\Service;
 
 use nlxNeosContent\Error\RequestError\NeosContentFetchException;
+use nlxNeosContent\Neos\DTO\NeosResults\NeosAssetResult;
 use nlxNeosContent\Neos\DTO\NeosResults\NeosContentResult;
 use nlxNeosContent\Neos\DTO\NeosResults\NeosRedirectResult;
 use nlxNeosContent\Service\ConfigService;
 use nlxNeosContent\Service\ContentExchangeService;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockCollection;
 use Shopware\Core\Content\Cms\Aggregate\CmsSection\CmsSectionCollection;
@@ -26,6 +28,7 @@ use Shopware\Core\System\SalesChannel\Aggregate\SalesChannelDomain\SalesChannelD
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Core\System\SalesChannel\SalesChannelEntity;
 use Shopware\Storefront\Framework\Routing\RequestTransformer;
+use Symfony\Component\HttpClient\Exception\ClientException;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -96,6 +99,64 @@ class ContentExchangeServiceTest extends TestCase
 
         static::assertInstanceOf(NeosRedirectResult::class, $result);
         static::assertSame('/', $result->getRedirectPathInfo());
+    }
+
+    public static function neosRedirects(): iterable
+    {
+        yield 'relative, content-by-path' => [301, '/neos/shopware-api/content-by-path/new-page', '/new-page'];
+        yield 'absolute Neos host, content-by-path' => [302, 'https://neos.example/neos/shopware-api/content-by-path/blog/new-post', '/blog/new-post'];
+        yield 'plain frontend path' => [301, 'https://neos.example/de/new-page', '/de/new-page'];
+        yield 'external host' => [307, 'https://other.example/landing?x=1', 'https://other.example/landing?x=1'];
+    }
+
+    #[DataProvider('neosRedirects')]
+    public function testRedirectIsRelayedWithItsStatusCode(int $statusCode, string $location, string $expectedPathInfo): void
+    {
+        $result = $this->service(new MockResponse('', [
+            'http_code' => $statusCode,
+            'response_headers' => ['location' => $location],
+        ]))->fetchCmsSectionsFromNeosByPath('/old-page/', $this->salesChannelContext());
+
+        static::assertInstanceOf(NeosRedirectResult::class, $result);
+        static::assertSame($expectedPathInfo, $result->getRedirectPathInfo());
+        static::assertSame($statusCode, $result->getStatusCode());
+    }
+
+    public function testRedirectAfterFormSubmitIsRelayed(): void
+    {
+        $result = $this->service(new MockResponse('', [
+            'http_code' => 303,
+            'response_headers' => ['location' => '/neos/shopware-api/content-by-path/contact/thank-you'],
+        ]))->submitFormToNeosByPath('/contact/', Request::create('/contact/', 'POST', ['name' => 'x']), $this->salesChannelContext());
+
+        static::assertInstanceOf(NeosRedirectResult::class, $result);
+        static::assertSame('/contact/thank-you', $result->getRedirectPathInfo());
+    }
+
+    public static function neosClientErrors(): iterable
+    {
+        yield 'gone (redirect into another dimension)' => [410];
+        yield 'not found' => [404];
+    }
+
+    #[DataProvider('neosClientErrors')]
+    public function testClientErrorIsThrownWithItsStatusCode(int $statusCode): void
+    {
+        $this->expectException(ClientException::class);
+        $this->expectExceptionCode($statusCode);
+
+        $this->service(new MockResponse('', ['http_code' => $statusCode]))
+            ->fetchCmsSectionsFromNeosByPath('/old-page/', $this->salesChannelContext());
+    }
+
+    public function testNonJsonResponseIsPassedThroughAsAsset(): void
+    {
+        $result = $this->service(new MockResponse('<svg/>', [
+            'response_headers' => ['content-type' => 'image/svg+xml'],
+        ]))->fetchCmsSectionsFromNeosByPath('/file.svg', $this->salesChannelContext());
+
+        static::assertInstanceOf(NeosAssetResult::class, $result);
+        static::assertSame('image/svg+xml', $result->getContentType());
     }
 
     public function testRedirectWithoutPathIsRejected(): void
