@@ -1,7 +1,7 @@
 {
     "name": "netlogix/neos-content",
     "description": "This plugin enables Shopware CMS layouts to be designed with an Enterprise CMS. Optionally, it allows to extend the Shopware navigation with CMS content pages.",
-    "version": "0.7.9",
+    "version": "0.8.0",
     "type": "shopware-platform-plugin",
     "license": "MIT",
     "autoload": {
