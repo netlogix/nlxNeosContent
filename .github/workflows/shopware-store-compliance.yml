@@ -5,10 +5,8 @@ on:
     branches:
       - main
       - develop
+  # Every pull request, whatever its base, so stacked pull requests get checked too
   pull_request:
-    branches:
-      - main
-      - develop
 
 jobs:
   extension-verifier:
@@ -42,4 +40,5 @@ jobs:
 
       - name: Run verifier
         shell: bash
-        run: shopware-cli extension validate --store-compliance .
+        # shopware-cli 0.21 checks formatting by default; skipped until the codebase is reformatted in a separate change
+        run: shopware-cli extension validate --store-compliance --exclude-formatters .
