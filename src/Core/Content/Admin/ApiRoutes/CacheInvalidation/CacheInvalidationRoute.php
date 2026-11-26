@@ -25,7 +25,7 @@ class CacheInvalidationRoute extends AbstractCacheInvalidationRoute
         return $this;
     }
 
-    #[Route(path: '/api/_action/neos/clear-cache', name: 'api.neos.clear-cache', methods: ['POST'])]
+    #[Route(path: '/api/_action/neos/clear-cache', name: 'api.neos.clear-cache', defaults: ['_acl' => ['neos:edit']], methods: ['POST'])]
     public function load(
         #[MapRequestPayload(acceptFormat: 'json')]
         CacheInvalidationDto $cacheInvalidationDto,

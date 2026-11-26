@@ -42,7 +42,7 @@ class SeoUrlTemplatePreviewRoute extends AbstractSeoUrlTemplatePreviewRoute
         return $this;
     }
 
-    #[Route(path: '/api/_action/neos/seo-url-template/preview', name: 'api.neos.seo-url-template.preview', methods: ['POST'])]
+    #[Route(path: '/api/_action/neos/seo-url-template/preview', name: 'api.neos.seo-url-template.preview', defaults: ['_acl' => ['system_config:read']], methods: ['POST'])]
     public function load(Request $request, Context $context): Response
     {
         $content = json_decode(json: $request->getContent(), associative: true) ?? [];
