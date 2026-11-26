@@ -192,18 +192,42 @@ class ContentExchangeService
 
     private function buildContentByPathUri(string $pathInfo, ?Request $request): string
     {
-        $segments = explode('/', trim($pathInfo, '/'));
-        foreach ($segments as $segment) {
-            // The HTTP client resolves dot segments, which would let the path escape the content-by-path endpoint.
-            if ($segment === '.' || $segment === '..' || str_contains($segment, '\\')) {
-                throw new NotFoundHttpException(sprintf('Invalid content path "%s".', $pathInfo));
-            }
+        $path = trim($pathInfo, '/');
+        if (!self::isSafeContentPath($path)) {
+            // The path is left out of the message, it may carry control or bidi characters into logs.
+            throw new NotFoundHttpException('Invalid content path.');
         }
 
-        $uri = self::CONTENT_BY_PATH_URI_PREFIX . implode('/', array_map(rawurlencode(...), $segments));
+        $uri = self::CONTENT_BY_PATH_URI_PREFIX . implode('/', array_map(rawurlencode(...), explode('/', $path)));
         $queryString = $request?->getQueryString();
 
         return $queryString !== null && $queryString !== '' ? $uri . '?' . $queryString : $uri;
+    }
+
+    /**
+     * The HTTP client resolves dot segments, which would let the path escape the content-by-path endpoint.
+     * The NFKC form is checked as well, in case anything behind Shopware turns "．．／" into "../".
+     */
+    private static function isSafeContentPath(string $path): bool
+    {
+        // Rejects invalid UTF-8 (preg_match() returns false, e.g. for an overlong "."), control and invisible format characters.
+        if (preg_match('/[\p{Cc}\p{Cf}]/u', $path) !== 0) {
+            return false;
+        }
+
+        foreach ([$path, \Normalizer::normalize($path, \Normalizer::NFKC)] as $candidate) {
+            if (!is_string($candidate) || str_contains($candidate, '\\')) {
+                return false;
+            }
+            foreach (explode('/', $candidate) as $segment) {
+                // Also "..." or ".. ", which some file systems trim to "..".
+                if (preg_match('/^\s*\.[.\s]*$/u', $segment) === 1) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 
     private function buildSwHeaders(SalesChannelContext $salesChannelContext, ?Request $request = null): array
