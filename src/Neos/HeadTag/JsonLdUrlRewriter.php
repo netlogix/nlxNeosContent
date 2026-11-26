@@ -25,13 +25,12 @@ final readonly class JsonLdUrlRewriter
         }
 
         $neosHost = parse_url($this->configService->getBaseUrl($salesChannelId), PHP_URL_HOST);
-        if ($neosHost === null) {
-            return $jsonLdPayload;
-        }
+        $rewritten = $neosHost === null
+            ? $decoded
+            : $this->rewriteUrlsRecursively($decoded, $neosHost, rtrim($currentDomain->getUrl(), '/'));
 
-        $rewritten = $this->rewriteUrlsRecursively($decoded, $neosHost, rtrim($currentDomain->getUrl(), '/'));
-
-        $encoded = json_encode($rewritten, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        // The result is printed raw into a <script> block, so "<" and ">" must never appear literally.
+        $encoded = json_encode($rewritten, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP);
 
         return $encoded === false ? null : $encoded;
     }
