@@ -40,6 +40,17 @@ class ApiRequestContextResolverTest extends TestCase
         static::assertNotContains('system_config:read', $permissions);
     }
 
+    public function testTokenDoesNotCarryTheUserAndRolePrivileges(): void
+    {
+        $permissions = $this->resolveNeosToken($this->source([
+            ...NeosAuthorizationRoleService::BASIC_PRIVILEGES,
+            ...NeosAuthorizationRoleService::NEOS_VIEWER_PRIVILEGES,
+        ]));
+
+        static::assertNotContains('user:read', $permissions);
+        static::assertNotContains('acl_role:read', $permissions);
+    }
+
     public function testTokenNeverCarriesMoreThanItsUserHas(): void
     {
         static::assertSame(['category:read'], $this->resolveNeosToken($this->source(['category:read', 'system_config:read'])));

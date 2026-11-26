@@ -33,7 +33,7 @@ class NeosAuthorizationRoleServiceTest extends TestCase
     {
         foreach (['refreshNeosViewerRole', 'refreshNeosEditorRole'] as $refreshMethod) {
             $privileges = $this->refresh($refreshMethod)['privileges'];
-            foreach ([...NeosAuthorizationRoleService::BASIC_PRIVILEGES, 'system_config:read'] as $privilege) {
+            foreach ([...NeosAuthorizationRoleService::BASIC_PRIVILEGES, 'system_config:read', 'user:read', 'acl_role:read'] as $privilege) {
                 static::assertContains($privilege, $privileges, $refreshMethod);
             }
         }
