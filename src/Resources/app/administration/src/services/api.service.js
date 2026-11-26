@@ -104,71 +104,23 @@ export default class NlxNeosContentApiService extends ApiService {
     }
 
     getNeosPageTree() {
-        return this.proxyGetRequest('pagetree');
+        const apiRoute = `${this.getApiBasePath()}/page-tree`;
+        return this.toResult(this.httpClient.get(apiRoute, { headers: this.getBasicHeaders() }));
     }
 
     createNeosLayout(payload) {
-        return this.proxyPostRequest('createPage', payload);
+        const apiRoute = `${this.getApiBasePath()}/layout`;
+        return this.toResult(this.httpClient.post(apiRoute, payload, { headers: this.getBasicHeaders() }));
     }
 
-    proxyGetRequest(action) {
-        const apiRoute = `${this.getApiBasePath()}/request`;
-        return this.httpClient
-            .post(
-                apiRoute,
-                {
-                    action: action,
-                    method: 'GET'
-                },
-                {headers: this.getBasicHeaders()}
-            ).catch((error) => {
-                return {
-                    success: false,
-                    data: error.response.data ?? {message: 'Network error'}
-                }
-            }).then((response) => {
-                if (response.status === 200) {
-                    return {
-                        success: true,
-                        data: response.data
-                    }
-                } else {
-                    return {
-                        success: false,
-                        data: {message: 'Invalid Status'}
-                    }
-                }
-            });
-    }
-
-    proxyPostRequest(action, payload) {
-        const apiRoute = `${this.getApiBasePath()}/request`;
-        return this.httpClient
-            .post(
-                apiRoute,
-                {
-                    action: action,
-                    method: 'POST',
-                    payload: payload
-                },
-                {headers: this.getBasicHeaders()}
-            ).catch((error) => {
-                return {
-                    success: false,
-                    data: error.response.data ?? {message: 'Network error'}
-                }
-            }).then((response) => {
-                if (response.status === 200) {
-                    return {
-                        success: true,
-                        data: response.data
-                    }
-                } else {
-                    return {
-                        success: false,
-                        data: {message: 'Invalid Status'}
-                    }
-                }
-            });
+    toResult(request) {
+        return request.then((response) => {
+            return { success: true, data: response.data };
+        }).catch((error) => {
+            const data = error.response?.data ?? { message: 'Network error' };
+            // The code identifies the matching entry in the Shopware log.
+            const message = data.code ? `${data.message} (${data.code})` : data.message;
+            return { success: false, data: { ...data, message } };
+        });
     }
 }
