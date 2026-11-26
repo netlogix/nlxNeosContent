@@ -26,7 +26,7 @@ readonly class NeosTokenValueResolver implements ValueResolverInterface
     {
         // Neos signs in the Shopware user the token belongs to, so integrations without a user can't get one.
         if (!is_string($request->attributes->get(PlatformRequest::ATTRIBUTE_OAUTH_USER_ID))) {
-            throw new AccessDeniedHttpException('A Neos token can only be issued for an admin user.');
+            throw new AccessDeniedHttpException('A Neos token requires a request authenticated as a Shopware user account, not as an integration.');
         }
 
         $expiration = new \DateTimeImmutable('+5 minutes');
