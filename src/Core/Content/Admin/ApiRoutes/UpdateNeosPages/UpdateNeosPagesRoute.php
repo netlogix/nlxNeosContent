@@ -26,7 +26,7 @@ class UpdateNeosPagesRoute extends AbstractUpdateNeosPagesRoute
         return $this;
     }
 
-    #[Route(path: '/api/_action/neos/update-neos-pages', name: 'api.neos.update-neos-pages', methods: ['POST'])]
+    #[Route(path: '/api/_action/neos/update-neos-pages', name: 'api.neos.update-neos-pages', defaults: ['_acl' => ['neos:edit']], methods: ['POST'])]
     public function load(Request $request, Context $context): Response
     {
         $content = json_decode(json: $request->getContent(), associative: true) ?? [];
