@@ -20,11 +20,8 @@ class NeosAuthorizationRoleService
     /**
      * What Neos needs from the Shopware API. Every Neos role gets these, and a Neos token carries
      * them as far as its user has them.
-     *
-     * 'acl_role:read' & 'user:read' are necessary for the Neos authentication.
      */
     public const BASIC_PRIVILEGES = [
-        'acl_role:read',
         'category:read',
         'language:read',
         'locale:read',
@@ -41,7 +38,6 @@ class NeosAuthorizationRoleService
         'sales_channel:read',
         'sales_channel_domain:read',
         'sales_channel_type:read',
-        'user:read',
     ];
 
     /**
@@ -49,6 +45,9 @@ class NeosAuthorizationRoleService
      * needs to be usable; Neos never gets these.
      */
     public const NEOS_VIEWER_PRIVILEGES = [
+        // Neos reads the user and its roles from /api/_info/me, only the administration uses these.
+        'acl_role:read',
+        'user:read',
         'log_entry:create',
         'message_queue_stats:read',
         'system_config:read',

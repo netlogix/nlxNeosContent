@@ -129,6 +129,7 @@ placeholders for the product's options of a property group:
 - PHP `^8.2`
 - Composer (for installation with composer)
 - A reachable Neos instance with the required Shopware API integration
+  - `netlogix/neos-shopware >= 0.8.0`; update Neos before this plugin, older versions can no longer log in
   - Registration for Demo possible
 
 ## Installation
