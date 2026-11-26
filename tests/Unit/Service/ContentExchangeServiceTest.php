@@ -32,6 +32,7 @@ use Symfony\Component\HttpClient\Exception\ClientException;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
@@ -68,6 +69,82 @@ class ContentExchangeServiceTest extends TestCase
         foreach ($sent['options']['headers'] as $header) {
             static::assertStringStartsNotWith('x-sw-request-uri', $header);
         }
+    }
+
+    public static function traversingPaths(): iterable
+    {
+        yield 'parent segment' => ['../../../robots.txt'];
+        yield 'parent segment in the middle' => ['/blog/../../../robots.txt'];
+        yield 'current segment' => ['/./contact'];
+        yield 'trailing parent segment' => ['/blog/..'];
+        yield 'backslash' => ['/..\\..\\robots.txt'];
+        yield 'invalid UTF-8 (overlong dot)' => ["/\xC0\xAE\xC0\xAE/robots.txt"];
+        yield 'NUL byte' => ["/robots.txt\0.html"];
+        yield 'line feed' => ["/blog\n/contact"];
+        yield 'zero-width space between dots' => ["/.\u{200B}./robots.txt"];
+        yield 'bidi override' => ["/blog\u{202E}txt.stobor"];
+        yield 'fullwidth full stops' => ["/\u{FF0E}\u{FF0E}/robots.txt"];
+        yield 'small full stop' => ["/\u{FE52}/contact"];
+        yield 'one dot leader' => ["/\u{2024}\u{2024}/robots.txt"];
+        yield 'two dot leader' => ["/\u{2025}/robots.txt"];
+        yield 'ellipsis' => ["/\u{2026}/robots.txt"];
+        yield 'fullwidth solidus' => ["/blog\u{FF0F}..\u{FF0F}robots.txt"];
+        yield 'fullwidth reverse solidus' => ["/blog\u{FF3C}robots.txt"];
+        yield 'small reverse solidus' => ["/blog\u{FE68}robots.txt"];
+        yield 'three dots' => ['/.../robots.txt'];
+        yield 'dots with trailing space' => ['/.. /robots.txt'];
+    }
+
+    public static function nonAsciiPaths(): iterable
+    {
+        yield 'umlaut' => ['/über-uns', '%C3%BCber-uns'];
+        yield 'look-alike slash without NFKC mapping' => ["/a\u{2215}b", '%E2%88%95'];
+        yield 'dot inside a segment' => ['/robots.txt', 'robots.txt'];
+        yield 'double-encoded dots' => ['/%2e%2e/robots.txt', '%252e%252e/robots.txt'];
+    }
+
+    #[DataProvider('nonAsciiPaths')]
+    public function testRegularPathsAreNotRejected(string $pathInfo, string $expectedUriPart): void
+    {
+        $this->service(new MockResponse('{}', ['response_headers' => ['content-type' => 'application/json']]))
+            ->fetchCmsSectionsFromNeosByPath($pathInfo, $this->salesChannelContext());
+
+        static::assertStringContainsString($expectedUriPart, $this->requests[0]['url']);
+    }
+
+    #[DataProvider('traversingPaths')]
+    public function testPathTraversalIsRejectedWithoutRequest(string $pathInfo): void
+    {
+        try {
+            $this->service(new MockResponse('{}'))->fetchCmsSectionsFromNeosByPath($pathInfo, $this->salesChannelContext());
+            static::fail('Expected a NotFoundHttpException');
+        } catch (NotFoundHttpException) {
+        }
+
+        static::assertSame([], $this->requests);
+    }
+
+    public function testPathTraversalIsRejectedForFormSubmits(): void
+    {
+        try {
+            $this->service(new MockResponse('{}'))
+                ->submitFormToNeosByPath('/../../form', Request::create('/x', 'POST', ['name' => 'x']), $this->salesChannelContext());
+            static::fail('Expected a NotFoundHttpException');
+        } catch (NotFoundHttpException) {
+        }
+
+        static::assertSame([], $this->requests);
+    }
+
+    public function testPathSegmentsAreEncoded(): void
+    {
+        $this->service(new MockResponse('{}', ['response_headers' => ['content-type' => 'application/json']]))
+            ->fetchCmsSectionsFromNeosByPath('/über uns/a?b#c/..%2F/', $this->salesChannelContext());
+
+        static::assertSame(
+            'https://neos.example/neos/shopware-api/content-by-path/%C3%BCber%20uns/a%3Fb%23c/..%252F',
+            $this->requests[0]['url']
+        );
     }
 
     public function testNoStoreResponseIsNotCacheable(): void

@@ -25,6 +25,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpClient\Exception\ClientException;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Mime\Part\DataPart;
 use Symfony\Component\Mime\Part\Multipart\FormDataPart;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
@@ -191,10 +192,42 @@ class ContentExchangeService
 
     private function buildContentByPathUri(string $pathInfo, ?Request $request): string
     {
-        $uri = self::CONTENT_BY_PATH_URI_PREFIX . trim($pathInfo, '/');
+        $path = trim($pathInfo, '/');
+        if (!self::isSafeContentPath($path)) {
+            // The path is left out of the message, it may carry control or bidi characters into logs.
+            throw new NotFoundHttpException('Invalid content path.');
+        }
+
+        $uri = self::CONTENT_BY_PATH_URI_PREFIX . implode('/', array_map(rawurlencode(...), explode('/', $path)));
         $queryString = $request?->getQueryString();
 
         return $queryString !== null && $queryString !== '' ? $uri . '?' . $queryString : $uri;
+    }
+
+    /**
+     * The HTTP client resolves dot segments, which would let the path escape the content-by-path endpoint.
+     * The NFKC form is checked as well, in case anything behind Shopware turns "．．／" into "../".
+     */
+    private static function isSafeContentPath(string $path): bool
+    {
+        // Rejects invalid UTF-8 (preg_match() returns false, e.g. for an overlong "."), control and invisible format characters.
+        if (preg_match('/[\p{Cc}\p{Cf}]/u', $path) !== 0) {
+            return false;
+        }
+
+        foreach ([$path, \Normalizer::normalize($path, \Normalizer::NFKC)] as $candidate) {
+            if (!is_string($candidate) || str_contains($candidate, '\\')) {
+                return false;
+            }
+            foreach (explode('/', $candidate) as $segment) {
+                // Also "..." or ".. ", which some file systems trim to "..".
+                if (preg_match('/^\s*\.[.\s]*$/u', $segment) === 1) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 
     private function buildSwHeaders(SalesChannelContext $salesChannelContext, ?Request $request = null): array
