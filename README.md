@@ -123,6 +123,18 @@ placeholders for the product's options of a property group:
 - `{{ product.propertyPosition.<propertyGroupId> }}` - the position of the option within the sorted options
   of the group, as a percentage (e.g. the 2nd of 3 options becomes `67`, no option becomes `0`)
 
+## Clearing caches
+
+Publishing in Neos only invalidates the layouts and pages it changed. The list of Neos CSS and JS
+resources is not refreshed by a publish, so clear all plugin caches after a Neos deployment that
+changes asset URLs:
+
+```bash
+bin/console nlx-cache:clear
+```
+
+`nlx-cache:clear layouts --id=<UUID>` and `nlx-cache:clear navigation` clear only those parts.
+
 ## Requirements
 
 - Shopware `>= 6.6.10.4`
