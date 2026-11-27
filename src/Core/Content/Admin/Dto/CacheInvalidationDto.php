@@ -13,11 +13,16 @@ readonly class CacheInvalidationDto
     public const TYPE_ALL = 'all';
     public const TYPE_LAYOUTS = 'layouts';
     public const TYPE_NAVIGATION = 'navigation';
+    /**
+     * Content of the given Neos pages changed, but nothing that shows up in the navigation.
+     */
+    public const TYPE_PAGES = 'pages';
 
     public const TYPES = [
         self::TYPE_ALL,
         self::TYPE_LAYOUTS,
         self::TYPE_NAVIGATION,
+        self::TYPE_PAGES,
     ];
 
     function __construct(
@@ -42,8 +47,8 @@ readonly class CacheInvalidationDto
     #[Assert\Callback]
     public function validate(ExecutionContextInterface $context, $payload): void
     {
-        if ($this->type === self::TYPE_LAYOUTS && $this->data === null) {
-            $context->buildViolation("The request body must contain a field 'data' when 'type' is 'layouts'.")
+        if (in_array($this->type, [self::TYPE_LAYOUTS, self::TYPE_PAGES], true) && $this->data === null) {
+            $context->buildViolation(sprintf("The request body must contain a field 'data' when 'type' is '%s'.", $this->type))
                 ->atPath('data')
                 ->addViolation();
         }

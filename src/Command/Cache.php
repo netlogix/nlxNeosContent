@@ -41,7 +41,7 @@ class Cache extends Command
             'id',
             null,
             InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
-            "One or more layout (CMS page) UUIDs to invalidate, e.g. --id=<UUID> --id=<UUID>. Only applies to type '" . CacheInvalidationDto::TYPE_LAYOUTS . "' or '" . CacheInvalidationDto::TYPE_ALL . "'. If omitted, all layouts are invalidated."
+            "One or more layout (CMS page) UUIDs for type '" . CacheInvalidationDto::TYPE_LAYOUTS . "' or '" . CacheInvalidationDto::TYPE_ALL . "', or Neos node identifiers for type '" . CacheInvalidationDto::TYPE_PAGES . "', e.g. --id=<UUID> --id=<UUID>. If omitted, all layouts or all Neos pages are invalidated."
         );
     }
 
@@ -89,6 +89,11 @@ class Cache extends Command
                 $this->cacheInvalidationService->invalidateNavigationCaches();
                 $this->cacheInvalidationService->invalidateNeosPageCaches();
                 $output->writeln('<info>Navigation caches invalidated successfully.</info>');
+            }
+
+            if ($type === CacheInvalidationDto::TYPE_PAGES) {
+                $this->cacheInvalidationService->invalidateNeosPageCaches($ids);
+                $output->writeln('<info>Neos page caches invalidated successfully.</info>');
             }
 
             if ($type === CacheInvalidationDto::TYPE_ALL) {
