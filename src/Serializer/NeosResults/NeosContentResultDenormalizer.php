@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace nlxNeosContent\Serializer\NeosResults;
 
 use nlxNeosContent\Core\Content\Cms\Aggregate\CmsSection\NeosCmsSectionCollection;
+use nlxNeosContent\Error\ContentReplacement\FaultyNeosSectionDataException;
 use nlxNeosContent\Neos\DTO\NeosResults\NeosContentResult;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use Symfony\Component\Serializer\SerializerAwareInterface;
@@ -26,9 +27,14 @@ class NeosContentResultDenormalizer implements DenormalizerInterface, Serializer
 
     public function denormalize(mixed $data, string $type, ?string $format = null, array $context = []): NeosContentResult
     {
-        $decoded = json_decode($data, true);
+        // An HTML error or maintenance page served with status 200 must not be taken (and cached) as an empty page.
+        try {
+            $decoded = json_decode($data, true, flags: JSON_THROW_ON_ERROR);
+        } catch (\JsonException $e) {
+            throw new FaultyNeosSectionDataException('Neos responded with invalid JSON: ' . $e->getMessage(), 1795703600, $e);
+        }
         if (!is_array($decoded)) {
-            $decoded = [];
+            throw new FaultyNeosSectionDataException('Neos responded with JSON that is neither an object nor a list.', 1795703601);
         }
 
         if (array_is_list($decoded)) {

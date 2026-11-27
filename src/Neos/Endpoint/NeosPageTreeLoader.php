@@ -23,8 +23,7 @@ readonly class NeosPageTreeLoader extends AbstractNeosPageTreeLoader
      * Bounds a single tree's worst-case latency when fetching SEVERAL concurrently
      * (loadMany() with more than one request) - without it, one slow/cold domain
      * could block the whole batch. A lone request (the common real-storefront-404
-     * fast path) gets no such ceiling - it's no different from load(), which has
-     * never had one, and doesn't need protecting from a batch it isn't part of.
+     * fast path) keeps the client's default NeosClientFactory::TIMEOUT, same as load().
      */
     private const CONCURRENT_REQUEST_TIMEOUT = 3.0;
 

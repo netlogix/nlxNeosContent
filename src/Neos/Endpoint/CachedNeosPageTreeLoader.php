@@ -19,6 +19,12 @@ readonly class CachedNeosPageTreeLoader extends AbstractNeosPageTreeLoader
     public const CACHE_KEY = 'netlogix_neos_content_neos_page_tree';
     private const CACHE_TTL = 86400;
 
+    /**
+     * A failed load is cached as an empty tree this long, so an unreachable Neos isn't asked again on every
+     * storefront request, while a transient failure doesn't hide all Neos pages for the full TTL.
+     */
+    private const FAILURE_CACHE_TTL = 10;
+
     public function __construct(
         #[AutowireDecorated]
         private AbstractNeosPageTreeLoader $decorated,
@@ -37,9 +43,17 @@ readonly class CachedNeosPageTreeLoader extends AbstractNeosPageTreeLoader
                 function (ItemInterface $item) use ($salesChannelId, $languageId) {
                     $item->tag(self::CACHE_KEY);
 
-                    return $this->decorated->load($salesChannelId, $languageId);
-                },
-                self::CACHE_TTL
+                    try {
+                        $item->expiresAfter(self::CACHE_TTL);
+
+                        return $this->decorated->load($salesChannelId, $languageId);
+                    } catch (\Throwable $e) {
+                        $this->logger->error($e);
+                        $item->expiresAfter(self::FAILURE_CACHE_TTL);
+
+                        return new NeosPageCollection();
+                    }
+                }
             );
         } catch (\Throwable $e) {
             $this->logger->error($e);
@@ -83,17 +97,11 @@ readonly class CachedNeosPageTreeLoader extends AbstractNeosPageTreeLoader
         foreach ($fetched as $result) {
             $results[] = $result;
 
-            // A failed fetch's empty tree is only a stand-in for this one response - caching
-            // it would make a transient Neos hiccup look like "no pages here" for a full TTL.
-            if ($result->failed) {
-                continue;
-            }
-
             /** @var ItemInterface $item TagAwareCacheInterface::getItem() is typed via the plain PSR-6 interface */
             $item = $this->cache->getItem($this->cacheKey($result->salesChannelId, $result->languageId));
             $item->set($result->tree);
             $item->tag(self::CACHE_KEY);
-            $item->expiresAfter(self::CACHE_TTL);
+            $item->expiresAfter($result->failed ? self::FAILURE_CACHE_TTL : self::CACHE_TTL);
             $this->cache->save($item);
         }
 

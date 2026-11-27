@@ -101,12 +101,9 @@ class ContentExchangeService
         SalesChannelContext $salesChannelContext,
         ?Request $request = null
     ): NeosContentResult|NeosRedirectResult|NeosAssetResult {
-        $response = $this->neosClient->request('GET', $this->buildContentByPathUri($pathInfo, $request), [
+        return $this->requestContentByPath('GET', $this->buildContentByPathUri($pathInfo, $request), [
             'headers' => $this->buildSwHeaders($salesChannelContext, $request),
-            'max_redirects' => 0,
         ]);
-
-        return $this->handleContentByPathResponse($response);
     }
 
     public function submitFormToNeosByPath(string $pathInfo, Request $request, SalesChannelContext $salesChannelContext): NeosContentResult|NeosRedirectResult|NeosAssetResult
@@ -130,13 +127,10 @@ class ContentExchangeService
             $body = $formData->bodyToIterable();
         }
 
-        $response = $this->neosClient->request('POST', $this->buildContentByPathUri($pathInfo, $request), [
+        return $this->requestContentByPath('POST', $this->buildContentByPathUri($pathInfo, $request), [
             'headers' => $headers,
             'body' => $body,
-            'max_redirects' => 0,
         ]);
-
-        return $this->handleContentByPathResponse($response);
     }
 
     private function mapUploadedFiles(array $files): array
@@ -151,6 +145,26 @@ class ContentExchangeService
         }
 
         return $mapped;
+    }
+
+    /**
+     * A 4xx is passed on as ClientException, since callers map it to the matching storefront status (404, 403, 410).
+     * Any other failure means Neos can't deliver right now and is turned into a 503 by NeosExceptionListener.
+     *
+     * @throws ClientException
+     * @throws NeosContentFetchException
+     */
+    private function requestContentByPath(string $method, string $uri, array $options): NeosContentResult|NeosRedirectResult|NeosAssetResult
+    {
+        try {
+            return $this->handleContentByPathResponse(
+                $this->neosClient->request($method, $uri, [...$options, 'max_redirects' => 0])
+            );
+        } catch (ClientException $e) {
+            throw $e;
+        } catch (ExceptionInterface $e) {
+            throw new NeosContentFetchException('Neos could not deliver content by path: ' . $e->getMessage(), 1795703364, $e);
+        }
     }
 
     private function handleContentByPathResponse(ResponseInterface $response): NeosContentResult|NeosRedirectResult|NeosAssetResult
@@ -169,8 +183,6 @@ class ContentExchangeService
         $contentType = $response->getHeaders(false)['content-type'][0] ?? '';
         if (!str_starts_with($contentType, 'application/json')) {
             // Not the CMS-page JSON envelope - e.g. a Neos asset served directly at this path.
-            // NeosContentResultDenormalizer treats invalid JSON as an empty page instead of
-            // throwing, so that can't be relied on to tell the two apart.
             return new NeosAssetResult(content: $content, statusCode: $statusCode, contentType: $contentType);
         }
 
