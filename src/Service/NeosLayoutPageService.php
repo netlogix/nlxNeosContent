@@ -9,6 +9,7 @@ use nlxNeosContent\Core\Content\NeosNode\NeosNodeEntity;
 use nlxNeosContent\Core\Notification\NotificationService;
 use nlxNeosContent\Error\DataIntegrity\CanNotDeleteDefaultLayoutPageException;
 use nlxNeosContent\Error\RequestError\NeosUrlNotConfiguredException;
+use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
