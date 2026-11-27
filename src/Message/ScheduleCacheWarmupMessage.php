@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace nlxNeosContent\Message;
 
 use nlxNeosContent\Cache\Warmup\CacheWarmerInterface;
-use nlxNeosContent\Cache\Warmup\DTO\AdditionalDataInterface;
 use Shopware\Core\Framework\MessageQueue\LowPriorityMessageInterface;
 
 final readonly class ScheduleCacheWarmupMessage implements LowPriorityMessageInterface

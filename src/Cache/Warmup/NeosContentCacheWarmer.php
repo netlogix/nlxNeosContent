@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace nlxNeosContent\Cache\Warmup;
 
-use nlxNeosContent\Cache\Warmup\DTO\AdditionalDataInterface;
-use nlxNeosContent\Cache\Warmup\DTO\AdditionalDataPageDTO;
 use nlxNeosContent\Core\Content\NeosNode\NeosNodeEntity;
 use nlxNeosContent\Message\ScheduleCacheWarmupMessage;
 use nlxNeosContent\Service\ContentExchangeService;

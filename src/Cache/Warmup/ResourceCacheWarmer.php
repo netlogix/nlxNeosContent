@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace nlxNeosContent\Cache\Warmup;
 
-use nlxNeosContent\Cache\Warmup\DTO\AdditionalDataInterface;
 use nlxNeosContent\Message\ScheduleCacheWarmupMessage;
 use nlxNeosContent\Twig\ResourceHelper;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
