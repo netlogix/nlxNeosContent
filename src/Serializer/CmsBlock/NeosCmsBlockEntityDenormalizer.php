@@ -6,7 +6,6 @@ namespace nlxNeosContent\Serializer\CmsBlock;
 
 use nlxNeosContent\Core\Content\Cms\Aggregate\CmsBlock\NeosCmsBlockEntity;
 use nlxNeosContent\Core\Content\Cms\Aggregate\CmsSlot\NeosCmsSlotCollection;
-use Shopware\Core\Defaults;
 use Shopware\Core\Framework\DataAbstractionLayer\FieldVisibility;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
