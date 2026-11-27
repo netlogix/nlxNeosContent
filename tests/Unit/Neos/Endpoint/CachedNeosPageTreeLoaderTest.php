@@ -69,31 +69,33 @@ class CachedNeosPageTreeLoaderTest extends TestCase
 
     private function loader(\Closure $fetch): CachedNeosPageTreeLoader
     {
-        $decorated = new readonly class($fetch, $this->calls) extends AbstractNeosPageTreeLoader {
-            public function __construct(private \Closure $fetch, private \ArrayObject $calls)
-            {
-            }
-
-            function load(string $salesChannelId, string $languageId): NeosPageCollection
-            {
-                $this->calls->append([$salesChannelId, $languageId]);
-
-                return ($this->fetch)();
-            }
-
-            function loadMany(array $requests): array
-            {
-                return array_map(
-                    fn (array $request) => new NeosPageTreeLoadResult($request[0], $request[1], $this->load(...$request)),
-                    $requests
-                );
-            }
-        };
-
         return new CachedNeosPageTreeLoader(
-            $decorated,
+            new FakeNeosPageTreeLoader($fetch, $this->calls),
             new TagAwareAdapter(new ArrayAdapter(clock: $this->clock)),
             new NullLogger(),
+        );
+    }
+}
+
+// Named, because anonymous readonly classes need PHP 8.3.
+readonly class FakeNeosPageTreeLoader extends AbstractNeosPageTreeLoader
+{
+    public function __construct(private \Closure $fetch, private \ArrayObject $calls)
+    {
+    }
+
+    function load(string $salesChannelId, string $languageId): NeosPageCollection
+    {
+        $this->calls->append([$salesChannelId, $languageId]);
+
+        return ($this->fetch)();
+    }
+
+    function loadMany(array $requests): array
+    {
+        return array_map(
+            fn (array $request) => new NeosPageTreeLoadResult($request[0], $request[1], $this->load(...$request)),
+            $requests
         );
     }
 }
