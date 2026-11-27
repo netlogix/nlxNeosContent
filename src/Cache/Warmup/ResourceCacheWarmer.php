@@ -9,11 +9,18 @@ use nlxNeosContent\Twig\ResourceHelper;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 use Symfony\Component\Messenger\MessageBusInterface;
+use Symfony\Contracts\Service\ResetInterface;
 
 #[AutoconfigureTag('nlx_neos_content.cache_warmer')]
-class ResourceCacheWarmer implements CacheWarmerInterface
+class ResourceCacheWarmer implements CacheWarmerInterface, ResetInterface
 {
     private bool $warmed = false;
+
+    /**
+     * Kept apart from $warmed: with a sync transport the handler runs
+     * warmUp() right inside scheduleWarmUp() and must not be skipped.
+     */
+    private bool $scheduled = false;
 
     public function __construct(
         private readonly ResourceHelper $resourceHelper,
@@ -38,7 +45,7 @@ class ResourceCacheWarmer implements CacheWarmerInterface
 
     public function scheduleWarmUp(SalesChannelContext $salesChannelContext): void
     {
-        if ($this->warmed) {
+        if ($this->scheduled) {
             return;
         }
 
@@ -47,7 +54,7 @@ class ResourceCacheWarmer implements CacheWarmerInterface
             return;
         }
 
-        $this->warmed = true;
+        $this->scheduled = true;
 
         $this->messageBus->dispatch(new ScheduleCacheWarmupMessage(
             self::class,
@@ -55,5 +62,15 @@ class ResourceCacheWarmer implements CacheWarmerInterface
             $salesChannelContext->getLanguageId(),
             $domainId,
         ));
+    }
+
+    /**
+     * Called by the messenger worker after every message, so long-running
+     * workers don't skip warmups of later runs.
+     */
+    public function reset(): void
+    {
+        $this->warmed = false;
+        $this->scheduled = false;
     }
 }
