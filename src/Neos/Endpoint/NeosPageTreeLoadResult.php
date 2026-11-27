@@ -15,7 +15,7 @@ final readonly class NeosPageTreeLoadResult
     /**
      * @param bool $failed True when $tree is a stand-in empty collection because the
      *             fetch itself failed (error/timeout), not because Neos genuinely has
-     *             no pages - callers must not cache a failed result as if it were real.
+     *             no pages - callers must not cache a failed result as long as a real one.
      */
     public function __construct(
         public string $salesChannelId,

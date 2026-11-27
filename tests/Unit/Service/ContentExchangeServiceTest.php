@@ -226,6 +226,30 @@ class ContentExchangeServiceTest extends TestCase
             ->fetchCmsSectionsFromNeosByPath('/old-page/', $this->salesChannelContext());
     }
 
+    public static function neosUnavailable(): iterable
+    {
+        yield 'server error' => [new MockResponse('', ['http_code' => 500])];
+        yield 'service unavailable' => [new MockResponse('', ['http_code' => 503])];
+        yield 'connection refused' => [new MockResponse('', ['error' => 'Connection refused'])];
+        yield 'timeout' => [new MockResponse([''])];
+    }
+
+    #[DataProvider('neosUnavailable')]
+    public function testUnavailableNeosBecomesAFetchException(MockResponse $response): void
+    {
+        $this->expectException(NeosContentFetchException::class);
+
+        $this->service($response)->fetchCmsSectionsFromNeosByPath('/page/', $this->salesChannelContext());
+    }
+
+    public function testFailedFormSubmitBecomesAFetchException(): void
+    {
+        $this->expectException(NeosContentFetchException::class);
+
+        $this->service(new MockResponse('', ['http_code' => 502]))
+            ->submitFormToNeosByPath('/contact/', Request::create('https://shop.example/contact', 'POST'), $this->salesChannelContext());
+    }
+
     public function testNonJsonResponseIsPassedThroughAsAsset(): void
     {
         $result = $this->service(new MockResponse('<svg/>', [
