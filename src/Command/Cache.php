@@ -90,6 +90,10 @@ class Cache extends Command
                 $this->cacheInvalidationService->invalidateNeosPageCaches();
                 $output->writeln('<info>Navigation caches invalidated successfully.</info>');
             }
+
+            if ($type === CacheInvalidationDto::TYPE_ALL) {
+                $this->cacheInvalidationService->invalidatePluginWideCaches();
+            }
         } catch (\Throwable $e) {
             $output->writeln(sprintf('<error>Failed to invalidate caches: %s</error>', $e->getMessage()));
 

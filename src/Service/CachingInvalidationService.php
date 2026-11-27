@@ -48,22 +48,27 @@ class CachingInvalidationService
 
         $tags = array_map(fn (string $id) => self::CMS_PAGE_CACHE_TAG_PREFIX . $id, $cmsPageIds);
 
-        $this->cacheInvalidator->invalidate($tags);
-        $this->cacheInvalidator->invalidateExpired();
-        $this->cacheInvalidator->invalidate([self::CACHE_TAG]);
+        $this->invalidate($tags);
     }
 
     public function invalidateNavigationCaches(): void
     {
-        $this->cacheInvalidator->invalidate([NavigationRoute::ALL_TAG, CachedNeosPageTreeLoader::CACHE_KEY]);
-        $this->cacheInvalidator->invalidateExpired();
-        $this->cacheInvalidator->invalidate([self::CACHE_TAG]);
+        $this->invalidate([NavigationRoute::ALL_TAG, CachedNeosPageTreeLoader::CACHE_KEY]);
+    }
+
+    /**
+     * Everything this plugin caches, including entries only reachable through the plugin-wide tag
+     * (e.g. the Neos frontend resources). Only meant for a full reset, not for a single publish.
+     */
+    public function invalidatePluginWideCaches(): void
+    {
+        $this->invalidate([self::CACHE_TAG]);
     }
 
     public function invalidateNeosPageCaches(array $identifiers = []): void
     {
         if (empty($identifiers)) {
-            $this->cacheInvalidator->invalidate([NeosPageController::CACHE_TAG_ALL]);
+            $this->invalidate([NeosPageController::CACHE_TAG_ALL]);
 
             return;
         }
@@ -73,6 +78,15 @@ class CachingInvalidationService
             $identifiers
         );
 
-        $this->cacheInvalidator->invalidate($tags);
+        $this->invalidate($tags);
+    }
+
+    /**
+     * Forced, so a Neos publish shows up right away instead of waiting for Shopware's delayed
+     * invalidation, without flushing tags queued by anyone else.
+     */
+    private function invalidate(array $tags): void
+    {
+        $this->cacheInvalidator->invalidate($tags, true);
     }
 }
