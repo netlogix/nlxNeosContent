@@ -133,7 +133,8 @@ changes asset URLs:
 bin/console nlx-cache:clear
 ```
 
-`nlx-cache:clear layouts --id=<UUID>` and `nlx-cache:clear navigation` clear only those parts.
+`nlx-cache:clear layouts --id=<UUID>`, `nlx-cache:clear pages --id=<node identifier>` and
+`nlx-cache:clear navigation` clear only those parts.
 
 ## Requirements
 

@@ -46,6 +46,8 @@ class CacheInvalidationRoute extends AbstractCacheInvalidationRoute
         {
             $this->cacheInvalidationService->invalidateNavigationCaches();
             $this->cacheInvalidationService->invalidateNeosPageCaches($cacheInvalidationDto->getData() ?? []);
+        } elseif ($cacheInvalidationDto->getType() === CacheInvalidationDto::TYPE_PAGES) {
+            $this->cacheInvalidationService->invalidateNeosPageCaches($cacheInvalidationDto->getData());
         }
 
         return new JsonResponse(['status' => 'Neos Content Cache invalidated']);
