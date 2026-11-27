@@ -17,6 +17,7 @@ services:
         factory: [nlxNeosContent\HttpClient\NeosClientFactory, create]
         arguments:
             - '@nlxNeosContent\Service\ConfigService'
+            - '%kernel.plugin_infos%'
 
     # Swap this alias (e.g. to a System-Config-backed implementation) to change
     # the head-tag allow-list source without touching NeosHeadDataFactory or
